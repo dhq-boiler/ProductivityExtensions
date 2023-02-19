@@ -56,7 +56,7 @@
         <Parent guid="guidboilersExtensionsPackageCmdSet" id="MyMenuGroup" />
         <Icon guid="guidImages" id="bmpPic1" />
         <Strings>
-          <ButtonText>Invoke NavigateGitHubLinesCommand</ButtonText>
+          <ButtonText>GitHubホスティングリポジトリの該当行を開く</ButtonText>
         </Strings>
       </Button>
     </Buttons>
