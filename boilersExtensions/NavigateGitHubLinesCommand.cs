@@ -138,18 +138,23 @@ namespace boilersExtensions
                 var repoPath = await GetGitRepositoryUrl(filePath, solution, projectItem);
                 var projectPath = projectItem.ContainingProject.FullName;
                 string projectName = System.IO.Path.GetFileNameWithoutExtension(projectPath);
+                string projectNameWithExt = Path.GetFileName(projectPath);
+                var path = projectPath.Remove(projectPath.IndexOf(projectNameWithExt), projectNameWithExt.Length);
+                path = path.Remove(path.IndexOf(repoPath), repoPath.Length);
+                path = path.Replace('\\', '/');
+                path = path.Trim('/');
 
                 var webBrowsingService = await serviceProvider.GetServiceAsync(typeof(SVsWebBrowsingService)) as IVsWebBrowsingService;
 
                 var gitRepository = new Repository(repoPath);
                 var repositoryUrl = gitRepository.Network.Remotes.FirstOrDefault()?.Url;
                 var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://").Replace("git://", "https://").Replace("git@", "https://").Replace("github.com:", "github.com/");
-                var branchName = gitRepository.Head.FriendlyName;
+                var branchName =  Uri.EscapeDataString(gitRepository.Head.FriendlyName);
                 var relativeFilePath = filePath?.Substring(Path.GetDirectoryName(projectPath).Length);
                 relativeFilePath = relativeFilePath?.Replace('\\', '/');
                 var lineNumberBegin = startLine + 1;
                 var lineNumberEnd = endLine + 1;
-                var fileUrl = $"{baseUrl}/blob/{branchName}/{projectName}{relativeFilePath}#L{lineNumberBegin}";
+                var fileUrl = $"{baseUrl}/blob/{branchName}/{path}{relativeFilePath}#L{lineNumberBegin}";
                 if (lineNumberBegin != lineNumberEnd)
                 {
                     fileUrl += $"-L{lineNumberEnd}";
