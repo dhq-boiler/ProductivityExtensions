@@ -64,7 +64,7 @@
 	  <Button guid="guidboilersExtensionsPackage2CmdSet" id="RenameProjectCommandId" priority="0x0100" type="Button">
 		<Parent guid="guidboilersExtensionsPackage2CmdSet" id="MyMenuGroup" />
 		<Strings>
-		  <ButtonText>プロジェクト名をリネームする</ButtonText>
+		  <ButtonText>プロジェクトをリネームする</ButtonText>
 		</Strings>
 	  </Button>
     </Buttons>
