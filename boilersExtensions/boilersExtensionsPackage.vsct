@@ -36,9 +36,12 @@
          group as the part of a menu contained between two lines. The parent of a group
          must be a menu. -->
     <Groups>
-      <Group guid="guidboilersExtensionsPackageCmdSet" id="MyMenuGroup" priority="0x0600">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
-      </Group>
+		<Group guid="guidboilersExtensionsPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+		</Group>
+		<Group guid="guidboilersExtensionsPackage2CmdSet" id="MyMenuGroup" priority="0x0600">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
+		</Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -58,6 +61,12 @@
           <ButtonText>GitHubホスティングリポジトリの該当行を開く</ButtonText>
         </Strings>
       </Button>
+	  <Button guid="guidboilersExtensionsPackage2CmdSet" id="RenameProjectCommandId" priority="0x0100" type="Button">
+		<Parent guid="guidboilersExtensionsPackage2CmdSet" id="MyMenuGroup" />
+		<Strings>
+		  <ButtonText>プロジェクト名をリネームする</ButtonText>
+		</Strings>
+	  </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -78,7 +87,11 @@
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidboilersExtensionsPackageCmdSet" value="{b19148c9-0670-418f-bce5-1845978d4302}">
       <IDSymbol name="MyMenuGroup" value="0x1020" />
-      <IDSymbol name="NavigateGitHubLinesCommandId" value="0x0100" />
+	  <IDSymbol name="NavigateGitHubLinesCommandId" value="0x0100" />
+    </GuidSymbol>
+    <GuidSymbol name="guidboilersExtensionsPackage2CmdSet" value="{7d2cd062-6ec4-42dc-8c6d-019b9b5d57cf}">
+	    <IDSymbol name="MyMenuGroup" value="0x1020" />
+	    <IDSymbol name="RenameProjectCommandId" value="0x0100" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >
