@@ -85,7 +85,8 @@ namespace boilersExtensions
                     OldProjectName =
                     {
                         Value = projectName
-                    }
+                    },
+                    Package = package,
                 }
             };
             (window.DataContext as RenameProjectDialogViewModel).OnDialogOpened(window);
