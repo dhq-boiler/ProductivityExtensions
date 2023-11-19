@@ -54,7 +54,6 @@
           If you do not want an image next to your command, remove the Icon node /> -->
       <Button guid="guidboilersExtensionsPackageCmdSet" id="NavigateGitHubLinesCommandId" priority="0x0100" type="Button">
         <Parent guid="guidboilersExtensionsPackageCmdSet" id="MyMenuGroup" />
-        <Icon guid="guidImages" id="bmpPic1" />
         <Strings>
           <ButtonText>GitHubホスティングリポジトリの該当行を開く</ButtonText>
         </Strings>
