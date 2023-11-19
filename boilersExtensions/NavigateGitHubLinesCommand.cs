@@ -16,7 +16,7 @@ namespace boilersExtensions
     /// <summary>
     /// Command handler
     /// </summary>
-    internal sealed class NavigateGitHubLinesCommand
+    internal sealed class NavigateGitHubLinesCommand : OleMenuCommand
     {
         /// <summary>
         /// Command ID.
@@ -31,7 +31,9 @@ namespace boilersExtensions
         /// <summary>
         /// VS Package that provides this command, not null.
         /// </summary>
-        private readonly AsyncPackage package;
+        private static AsyncPackage package;
+
+        private static OleMenuCommand menuItem;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NavigateGitHubLinesCommand"/> class.
@@ -39,16 +41,18 @@ namespace boilersExtensions
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private NavigateGitHubLinesCommand(AsyncPackage package, OleMenuCommandService commandService)
+        private NavigateGitHubLinesCommand() : base(Execute, OnBeforeQueryStatus, new CommandID(CommandSet, CommandId))
         {
-            this.package = package ?? throw new ArgumentNullException(nameof(package));
-            commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
-
-            var menuCommandID = new CommandID(CommandSet, CommandId);
-            var menuItem = new MenuCommand(this.Execute, menuCommandID);
-            commandService.AddCommand(menuItem);
         }
 
+        private static async void OnBeforeQueryStatus(object sender, EventArgs e)
+        {
+            if (sender is OleMenuCommand command)
+            {
+                command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
+            }
+        }
+        
         /// <summary>
         /// Gets the instance of the command.
         /// </summary>
@@ -61,13 +65,7 @@ namespace boilersExtensions
         /// <summary>
         /// Gets the service provider from the owner package.
         /// </summary>
-        private Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProvider
-        {
-            get
-            {
-                return this.package;
-            }
-        }
+        private static IAsyncServiceProvider ServiceProvider => package;
 
         /// <summary>
         /// Initializes the singleton instance of the command.
@@ -75,12 +73,15 @@ namespace boilersExtensions
         /// <param name="package">Owner package, not null.</param>
         public static async Task InitializeAsync(AsyncPackage package)
         {
+            NavigateGitHubLinesCommand.package = package;
+            
             // Switch to the main thread - the call to AddCommand in NavigateGitHubLinesCommand's constructor requires
             // the UI thread.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
 
-            OleMenuCommandService commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
-            Instance = new NavigateGitHubLinesCommand(package, commandService);
+            var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
+            menuItem = Instance = new NavigateGitHubLinesCommand();
+            commandService.AddCommand(Instance);
         }
 
         /// <summary>
@@ -90,7 +91,7 @@ namespace boilersExtensions
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
-        private void Execute(object sender, EventArgs e)
+        private static void Execute(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             //string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
@@ -106,19 +107,17 @@ namespace boilersExtensions
             //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             OpenWebBrowserAndNavigateGitHubPage();
         }
-
-        private async Task OpenWebBrowserAndNavigateGitHubPage()
+        
+        private static async Task OpenWebBrowserAndNavigateGitHubPage()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var serviceProvider = ServiceProvider;
             var textManager = await serviceProvider.GetServiceAsync(typeof(SVsTextManager)) as IVsTextManager;
-            IVsTextLines textLines;
-            int startLine, endLine, startIndex, endIndex;
-            textManager.GetActiveView(1, null, out IVsTextView textView);
-            textView.GetSelection(out startLine, out startIndex, out endLine, out endIndex);
-            textView.GetBuffer(out textLines);
+            textManager.GetActiveView(1, null, out var textView);
+            textView.GetSelection(out var startLine, out _, out var endLine, out _);
+            textView.GetBuffer(out _);
 
-            DTE dte = await ServiceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+            var dte = await ServiceProvider.GetServiceAsync(typeof(DTE)) as DTE;
             var document = dte.ActiveDocument;
             var projectItem = document.ProjectItem;
             string filePath = null;
@@ -132,23 +131,29 @@ namespace boilersExtensions
             }
 
             //ファイルパスを取得できた場合の処理
-            var solution = await serviceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
-            if (solution != null && filePath != null)
+            if (await serviceProvider.GetServiceAsync(typeof(SVsSolution)) is IVsSolution solution && filePath != null)
             {
-                var repoPath = await GetGitRepositoryUrl(filePath, solution, projectItem);
+                var repoPath = await GetGitRepositoryUrl();
+
+                if (repoPath == null)
+                {
+                    menuItem.Enabled = false;
+                    return;
+                }
+
                 var projectPath = projectItem.ContainingProject.FullName;
-                string projectName = System.IO.Path.GetFileNameWithoutExtension(projectPath);
-                string projectNameWithExt = Path.GetFileName(projectPath);
+                var projectNameWithExt = Path.GetFileName(projectPath);
                 var path = projectPath.Remove(projectPath.IndexOf(projectNameWithExt), projectNameWithExt.Length);
                 path = path.Remove(path.IndexOf(repoPath), repoPath.Length);
                 path = path.Replace('\\', '/');
                 path = path.Trim('/');
 
-                var webBrowsingService = await serviceProvider.GetServiceAsync(typeof(SVsWebBrowsingService)) as IVsWebBrowsingService;
-
                 var gitRepository = new Repository(repoPath);
                 var repositoryUrl = gitRepository.Network.Remotes.FirstOrDefault()?.Url;
-                var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://").Replace("git://", "https://").Replace("git@", "https://").Replace("github.com:", "github.com/");
+                var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://")
+                                                                           .Replace("git://", "https://")
+                                                                           .Replace("git@", "https://")
+                                                                           .Replace("github.com:", "github.com/");
                 var branchName =  Uri.EscapeDataString(gitRepository.Head.FriendlyName);
                 var relativeFilePath = filePath?.Substring(Path.GetDirectoryName(projectPath).Length);
                 relativeFilePath = relativeFilePath?.Replace('\\', '/');
@@ -163,15 +168,20 @@ namespace boilersExtensions
             }
         }
 
-        private async Task<string> GetGitRepositoryUrl(string filePath, IVsSolution solution, ProjectItem projectItem)
+        private static async Task<string> GetGitRepositoryUrl()
+        {
+            var repositoryInfo = await GetGitRepositoryInfo();
+
+            return repositoryInfo?.RepositoryPath;
+        }
+
+        private static async Task<IGitRepositoryInfo> GetGitRepositoryInfo()
         {
             // Get an instance of the IGitExt object
             IGitExt gitService = await ServiceProvider.GetServiceAsync(typeof(IGitExt)) as IGitExt;
 
             // Get the active repository object
-            IGitRepositoryInfo repositoryInfo = gitService.ActiveRepositories.FirstOrDefault();
-
-            return repositoryInfo.RepositoryPath;
+            return gitService.ActiveRepositories.FirstOrDefault();
         }
     }
 }
