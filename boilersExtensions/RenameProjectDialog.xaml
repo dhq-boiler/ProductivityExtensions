@@ -4,9 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:boilersExtensions.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="clr-namespace:boilersExtensions.Helpers"
     xmlns:local="clr-namespace:boilersExtensions"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="{Binding Title}"
+    Title="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Title_RenameProject, Mode=OneWay}"
     Width="400"
     Background="#1F1F1F"
     SizeToContent="WidthAndHeight"
@@ -34,13 +35,13 @@
     <DockPanel>
         <DockPanel Dock="Bottom">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Command="{Binding RenameProjectCommand}" Content="Rename" />
-                <Button Command="{Binding CancelCommand}" Content="Cancel" />
+                <Button Command="{Binding RenameProjectCommand}" Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Caption_Rename, Mode=OneWay}" />
+                <Button Command="{Binding CancelCommand}" Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Caption_Cancel, Mode=OneWay}" />
             </StackPanel>
             <Grid />
         </DockPanel>
         <DockPanel>
-            <Label Content="Project Name after renaming：" DockPanel.Dock="Left" />
+            <Label Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_NewProjectName, Mode=OneWay}" DockPanel.Dock="Left" />
             <controls:EasyEnterTextBox x:Name="projectNameTextBox" Text="{Binding NewProjectName.Value, Mode=TwoWay}" />
         </DockPanel>
     </DockPanel>

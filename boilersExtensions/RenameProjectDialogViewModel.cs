@@ -1,17 +1,17 @@
-﻿using Prism.Mvvm;
+﻿using boilersExtensions.Properties;
+using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using System;
 using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
-using Microsoft.VisualStudio.Shell;
-using System.Windows;
-using boilersExtensions.Controls;
-using EnvDTE;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Xml.Linq;
 
 namespace boilersExtensions
 {
@@ -30,7 +30,7 @@ namespace boilersExtensions
 
         public AsyncPackage Package { get; set; }
 
-        public string Title => $"プロジェクトのリネーム";
+        public string Title => Resource.Title_RenameProject;
 
         public RenameProjectDialogViewModel()
         {
@@ -170,7 +170,6 @@ namespace boilersExtensions
         {
             this.Window = window;
             NewProjectName.Value = OldProjectName.Value;
-            (Window.FindName("projectNameTextBox") as EasyEnterTextBox).Focus();
         }
 
         public void Dispose()
