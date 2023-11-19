@@ -10,6 +10,7 @@
     Title="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Title_RenameProject, Mode=OneWay}"
     Width="400"
     Background="#1F1F1F"
+    ResizeMode="NoResize"
     SizeToContent="WidthAndHeight"
     mc:Ignorable="d">
     <Window.Resources>
