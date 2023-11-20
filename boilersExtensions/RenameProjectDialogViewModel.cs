@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,7 +20,7 @@ namespace boilersExtensions
     {
         private CompositeDisposable _compositeDisposable = new CompositeDisposable();
 
-        public ReactiveCommand RenameProjectCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand RenameProjectCommand { get; }
         public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
 
         public ReactivePropertySlim<string> OldProjectName { get; } = new ReactivePropertySlim<string>();
@@ -34,10 +35,15 @@ namespace boilersExtensions
 
         public RenameProjectDialogViewModel()
         {
+            RenameProjectCommand = OldProjectName.CombineLatest(NewProjectName, (oldName, newName) => oldName != null && newName != null && !oldName.Equals(newName))
+                                                 .ToReactiveCommand();
             RenameProjectCommand.Subscribe(() =>
                 {
                     //プロジェクト名変更の手続き...
-                    RenameProject();
+                    if (!OldProjectName.Value.Equals(NewProjectName.Value))
+                    {
+                        RenameProject();
+                    }
 
                     Window.Close();
                 })

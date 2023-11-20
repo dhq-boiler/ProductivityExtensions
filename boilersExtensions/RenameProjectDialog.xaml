@@ -43,7 +43,7 @@
         </DockPanel>
         <DockPanel>
             <Label Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_NewProjectName, Mode=OneWay}" DockPanel.Dock="Left" />
-            <controls:EasyEnterTextBox x:Name="projectNameTextBox" Text="{Binding NewProjectName.Value, Mode=TwoWay}" />
+            <controls:EasyEnterTextBox x:Name="projectNameTextBox" Text="{Binding NewProjectName.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         </DockPanel>
     </DockPanel>
 </Window>
