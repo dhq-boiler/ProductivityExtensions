@@ -4,6 +4,7 @@
         <Identity Id="boilersExtensions.8f623f48-bef1-49ab-9e67-3ced5baa09e0" Version="0.1" Language="ja-JP" Publisher="dhq_boiler" />
         <DisplayName>boilersExtensions</DisplayName>
 		<Description xml:space="preserve">Visual Studio 2022 での開発作業をさらに豊かにする機能が盛り込まれている拡張機能です。</Description>
+		<License>Resources\LICENSE.md</License>
         <Icon>Resources\Icon.png</Icon>
         <PreviewImage>Resources\Preview.png</PreviewImage>
         <Tags>Extensibility Tool GitHub Rename</Tags>
