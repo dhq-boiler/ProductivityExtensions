@@ -49,8 +49,8 @@
   <ItemGroup>
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
-    <Compile Include="NamespaceRenamer.cs" />
-    <Compile Include="NavigateGitHubLinesCommand.cs" />
+    <Compile Include="Utils\NamespaceRenamer.cs" />
+    <Compile Include="Commands\NavigateGitHubLinesCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="boilersExtensionsPackage.cs" />
     <Compile Include="Properties\Resource.Designer.cs">
@@ -58,13 +58,14 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
-    <Compile Include="RenameProjectCommand.cs" />
+    <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="RenameProjectDialog.xaml.cs">
       <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="RenameProjectDialogViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\LICENSE.md" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -115,11 +116,15 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <VSCTCompile Include="boilersExtensionsPackage.vsct">
+    <VSCTCompile Include="VSCT\boilersExtensionsPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="boilersExtensions.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="git2-106a5f2.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -128,7 +133,14 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Resources\NavigateGitHubLinesCommand.png" />
+    <Content Include="Icon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Preview.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Page Include="RenameProjectDialog.xaml">
