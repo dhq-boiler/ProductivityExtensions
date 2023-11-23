@@ -47,6 +47,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Commands\RenameSolutionCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="Utils\NamespaceRenamer.cs" />
@@ -59,12 +60,19 @@
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
     <Compile Include="Commands\RenameProjectCommand.cs" />
-    <Compile Include="RenameProjectDialog.xaml.cs">
+    <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
+    <Compile Include="Views\RenameSolutionDialog.xaml.cs">
+      <DependentUpon>RenameSolutionDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RenameProjectDialog.xaml.cs">
       <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RenameProjectDialogViewModel.cs" />
+    <Compile Include="ViewModels\RenameProjectDialogViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Batches\BE001.bat">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -151,7 +159,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="RenameProjectDialog.xaml">
+    <Page Include="Views\RenameSolutionDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\RenameProjectDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

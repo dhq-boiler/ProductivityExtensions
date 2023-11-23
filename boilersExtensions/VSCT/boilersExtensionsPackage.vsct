@@ -42,6 +42,9 @@
 		<Group guid="guidboilersExtensionsPackage2CmdSet" id="MyMenuGroup" priority="0x0200">
 			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
 		</Group>
+	    <Group guid="guidboilersExtensionsPackage3CmdSet" id="MyMenuGroup" priority="0x0200">
+		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_SOLNNODE"/>
+	    </Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -67,6 +70,12 @@
 		  <ButtonText>プロジェクトをリネームする</ButtonText>
 		</Strings>
 	  </Button>
+      <Button guid="guidboilersExtensionsPackage3CmdSet" id="RenameSolutionCommandId" priority="0x0100" type="Button">
+	      <Parent guid="guidboilersExtensionsPackage3CmdSet" id="MyMenuGroup" />
+	      <Strings>
+		      <ButtonText>ソリューションをリネームする</ButtonText>
+	      </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -91,6 +100,10 @@
     <GuidSymbol name="guidboilersExtensionsPackage2CmdSet" value="{7d2cd062-6ec4-42dc-8c6d-019b9b5d57cf}">
 	    <IDSymbol name="MyMenuGroup" value="0x1020" />
 	    <IDSymbol name="RenameProjectCommandId" value="0x0100" />
+    </GuidSymbol>
+    <GuidSymbol name="guidboilersExtensionsPackage3CmdSet" value="{3854c682-aa0a-414a-b9ce-6dfc719d12d3}">
+	    <IDSymbol name="MyMenuGroup" value="0x1020" />
+	    <IDSymbol name="RenameSolutionCommandId" value="0x0100" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >

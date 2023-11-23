@@ -1,15 +1,18 @@
-﻿using boilersExtensions.Views;
-using EnvDTE;
+﻿using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using boilersExtensions.ViewModels;
-using Package = Microsoft.VisualStudio.Shell.Package;
+using boilersExtensions.Views;
 
-namespace boilersExtensions
+namespace boilersExtensions.Commands
 {
-    internal class RenameProjectCommand : OleMenuCommand
+    internal class RenameSolutionCommand : OleMenuCommand
     {
         /// <summary>
         /// Command ID.
@@ -19,7 +22,7 @@ namespace boilersExtensions
         /// <summary>
         /// Command menu group (command set GUID).
         /// </summary>
-        public static readonly Guid CommandSet = new Guid("7d2cd062-6ec4-42dc-8c6d-019b9b5d57cf");
+        public static readonly Guid CommandSet = new Guid("3854c682-aa0a-414a-b9ce-6dfc719d12d3");
 
         /// <summary>
         /// VS Package that provides this command, not null.
@@ -31,7 +34,7 @@ namespace boilersExtensions
         /// <summary>
         /// Gets the instance of the command.
         /// </summary>
-        public static RenameProjectCommand Instance
+        public static RenameSolutionCommand Instance
         {
             get;
             private set;
@@ -43,18 +46,18 @@ namespace boilersExtensions
         private static IAsyncServiceProvider ServiceProvider => package;
 
 
-        private RenameProjectCommand() : base(Execute, new CommandID(CommandSet, CommandId))
+        private RenameSolutionCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
         }
 
         public static async Task InitializeAsync(AsyncPackage package)
         {
-            RenameProjectCommand.package = package;
+            RenameSolutionCommand.package = package;
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
-            menuItem = Instance = new RenameProjectCommand();
+            menuItem = Instance = new RenameSolutionCommand();
             commandService.AddCommand(Instance);
         }
 
@@ -65,27 +68,23 @@ namespace boilersExtensions
             // DTE オブジェクトの取得
             DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
-            // アクティブなプロジェクトの配列を取得
-            Array activeSolutionProjects = dte.ActiveSolutionProjects as Array;
+            Solution solution = dte.Solution;   
+            
+            //ソリューション名の取得
+            string solutionName = Path.GetFileNameWithoutExtension(solution?.FullName);
 
-            // 配列から最初のプロジェクトを取得（通常、アクティブなプロジェクト）
-            Project activeProject = activeSolutionProjects?.GetValue(0) as Project;
-
-            // プロジェクト名の取得
-            string projectName = activeProject?.Name;
-
-            var window = new RenameProjectDialog()
+            var window = new RenameSolutionDialog()
             {
-                DataContext = new RenameProjectDialogViewModel()
+                DataContext = new RenameSolutionDialogViewModel()
                 {
-                    OldProjectName =
+                    OldSolutionName =
                     {
-                        Value = projectName
+                        Value = solutionName
                     },
                     Package = package,
                 }
             };
-            (window.DataContext as RenameProjectDialogViewModel).OnDialogOpened(window);
+            (window.DataContext as RenameSolutionDialogViewModel).OnDialogOpened(window);
             window.ShowDialog();
         }
     }

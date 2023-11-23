@@ -2,7 +2,7 @@
 
 using System.Windows;
 
-namespace boilersExtensions
+namespace boilersExtensions.Views
 {
     /// <summary>
     /// RenameProjectDialog.xaml の相互作用ロジック

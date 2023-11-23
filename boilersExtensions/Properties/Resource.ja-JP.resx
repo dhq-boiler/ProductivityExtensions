@@ -126,7 +126,16 @@
   <data name="Label_NewProjectName" xml:space="preserve">
     <value>リネーム後のプロジェクト名：</value>
   </data>
+  <data name="Label_NewSolutionName" xml:space="preserve">
+    <value>リネーム後のソリューション名：</value>
+  </data>
+  <data name="Label_WillRenameParentDir" xml:space="preserve">
+    <value>ソリューションの親ディレクトリをリネームする</value>
+  </data>
   <data name="Title_RenameProject" xml:space="preserve">
     <value>プロジェクトのリネーム</value>
+  </data>
+  <data name="Title_RenameSolution" xml:space="preserve">
+    <value>ソリューションのリネーム</value>
   </data>
 </root>

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Xml.Linq;
 
-namespace boilersExtensions
+namespace boilersExtensions.ViewModels
 {
     internal class RenameProjectDialogViewModel : BindableBase, IDisposable
     {

@@ -88,11 +88,38 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Solution Name after renaming： に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Label_NewSolutionName {
+            get {
+                return ResourceManager.GetString("Label_NewSolutionName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Rename parent directory of Solution に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Label_WillRenameParentDir {
+            get {
+                return ResourceManager.GetString("Label_WillRenameParentDir", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Rename Project に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Title_RenameProject {
             get {
                 return ResourceManager.GetString("Title_RenameProject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Rename Solution に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Title_RenameSolution {
+            get {
+                return ResourceManager.GetString("Title_RenameSolution", resourceCulture);
             }
         }
     }

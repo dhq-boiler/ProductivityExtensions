@@ -126,7 +126,16 @@
   <data name="Label_NewProjectName" xml:space="preserve">
     <value>Project Name after renaming：</value>
   </data>
+  <data name="Label_NewSolutionName" xml:space="preserve">
+    <value>Solution Name after renaming：</value>
+  </data>
+  <data name="Label_WillRenameParentDir" xml:space="preserve">
+    <value>Rename parent directory of Solution</value>
+  </data>
   <data name="Title_RenameProject" xml:space="preserve">
     <value>Rename Project</value>
+  </data>
+  <data name="Title_RenameSolution" xml:space="preserve">
+    <value>Rename Solution</value>
   </data>
 </root>

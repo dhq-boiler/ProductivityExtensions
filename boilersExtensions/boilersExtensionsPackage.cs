@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
+using boilersExtensions.Commands;
 using boilersExtensions.Helpers;
 using Task = System.Threading.Tasks.Task;
 
@@ -53,6 +54,7 @@ namespace boilersExtensions
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             await NavigateGitHubLinesCommand.InitializeAsync(this);
             await RenameProjectCommand.InitializeAsync(this);
+            await RenameSolutionCommand.InitializeAsync(this);
         }
 
         #endregion
