@@ -99,7 +99,8 @@ namespace boilersExtensions.ViewModels
                 throw new FileNotFoundException("バッチファイルが見つかりません。", batchFilePath);
             }
 
-            argumentsStr = string.Format("{0} {1} \"{2}\" \"{3}\" \"{4}\", {5}", vsPath[0], WillRenameParentDir.Value, Path.GetFileNameWithoutExtension(newSolutionPath), newSolutionPath, argumentsStr, Path.GetFileNameWithoutExtension(oldSolutionPath.Substring(oldSolutionPath.LastIndexOf('\\') + 1)));
+            argumentsStr =
+                $"{vsPath[0]} {WillRenameParentDir.Value} \"{Path.GetFileNameWithoutExtension(newSolutionPath)}\" \"{newSolutionPath}\" \"{argumentsStr}\", {Path.GetFileNameWithoutExtension(oldSolutionPath.Substring(oldSolutionPath.LastIndexOf('\\') + 1))}";
 
             var startInfo = new ProcessStartInfo
             {
