@@ -100,7 +100,7 @@ namespace boilersExtensions.ViewModels
             }
 
             argumentsStr =
-                $"{vsPath[0]} {WillRenameParentDir.Value} \"{Path.GetFileNameWithoutExtension(newSolutionPath)}\" \"{newSolutionPath}\" \"{argumentsStr}\", {Path.GetFileNameWithoutExtension(oldSolutionPath.Substring(oldSolutionPath.LastIndexOf('\\') + 1))}";
+                $"{vsPath[0]} {WillRenameParentDir.Value} \"{Path.GetFileNameWithoutExtension(newSolutionPath)}\" \"{newSolutionPath}\" \"{argumentsStr}\", {Path.GetDirectoryName(oldSolutionPath).Substring(Path.GetDirectoryName(oldSolutionPath).LastIndexOf('\\') + 1)}";
 
             var startInfo = new ProcessStartInfo
             {
