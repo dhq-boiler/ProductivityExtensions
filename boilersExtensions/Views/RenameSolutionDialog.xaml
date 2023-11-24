@@ -54,6 +54,8 @@
             <DockPanel>
                 <CheckBox Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_WillRenameParentDir, Mode=OneWay}" IsChecked="{Binding WillRenameParentDir.Value, Mode=TwoWay}" />
             </DockPanel>
+            <Label Content="※ソリューションのリネーム後に Visual Studio 再起動が行われます。" Foreground="Red" />
+            <Label Content="　編集中のファイルを予め保存してください。" Foreground="Red" />
         </StackPanel>
     </DockPanel>
 </Window>

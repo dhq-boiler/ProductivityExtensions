@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
 	<Metadata>
-		<Identity Id="boilersExtensions.8f623f48-bef1-49ab-9e67-3ced5baa09e0" Version="1.0.1" Language="ja-JP" Publisher="dhq_boiler" />
+		<Identity Id="boilersExtensions.e678fe69-e61b-429d-ab8e-83d2b8fe516c" Version="1.1" Language="ja-JP" Publisher="dhq_boiler" />
 		<DisplayName>boilersExtensions</DisplayName>
 		<Description>This is an extension that includes features to further enrich your development work with Visual Studio 2022.</Description>
 		<License>Resources\LICENSE.md</License>
 		<Icon>Resources\Icon.png</Icon>
 		<PreviewImage>Resources\Preview.png</PreviewImage>
 		<Tags>Extensibility Tool GitHub Rename</Tags>
-		<Preview>true</Preview>
+		<Preview>false</Preview>
 	</Metadata>
 	<Installation>
 		<InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
