@@ -14,6 +14,8 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
+using MessageBox = System.Windows.MessageBox;
 
 namespace boilersExtensions.ViewModels
 {
@@ -28,7 +30,7 @@ namespace boilersExtensions.ViewModels
 
         public ReactivePropertySlim<string> NewSolutionName { get; } = new ReactivePropertySlim<string>();
 
-        public ReactivePropertySlim<bool> WillRenameParentDir { get; } = new ReactivePropertySlim<bool>();
+        public ReactivePropertySlim<bool> WillRenameParentDir { get; } = new ReactivePropertySlim<bool>(true);
 
         public System.Windows.Window Window { get; set; }
 
@@ -46,9 +48,8 @@ namespace boilersExtensions.ViewModels
                     if (!OldSolutionName.Value.Equals(NewSolutionName.Value))
                     {
                         RenameSolution();
+                        Window.Close();
                     }
-
-                    Window.Close();
                 })
                 .AddTo(_compositeDisposable);
             CancelCommand.Subscribe(() =>
@@ -96,7 +97,8 @@ namespace boilersExtensions.ViewModels
             // バッチファイルの存在を確認
             if (!File.Exists(batchFilePath))
             {
-                throw new FileNotFoundException("バッチファイルが見つかりません。", batchFilePath);
+                MessageBox.Show($"バッチファイルが見つかりません。{batchFilePath}");
+                return;
             }
 
             argumentsStr =
@@ -210,6 +212,9 @@ namespace boilersExtensions.ViewModels
             CancelCommand?.Dispose();
             OldSolutionName?.Dispose();
             NewSolutionName?.Dispose();
+            OldSolutionName?.Dispose();
+            NewSolutionName?.Dispose();
+            WillRenameParentDir?.Dispose();
         }
     }
 }

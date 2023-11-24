@@ -41,9 +41,12 @@
             </StackPanel>
             <Grid />
         </DockPanel>
-        <DockPanel>
-            <Label Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_NewProjectName, Mode=OneWay}" DockPanel.Dock="Left" />
-            <controls:EasyEnterTextBox x:Name="projectNameTextBox" Text="{Binding NewProjectName.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-        </DockPanel>
+        <StackPanel Orientation="Vertical">
+            <DockPanel>
+                <Label Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_NewProjectName, Mode=OneWay}" DockPanel.Dock="Left" />
+                <controls:EasyEnterTextBox x:Name="projectNameTextBox" Text="{Binding NewProjectName.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </DockPanel>
+            <Label Content="※プロジェクトのリネーム後に再読み込みが必要になります。" Foreground="#FF0000" />
+        </StackPanel>
     </DockPanel>
 </Window>
