@@ -12,9 +12,9 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using MessageBox = System.Windows.MessageBox;
 
 namespace boilersExtensions.ViewModels
@@ -83,9 +83,10 @@ namespace boilersExtensions.ViewModels
             //// Visual Studioを新しいソリューションで再起動
             var args = new List<string>();
             args.AddRange(vsPath);
-            if (args.Count() == 4)
+            Regex regex = new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
+            if (regex.IsMatch(args.Last()))
             {
-                args.Remove(args[3]);
+                args.Remove(args.Last());
             }
             args.Add(newSolutionPath);
             var arguments = args.Skip(1);
