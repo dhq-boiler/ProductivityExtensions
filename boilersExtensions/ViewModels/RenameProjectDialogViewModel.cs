@@ -68,11 +68,34 @@ namespace boilersExtensions.ViewModels
             // 配列から最初のプロジェクトを取得（通常、アクティブなプロジェクト）
             Project activeProject = activeSolutionProjects?.GetValue(0) as Project;
 
+            Projects projects = dte.Solution.Projects;
+
+            bool hasProjects = projects.Count != 0;
+
+            bool isSameDir = false;
+
+            if (hasProjects)
+            {
+                isSameDir = BothSolutionDirAndProjectDirIsSame(dte.Solution.FileName, projects.Item(1).FileName);
+            }
+
             RenameRootNamespace(activeProject);
             await RenameCSharpFiles(dte.Solution.FileName);
             RenameCsproj(activeProject);
-            RenameCsprojDir(activeProject);
+
+            if (!isSameDir)
+            {
+                RenameCsprojDir(activeProject);
+            }
+
             RenameInSolutionFile(dte.Solution.FileName, OldProjectName.Value, NewProjectName.Value);
+        }
+
+        private bool BothSolutionDirAndProjectDirIsSame(string solutionFilePath, string projectFilePath)
+        {
+            var slnDir = Path.GetDirectoryName(solutionFilePath);
+            var prjDir = Path.GetDirectoryName(projectFilePath);
+            return slnDir == prjDir;
         }
 
         private static void RenameInSolutionFile(string solutionFilePath, string oldProjectName, string newProjectName)

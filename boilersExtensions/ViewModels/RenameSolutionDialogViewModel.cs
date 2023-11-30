@@ -68,6 +68,17 @@ namespace boilersExtensions.ViewModels
 
             Solution solution = dte.Solution;
 
+            Projects projects = dte.Solution.Projects;
+
+            bool hasProjects = projects.Count != 0;
+
+            bool isSameDir = false;
+
+            if (hasProjects)
+            {
+                isSameDir = BothSolutionDirAndProjectDirIsSame(solution.FileName, projects.Item(1).FileName);
+            }
+
             var oldSolutionPath = solution.FileName;
             var newSolutionPath = RenameSolutionFile(solution);
 
@@ -77,54 +88,119 @@ namespace boilersExtensions.ViewModels
                     Path.GetFileName(newSolutionPath));
             }
 
-            // Visual Studioのパス（通常はこれですが、環境によって異なる場合があります）
-            string[] vsPath = GetVisualStudio2022Path();
-
-            //// Visual Studioを新しいソリューションで再起動
-            var args = new List<string>();
-            args.AddRange(vsPath);
-            Regex regex = new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
-            if (regex.IsMatch(args.Last()))
+            if (isSameDir)
             {
-                args.Remove(args.Last());
+                // Visual Studioのパス（通常はこれですが、環境によって異なる場合があります）
+                string[] vsPath = GetVisualStudio2022Path();
+
+                //// Visual Studioを新しいソリューションで再起動
+                var args = new List<string>();
+                args.AddRange(vsPath);
+                Regex regex =
+                    new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
+                if (regex.IsMatch(args.Last()))
+                {
+                    args.Remove(args.Last());
+                }
+
+                args.Add(newSolutionPath);
+                var arguments = args.Skip(1);
+                var argumentsStr = string.Join(" ", arguments);
+
+                // 拡張機能のインストールパスを取得
+                string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+                string extensionDirectory = Path.GetDirectoryName(assemblyLocation);
+
+                // バッチファイルのパスを構築
+                string batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
+
+                // バッチファイルの存在を確認
+                if (!File.Exists(batchFilePath))
+                {
+                    MessageBox.Show($"バッチファイルが見つかりません。{batchFilePath}");
+                    return;
+                }
+
+                argumentsStr =
+                    $"{vsPath[0]} {WillRenameParentDir.Value} \"{Path.GetFileNameWithoutExtension(newSolutionPath)}\" \"{newSolutionPath}\" \"{argumentsStr}\" {Path.GetDirectoryName(oldSolutionPath).Substring(Path.GetDirectoryName(oldSolutionPath).LastIndexOf('\\') + 1)}";
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = batchFilePath,
+                    CreateNoWindow = true, // コマンドウィンドウを開かない
+                    WindowStyle = ProcessWindowStyle.Hidden, // ウィンドウを隠す
+                    UseShellExecute = false, // シェル実行を使用しない
+                    Arguments = argumentsStr
+                };
+                var process = new System.Diagnostics.Process
+                {
+                    StartInfo = startInfo
+                };
+                process.Start();
+
+                // Visual Studioを閉じる
+                dte.Quit();
             }
-            args.Add(newSolutionPath);
-            var arguments = args.Skip(1);
-            var argumentsStr = string.Join(" ", arguments);
-
-            // 拡張機能のインストールパスを取得
-            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-            string extensionDirectory = Path.GetDirectoryName(assemblyLocation);
-
-            // バッチファイルのパスを構築
-            string batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
-
-            // バッチファイルの存在を確認
-            if (!File.Exists(batchFilePath))
+            else
             {
-                MessageBox.Show($"バッチファイルが見つかりません。{batchFilePath}");
-                return;
+                // Visual Studioのパス（通常はこれですが、環境によって異なる場合があります）
+                string[] vsPath = GetVisualStudio2022Path();
+
+                //// Visual Studioを新しいソリューションで再起動
+                var args = new List<string>();
+                args.AddRange(vsPath);
+                Regex regex =
+                    new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
+                if (regex.IsMatch(args.Last()))
+                {
+                    args.Remove(args.Last());
+                }
+
+                args.Add(newSolutionPath);
+                var arguments = args.Skip(1);
+                var argumentsStr = string.Join(" ", arguments);
+
+                // 拡張機能のインストールパスを取得
+                string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+                string extensionDirectory = Path.GetDirectoryName(assemblyLocation);
+
+                // バッチファイルのパスを構築
+                string batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
+
+                // バッチファイルの存在を確認
+                if (!File.Exists(batchFilePath))
+                {
+                    MessageBox.Show($"バッチファイルが見つかりません。{batchFilePath}");
+                    return;
+                }
+
+                argumentsStr =
+                    $"{vsPath[0]} {WillRenameParentDir.Value} \"{Path.GetFileNameWithoutExtension(newSolutionPath)}\" \"{newSolutionPath}\" \"{argumentsStr}\" {Path.GetDirectoryName(oldSolutionPath).Substring(Path.GetDirectoryName(oldSolutionPath).LastIndexOf('\\') + 1)}";
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = batchFilePath,
+                    CreateNoWindow = true, // コマンドウィンドウを開かない
+                    WindowStyle = ProcessWindowStyle.Hidden, // ウィンドウを隠す
+                    UseShellExecute = false, // シェル実行を使用しない
+                    Arguments = argumentsStr
+                };
+                var process = new System.Diagnostics.Process
+                {
+                    StartInfo = startInfo
+                };
+                process.Start();
+
+                // Visual Studioを閉じる
+                dte.Quit();
             }
+        }
 
-            argumentsStr =
-                $"{vsPath[0]} {WillRenameParentDir.Value} \"{Path.GetFileNameWithoutExtension(newSolutionPath)}\" \"{newSolutionPath}\" \"{argumentsStr}\" {Path.GetDirectoryName(oldSolutionPath).Substring(Path.GetDirectoryName(oldSolutionPath).LastIndexOf('\\') + 1)}";
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = batchFilePath,
-                CreateNoWindow = true, // コマンドウィンドウを開かない
-                WindowStyle = ProcessWindowStyle.Hidden, // ウィンドウを隠す
-                UseShellExecute = false, // シェル実行を使用しない
-                Arguments = argumentsStr
-            };
-            var process = new System.Diagnostics.Process
-            {
-                StartInfo = startInfo
-            };
-            process.Start();
-
-            // Visual Studioを閉じる
-            dte.Quit();
+        private bool BothSolutionDirAndProjectDirIsSame(string solutionFilePath, string projectFilePath)
+        {
+            var slnDir = Path.GetDirectoryName(solutionFilePath); 
+            var prjDir = Path.GetDirectoryName(projectFilePath);
+            return slnDir == prjDir;
         }
 
         private string[] GetVisualStudio2022Path()
