@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -134,57 +135,64 @@ namespace boilersExtensions.TextEditor.Adornments
 
         private void AddStrikethrough(TextSpan span)
         {
-            // パラメータの実際の位置を取得
-            SnapshotSpan snapshotSpan = new SnapshotSpan(_view.TextBuffer.CurrentSnapshot, new Span(span.Start, span.End - span.Start));
-            var line = _view.GetTextViewLineContainingBufferPosition(snapshotSpan.Start);
-            var bounds = line.GetCharacterBounds(snapshotSpan.Start);
-            var endBounds = line.GetCharacterBounds(snapshotSpan.End);
-
-            // デバッグ情報の出力
-            Debug.WriteLine($"Parameter bounds: Left={bounds.Left}, Right={bounds.Right}, Top={bounds.Top}, Height={bounds.Height}");
-
-            var text = new TextBlock
+            try
             {
-                Text = snapshotSpan.GetText(),
-                Background = Brushes.Transparent,
-                Foreground = Brushes.Gray,
-                FontSize = _view.FormattedLineSource.DefaultTextProperties.FontRenderingEmSize,
-                FontFamily = _view.FormattedLineSource.DefaultTextProperties.Typeface.FontFamily,
-                Padding = new System.Windows.Thickness(0, 0, 0, 0),
-                //ToolTip = $"変数 {snapshotSpan.GetText()} はメソッド内のどこからも参照されていないので削除できます"
-            };
+                // パラメータの実際の位置を取得
+                SnapshotSpan snapshotSpan = new SnapshotSpan(_view.TextBuffer.CurrentSnapshot,
+                    new Span(span.Start, span.End - span.Start));
+                var line = _view.GetTextViewLineContainingBufferPosition(snapshotSpan.Start);
+                var bounds = line.GetCharacterBounds(snapshotSpan.Start);
+                var endBounds = line.GetCharacterBounds(snapshotSpan.End);
 
-            Canvas.SetLeft(text, bounds.Left);
-            Canvas.SetTop(text, bounds.TextTop);
-            _unusedParameters.Add(text);
+                // デバッグ情報の出力
+                Debug.WriteLine(
+                    $"Parameter bounds: Left={bounds.Left}, Right={bounds.Right}, Top={bounds.Top}, Height={bounds.Height}");
 
-            _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative,
-                snapshotSpan,
-                null,
-                text,
-                null);
+                var text = new TextBlock
+                {
+                    Text = snapshotSpan.GetText(),
+                    Background = Brushes.Transparent,
+                    Foreground = Brushes.Gray,
+                    FontSize = _view.FormattedLineSource.DefaultTextProperties.FontRenderingEmSize,
+                    FontFamily = _view.FormattedLineSource.DefaultTextProperties.Typeface.FontFamily,
+                    Padding = new System.Windows.Thickness(0, 0, 0, 0),
+                };
 
-            // 打ち消し線を作成
-            var strikeout = new Line
+                Canvas.SetLeft(text, bounds.Left);
+                Canvas.SetTop(text, bounds.TextTop);
+                _unusedParameters.Add(text);
+
+                _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative,
+                    snapshotSpan,
+                    null,
+                    text,
+                    null);
+
+                // 打ち消し線を作成
+                var strikeout = new Line
+                {
+                    X1 = bounds.Left + 0.5,
+                    Y1 = bounds.Top + (bounds.Height / 4 * 3) - 0.5,
+                    X2 = endBounds.Left + 0.5,
+                    Y2 = bounds.Top + (bounds.Height / 4 * 3) - 0.5,
+                    Stroke = Brushes.Gray,
+                    StrokeThickness = 1,
+                };
+
+                Canvas.SetLeft(strikeout, 0);
+                Canvas.SetTop(strikeout, 0);
+                _strikeouts.Add(strikeout);
+
+                _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative,
+                    snapshotSpan,
+                    null,
+                    strikeout,
+                    null);
+            }
+            catch (ArgumentException ex)
             {
-                X1 = bounds.Left + 0.5,
-                Y1 = bounds.Top + (bounds.Height / 4 * 3) - 0.5,
-                X2 = endBounds.Left + 0.5,
-                Y2 = bounds.Top + (bounds.Height / 4 * 3) - 0.5,
-                Stroke = Brushes.Gray,
-                StrokeThickness = 1,
-                //ToolTip = $"変数 {snapshotSpan.GetText()} はメソッド内のどこからも参照されていないので削除できます"
-            };
-
-            Canvas.SetLeft(strikeout, 0);
-            Canvas.SetTop(strikeout, 0);
-            _strikeouts.Add(strikeout);
-
-            _layer.AddAdornment(AdornmentPositioningBehavior.TextRelative,
-                snapshotSpan,
-                null,
-                strikeout,
-                null);
+                //コード編集中に例外が発生する可能性があるため、例外をキャッチして無視する
+            }
         }
     }
 }
