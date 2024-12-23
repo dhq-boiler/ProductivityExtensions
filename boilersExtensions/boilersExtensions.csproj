@@ -50,6 +50,9 @@
     <Compile Include="Commands\RenameSolutionCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
+    <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
+    <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
+    <Compile Include="TextEditor\QuickInfoSources\UnusedParameterQuickInfoSource.cs" />
     <Compile Include="Utils\NamespaceRenamer.cs" />
     <Compile Include="Commands\NavigateGitHubLinesCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
