@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Text.Differencing;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,18 +11,12 @@ namespace boilersExtensions.TextEditor.SuggestedActions
     internal class RemoveUnusedParameterSuggestedAction : ISuggestedAction
     {
         private ITrackingSpan m_span;
-        private readonly IDifferenceBufferFactoryService diffBufferFactory;
-        private readonly ITextDifferencingSelectorService diffSelector;
-        private readonly IWpfDifferenceViewerFactoryService wpfDifferenceViewerFactoryService;
         private ITextSnapshot m_snapshot;
         
-        public RemoveUnusedParameterSuggestedAction(ITrackingSpan span, IDifferenceBufferFactoryService diffBufferFactory, ITextDifferencingSelectorService diffSelector, IWpfDifferenceViewerFactoryService wpfDifferenceViewerFactoryService)
+        public RemoveUnusedParameterSuggestedAction(ITrackingSpan span)
         {
-
-            m_snapshot = span.TextBuffer.CurrentSnapshot;            m_span = span;
-            this.diffBufferFactory = diffBufferFactory;
-            this.diffSelector = diffSelector;
-            this.wpfDifferenceViewerFactoryService = wpfDifferenceViewerFactoryService;
+            m_span = span;
+            m_snapshot = span.TextBuffer.CurrentSnapshot;
             DisplayText = $"未使用のパラメーター '{span.GetText(m_snapshot)}' を削除します";
         }
 
