@@ -51,10 +51,13 @@
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
+    <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\QuickInfoSources\UnusedParameterQuickInfoSource.cs" />
+    <Compile Include="TextEditor\SuggestedActionsSources\ExtractMethodSuggestedActionsSource.cs" />
     <Compile Include="TextEditor\SuggestedActionsSources\UnusedParameterSuggestedActionsSource.cs" />
+    <Compile Include="TextEditor\SuggestedActions\ExtractMethodSuggestedAction.cs" />
     <Compile Include="TextEditor\SuggestedActions\RemoveUnusedParameterSuggestedAction.cs" />
     <Compile Include="Utils\DiffViewer.cs" />
     <Compile Include="Utils\NamespaceRenamer.cs" />
