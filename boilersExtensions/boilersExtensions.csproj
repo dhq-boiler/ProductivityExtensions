@@ -56,6 +56,7 @@
     <Compile Include="TextEditor\QuickInfoSources\UnusedParameterQuickInfoSource.cs" />
     <Compile Include="TextEditor\SuggestedActionsSources\UnusedParameterSuggestedActionsSource.cs" />
     <Compile Include="TextEditor\SuggestedActions\RemoveUnusedParameterSuggestedAction.cs" />
+    <Compile Include="Utils\DiffViewer.cs" />
     <Compile Include="Utils\NamespaceRenamer.cs" />
     <Compile Include="Commands\NavigateGitHubLinesCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -200,6 +201,7 @@
     <Folder Include="TextEditor\Classifiers\" />
     <Folder Include="TextEditor\Colorizers\" />
     <Folder Include="TextEditor\Enhancers\" />
+    <Folder Include="TextEditor\FactoryServices\" />
     <Folder Include="TextEditor\LanguageServices\" />
     <Folder Include="TextEditor\Listeners\" />
     <Folder Include="TextEditor\Scanners\" />
