@@ -1,22 +1,26 @@
-﻿using EnvDTE;
+﻿using boilersExtensions.Commands;
+using boilersExtensions.TextEditor.Adornments;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Windows;
-using boilersExtensions.Commands;
-using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace boilersExtensions.ViewModels
 {
     internal class GuidSelectionDialogViewModel : BindableBase, IDisposable
     {
         private CompositeDisposable _compositeDisposable = new CompositeDisposable();
+
+        private Dictionary<string, GuidPositionInfo> _guidPositions = new Dictionary<string, GuidPositionInfo>();
 
         public ReactiveCommand UpdateGuidsCommand { get; }
         public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
@@ -56,6 +60,9 @@ namespace boilersExtensions.ViewModels
                     IsProcessing.Value = true;
                     Progress.Value = 0;
 
+                    // アナライザーを一時停止
+                    UnusedParameterAdornment.PauseAnalysis();
+
                     // 選択されたGUIDのみ処理
                     var selectedGuids = GuidList.FindAll(g => g.IsSelected.Value && !string.IsNullOrEmpty(g.NewGuid.Value));
 
@@ -81,19 +88,23 @@ namespace boilersExtensions.ViewModels
                         for (int i = 0; i < selectedGuids.Count; i++)
                         {
                             var guidInfo = selectedGuids[i];
+                            string originalGuid = guidInfo.OriginalGuid.Value;
 
-                            // 進捗状況を更新（UI更新のためにDispatcher経由）
+                            // 進捗状況を更新
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
-                                ProcessingStatus.Value = $"更新中: {guidInfo.OriginalGuid.Value} ({i + 1}/{selectedGuids.Count})";
+                                ProcessingStatus.Value = $"更新中: {originalGuid} ({i + 1}/{selectedGuids.Count})";
                                 Progress.Value = (double)(i + 1) / selectedGuids.Count * 100;
                             });
 
                             // 少し時間を空けてUIの更新を許可
                             await Task.Delay(10);
 
-                            // GUIDを置換
-                            ReplaceAllGuidOccurrences(Document, guidInfo.OriginalGuid.Value, guidInfo.NewGuid.Value);
+                            // キャッシュした位置情報を使ってGUIDを置換
+                            if (_guidPositions.TryGetValue(originalGuid, out var posInfo))
+                            {
+                                ReplaceGuidAtPositions(Document, posInfo, guidInfo.NewGuid.Value);
+                            }
                         }
 
                         // 成功メッセージを表示
@@ -120,6 +131,9 @@ namespace boilersExtensions.ViewModels
                 }
                 finally
                 {
+                    // アナライザーを再開
+                    UnusedParameterAdornment.ResumeAnalysis();
+
                     // 処理終了
                     ProcessingStatus.Value = "完了";
                     IsProcessing.Value = false;
@@ -226,83 +240,107 @@ namespace boilersExtensions.ViewModels
                 .AddTo(_compositeDisposable);
         }
 
-        private void UpdateSelectedGuids()
+        /// <summary>
+        /// 位置情報を使って効率的に置換
+        /// </summary>
+        private void ReplaceGuidAtPositions(TextDocument textDocument, GuidPositionInfo guidInfo, string newGuid)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            // 選択されたGUIDのみ処理
-            var selectedGuids = GuidList.FindAll(g => g.IsSelected.Value && !string.IsNullOrEmpty(g.NewGuid.Value));
-
-            if (selectedGuids.Count == 0)
+            // 編集操作の順序を逆順にすることで、置換による位置のずれを回避
+            foreach (var position in guidInfo.Positions.OrderByDescending(p => p.Line).ThenByDescending(p => p.Column))
             {
-                MessageBox.Show("置換するGUIDが選択されていないか、新しいGUIDが生成されていません。",
-                    "GUID一括更新",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-                return;
-            }
+                var editPoint = textDocument.StartPoint.CreateEditPoint();
+                editPoint.MoveToLineAndOffset(position.Line, position.Column);
 
-            // DTEのUndoContextを開始
-            DTE dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
-            dte.UndoContext.Open("Update Multiple GUIDs");
-
-            try
-            {
-                // 各GUIDを置換
-                foreach (var guidInfo in selectedGuids)
-                {
-                    ReplaceAllGuidOccurrences(Document, guidInfo.OriginalGuid.Value, guidInfo.NewGuid.Value);
-                }
-
-                // 成功メッセージを表示
-                MessageBox.Show($"{selectedGuids.Count}個のGUIDを更新しました。",
-                    "GUID一括更新",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-            finally
-            {
-                // UndoContextを閉じる
-                dte.UndoContext.Close();
+                // 古いGUIDを削除して新しいGUIDを挿入
+                editPoint.Delete(guidInfo.Guid.Length);
+                editPoint.Insert(newGuid);
             }
         }
 
         /// <summary>
-        /// ドキュメント内のすべての一致するGUIDを新しいGUIDで置換
+        /// ドキュメント内のすべてのGUIDを位置情報とともに検出
         /// </summary>
-        private void ReplaceAllGuidOccurrences(TextDocument textDocument, string oldGuid, string newGuid)
+        private Dictionary<string, GuidPositionInfo> FindAllGuidsWithPositions(TextDocument textDocument)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            // ドキュメントの先頭に移動
-            var searchPoint = textDocument.StartPoint.CreateEditPoint();
+            var result = new Dictionary<string, GuidPositionInfo>();
+            string guidPattern = @"(\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?)";
 
-            // 最初の出現箇所を検索
-            TextRanges replacements = null;
-            bool found = searchPoint.FindPattern(oldGuid, (int)EnvDTE.vsFindOptions.vsFindOptionsMatchCase, Tags: replacements);
-
-            // 見つかる限り置換を続ける
-            while (found)
+            // 各行ごとに処理
+            for (int lineNum = 1; lineNum <= textDocument.EndPoint.Line; lineNum++)
             {
-                // 見つかった範囲にカーソルを移動
-                var editPoint = searchPoint.CreateEditPoint();
+                var line = textDocument.StartPoint.CreateEditPoint();
+                line.MoveToLineAndOffset(lineNum, 1);
+                string lineText = line.GetLines(lineNum, lineNum + 1);
 
-                // 古いGUIDを削除して新しいGUIDを挿入
-                editPoint.Delete(oldGuid.Length);
-                editPoint.Insert(newGuid);
+                // 行内のGUIDを検出
+                var matches = Regex.Matches(lineText, guidPattern);
+                foreach (Match match in matches)
+                {
+                    string guidText = match.Groups[1].Value;
 
-                // 次の出現を検索
-                found = searchPoint.FindPattern(oldGuid, (int)EnvDTE.vsFindOptions.vsFindOptionsMatchCase, Tags: replacements);
+                    if (!result.TryGetValue(guidText, out var guidInfo))
+                    {
+                        guidInfo = new GuidPositionInfo { Guid = guidText };
+                        result[guidText] = guidInfo;
+                    }
+
+                    // 位置情報を記録（列位置はマッチの開始位置 + 1）
+                    guidInfo.Positions.Add(new TextPosition
+                    {
+                        Line = lineNum,
+                        Column = match.Index + 1
+                    });
+                }
             }
+
+            return result;
         }
 
-        public void OnDialogOpened(System.Windows.Window window)
+        public async void OnDialogOpened(System.Windows.Window window)
         {
             this.Window = window;
 
-            // 初期化時に新しいGUIDを生成
-            GenerateNewGuidsCommand.Execute();
+            // 処理開始
+            IsProcessing.Value = true;
+            ProcessingStatus.Value = "GUIDを検索中...";
+
+            try
+            {
+                // UIスレッドをブロックしないためにバックグラウンドで実行
+                await Task.Run(() => {
+                    ThreadHelper.JoinableTaskFactory.Run(async () => {
+                        // UIスレッドに切り替え
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                        // 位置情報付きでGUIDを検出
+                        _guidPositions = FindAllGuidsWithPositions(Document);
+
+                        // GuidInfoリストを作成
+                        GuidList = _guidPositions.Values.Select(pos =>
+                            new GuidInfo(
+                                originalGuid: pos.Guid,
+                                newGuid: null,
+                                isSelected: true,
+                                occurrences: pos.Occurrences
+                            )).ToList();
+                    });
+                });
+
+                // 新しいGUIDを生成
+                GenerateNewGuidsCommand.Execute();
+            }
+            finally
+            {
+                ProcessingStatus.Value = "準備完了";
+                IsProcessing.Value = false;
+            }
         }
+
+
         public void Dispose()
         {
             _compositeDisposable?.Dispose();
