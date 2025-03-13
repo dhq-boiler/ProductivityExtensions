@@ -45,6 +45,9 @@
 	    <Group guid="guidboilersExtensionsPackage3CmdSet" id="MyMenuGroup" priority="0x0200">
 		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_SOLNNODE"/>
 	    </Group>
+	    <Group guid="guidUpdateGuidCommandPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+	    </Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -76,6 +79,12 @@
 		      <ButtonText>ソリューションをリネームする</ButtonText>
 	      </Strings>
       </Button>
+      <Button guid="guidUpdateGuidCommandPackageCmdSet" id="UpdateGuidCommandId" priority="0x0100" type="Button">
+	      <Parent guid="guidUpdateGuidCommandPackageCmdSet" id="MyMenuGroup" />
+	      <Strings>
+		      <ButtonText>選択したGUID文字列を更新する</ButtonText>
+	      </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -105,6 +114,10 @@
 	    <IDSymbol name="MyMenuGroup" value="0x1020" />
 	    <IDSymbol name="RenameSolutionCommandId" value="0x0100" />
     </GuidSymbol>
+    <GuidSymbol name="guidUpdateGuidCommandPackageCmdSet" value="{5d92efdf-28cc-4a31-9c52-7f633ee6b0e6}">
+	    <IDSymbol name="MyMenuGroup" value="0x1020" />
+	    <IDSymbol name="UpdateGuidCommandId" value="0x0100" />
+    </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >
       <IDSymbol name="bmpPic1" value="1" />
@@ -114,5 +127,6 @@
       <IDSymbol name="bmpPicArrows" value="5" />
       <IDSymbol name="bmpPicStrikethrough" value="6" />
     </GuidSymbol>
+	  
   </Symbols>
 </CommandTable>
