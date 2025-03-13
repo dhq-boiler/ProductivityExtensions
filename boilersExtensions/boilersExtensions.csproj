@@ -47,9 +47,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
+    <Compile Include="Controls\LoadingSpinner.xaml.cs">
+      <DependentUpon>LoadingSpinner.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
@@ -71,7 +76,11 @@
       <DependentUpon>Resource.resx</DependentUpon>
     </Compile>
     <Compile Include="Commands\RenameProjectCommand.cs" />
+    <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
     <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
+    <Compile Include="Views\GuidSelectionDialog.xaml.cs">
+      <DependentUpon>GuidSelectionDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\RenameSolutionDialog.xaml.cs">
       <DependentUpon>RenameSolutionDialog.xaml</DependentUpon>
     </Compile>
@@ -184,6 +193,14 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\LoadingSpinner.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\GuidSelectionDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\RenameSolutionDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
