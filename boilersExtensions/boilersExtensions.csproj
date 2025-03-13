@@ -48,6 +48,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Commands\RenameSolutionCommand.cs" />
+    <Compile Include="Commands\UpdateGuidCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />

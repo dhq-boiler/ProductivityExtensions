@@ -43,6 +43,7 @@ namespace boilersExtensions
             await NavigateGitHubLinesCommand.InitializeAsync(this);
             await RenameProjectCommand.InitializeAsync(this);
             await RenameSolutionCommand.InitializeAsync(this);
+            await UpdateGuidCommand.InitializeAsync(this);
         }
     }
 }
