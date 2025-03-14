@@ -51,6 +51,9 @@
 	    <Group guid="guidBatchUpdateGuidCommandPackageCmdSet" id="MyMenuGroup" priority="0x0600">
 		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
 	    </Group>
+	    <Group guid="guidTypeHierarchyCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
+		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+	    </Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -94,6 +97,12 @@
 		      <ButtonText>GUIDを一括更新する</ButtonText>
 	      </Strings>
       </Button>
+      <Button guid="guidTypeHierarchyCommandPackageCmdSet" id="TypeHierarchyCommandId" priority="0x0100" type="Button">
+	      <Parent guid="guidTypeHierarchyCommandPackageCmdSet" id="MyMenuGroup" />
+	      <Strings>
+		      <ButtonText>型階層から型を選択</ButtonText>
+	      </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -130,6 +139,10 @@
     <GuidSymbol name="guidBatchUpdateGuidCommandPackageCmdSet" value="{6f89e4ab-2b85-49b6-a2d9-3f9b78e02acf}">
 	    <IDSymbol name="MyMenuGroup" value="0x1020" />
 	    <IDSymbol name="BatchUpdateGuidCommandId" value="0x0100" />
+    </GuidSymbol>
+    <GuidSymbol name="guidTypeHierarchyCommandPackageCmdSet" value="{c92b03a4-fb47-4d9d-8ab2-40d27c61788c}">
+	    <IDSymbol name="MyMenuGroup" value="0x1020" />
+	    <IDSymbol name="TypeHierarchyCommandId" value="0x0100" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >

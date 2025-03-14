@@ -41,11 +41,11 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
 
             // 選択範囲のシンタックスノードを取得
             var root = document.GetSyntaxRootAsync().Result;
-            var selectedNode = root.FindNode(new TextSpan(selectedSpan.Span.Start, selectedSpan.Span.End));
+            var selectedNode = root.FindNode(new TextSpan(selectedSpan.Span.Start, selectedSpan.Span.End - selectedSpan.Span.Start));
 
             // コンパイルエラーがある場合は抽出不可
             var semanticModel = document.GetSemanticModelAsync().Result;
-            var diagnostics = semanticModel.GetDiagnostics(new TextSpan(selectedSpan.Span.Start, selectedSpan.Span.End));
+            var diagnostics = semanticModel.GetDiagnostics(new TextSpan(selectedSpan.Span.Start, selectedSpan.Span.End - selectedSpan.Span.Start));
             if (diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error))
                 return null;
 

@@ -45,6 +45,7 @@ namespace boilersExtensions
             await RenameSolutionCommand.InitializeAsync(this);
             await UpdateGuidCommand.InitializeAsync(this);
             await BatchUpdateGuidCommand.InitializeAsync(this);
+            await TypeHierarchyCommand.InitializeAsync(this);
         }
     }
 }
