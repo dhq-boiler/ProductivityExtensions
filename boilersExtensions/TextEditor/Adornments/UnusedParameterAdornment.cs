@@ -40,6 +40,9 @@ namespace boilersExtensions.TextEditor.Adornments
         private readonly List<TextBlock> _unusedParameters = new List<TextBlock>();
         private readonly List<Line> _strikeouts = new List<Line>();
 
+        // 分析が一時停止中かどうかのフラグ
+        private static bool _isPaused = false;
+
         public UnusedParameterAdornment(IWpfTextView view)
         {
             _view = view;
@@ -47,6 +50,18 @@ namespace boilersExtensions.TextEditor.Adornments
 
             _view.LayoutChanged += OnLayoutChanged;
             _view.TextBuffer.Changed += OnTextBufferChanged;
+        }
+
+        // 分析を一時停止するメソッド
+        public static void PauseAnalysis()
+        {
+            _isPaused = true;
+        }
+
+        // 分析を再開するメソッド
+        public static void ResumeAnalysis()
+        {
+            _isPaused = false;
         }
 
         private void OnTextBufferChanged(object sender, TextContentChangedEventArgs e)
@@ -61,6 +76,10 @@ namespace boilersExtensions.TextEditor.Adornments
 
         private void AnalyzeAndAdornUnusedParameters()
         {
+            // 分析が一時停止中なら何もしない
+            if (_isPaused)
+                return;
+
             _layer.RemoveAllAdornments();
             _unusedParameters.Clear();
             _strikeouts.Clear();

@@ -174,6 +174,25 @@ namespace boilersExtensions.Commands
     }
 
     /// <summary>
+    /// GUIDの位置情報を保持するクラス
+    /// </summary>
+    public class GuidPositionInfo
+    {
+        public string Guid { get; set; }
+        public List<TextPosition> Positions { get; set; } = new List<TextPosition>();
+        public int Occurrences => Positions.Count;
+    }
+
+    /// <summary>
+    /// テキスト内の位置を表すクラス
+    /// </summary>
+    public class TextPosition
+    {
+        public int Line { get; set; }
+        public int Column { get; set; }
+    }
+
+    /// <summary>
     /// Reactive版GUID情報を保持するクラス
     /// </summary>
     public class GuidInfo : IDisposable
