@@ -23,7 +23,23 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
         private readonly ITextBuffer m_textBuffer;
         private readonly ITextView m_textView;
 
+        // ファイルサイズの閾値 (バイト)
+        private const int FILE_SIZE_THRESHOLD = 100000;
+
+        // キャッシュのタイムアウト (ミリ秒)
+        private const int CACHE_TIMEOUT_MS = 5000;
+
+        // 最後の分析時刻
+        private DateTime _lastAnalysisTime = DateTime.MinValue;
+
+        // 最後の分析位置
+        private int _lastAnalysisPosition = -1;
+
+        // 分析結果キャッシュ
+        private (bool isValid, TextExtent wordExtent) _cachedResult;
+
         public event EventHandler<EventArgs> SuggestedActionsChanged;
+
         public Task<ISuggestedActionCategorySet> GetSuggestedActionCategoriesAsync(
             ISuggestedActionCategorySet requestedActionCategories,
             SnapshotSpan range,
@@ -39,6 +55,10 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
             ImmutableArray<ISuggestedActionSetCollector> suggestedActionSetCollectors,
             CancellationToken cancellationToken)
         {
+            // ファイルサイズをチェック
+            if (m_textBuffer.CurrentSnapshot.Length > FILE_SIZE_THRESHOLD)
+                return;
+
             var result = await TryGetWordUnderCaret(cancellationToken);
             if (result.isValid && result.wordExtent.IsSignificant)
             {
@@ -65,7 +85,9 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
 
         private async Task<(bool isValid, TextExtent wordExtent)> TryGetWordUnderCaret(CancellationToken cancellationToken = default)
         {
-            var wordExtent = default(TextExtent);
+            // ファイルサイズをチェック
+            if (m_textBuffer.CurrentSnapshot.Length > FILE_SIZE_THRESHOLD)
+                return (false, default(TextExtent));
 
             // カレット位置の取得
             ITextCaret caret = m_textView.Caret;
@@ -76,111 +98,148 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
 
             var currentPosition = caret.Position.BufferPosition;
 
-            // Get the document using the new method
-            var document = await GetDocument(m_textBuffer, cancellationToken);
-            if (document == null) return (false, default(TextExtent));
-
-            // Get semantic model
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-            if (semanticModel == null) return (false, default(TextExtent));
-
-            // Get syntax node at position
-            var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken);
-            var node = syntaxRoot.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(currentPosition, 0));
-
-            // Check if the node is a parameter
-            if (!(node is ParameterSyntax parameter))
+            // 前回と同じ位置でキャッシュが有効期限内ならキャッシュを使用
+            var now = DateTime.Now;
+            if (currentPosition.Position == _lastAnalysisPosition &&
+                (now - _lastAnalysisTime).TotalMilliseconds < CACHE_TIMEOUT_MS)
             {
-                return (false, default(TextExtent));
+                return _cachedResult;
             }
 
-            // Get parameter symbol
-            var parameterSymbol = semanticModel.GetDeclaredSymbol(parameter);
-            if (parameterSymbol == null)
-                return (false, default(TextExtent));
+            _lastAnalysisPosition = currentPosition.Position;
 
-            // Find references
-            var references = await SymbolFinder.FindReferencesAsync(parameterSymbol, document.Project.Solution, cancellationToken);
-            var referenceCount = references.SelectMany(r => r.Locations).Count();
-
-            // If parameter has references, don't create an extent
-            if (referenceCount > 0)
+            try
             {
-                return (false, default(TextExtent));
-            }
-
-            var currentLine = currentPosition.GetContainingLine();
-            var lineText = currentLine.GetText();
-
-            // パラメーターリストの開始と終了位置を見つける
-            int paramListStart = lineText.LastIndexOf('(', currentPosition.Position - currentLine.Start);
-            int paramListEnd = lineText.IndexOf(')', currentPosition.Position - currentLine.Start);
-
-            if (paramListStart == -1 || paramListEnd == -1)
-            {
-                return (false, default(TextExtent));
-            }
-
-            // パラメーターリスト内のテキストを取得
-            string parameters = lineText.Substring(paramListStart + 1, paramListEnd - paramListStart - 1);
-            var paramArray = parameters.Split(',').Select(p => p.Trim()).ToList();
-
-            // カレット位置がどのパラメーターを指しているか特定
-            int currentPos = currentPosition.Position - currentLine.Start - paramListStart - 1;
-            int currentParam = -1;
-            int accumulatedLength = 0;
-
-            for (int i = 0; i < paramArray.Count; i++)
-            {
-                int paramLength = paramArray[i].Length;
-                if (i > 0)
+                // Get the document using the new method
+                var document = await GetDocument(m_textBuffer, cancellationToken);
+                if (document == null)
                 {
-                    accumulatedLength += 2; // カンマとスペース分
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
                 }
 
-                if (currentPos >= accumulatedLength && currentPos <= accumulatedLength + paramLength)
+                // Get semantic model
+                var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
+                if (semanticModel == null)
                 {
-                    currentParam = i;
-                    break;
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
                 }
 
-                accumulatedLength += paramLength;
-            }
+                // Get syntax node at position
+                var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken);
+                var node = syntaxRoot.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(currentPosition, 0));
 
-            if (currentParam == -1)
+                // Check if the node is a parameter
+                if (!(node is ParameterSyntax parameter))
+                {
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
+                }
+
+                // Get parameter symbol
+                var parameterSymbol = semanticModel.GetDeclaredSymbol(parameter);
+                if (parameterSymbol == null)
+                {
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
+                }
+
+                // Find references
+                var references = await SymbolFinder.FindReferencesAsync(parameterSymbol, document.Project.Solution, cancellationToken);
+                var referenceCount = references.SelectMany(r => r.Locations).Count();
+
+                // If parameter has references, don't create an extent
+                if (referenceCount > 0)
+                {
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
+                }
+
+                var currentLine = currentPosition.GetContainingLine();
+                var lineText = currentLine.GetText();
+
+                // パラメーターリストの開始と終了位置を見つける
+                int paramListStart = lineText.LastIndexOf('(', currentPosition.Position - currentLine.Start);
+                int paramListEnd = lineText.IndexOf(')', currentPosition.Position - currentLine.Start);
+
+                if (paramListStart == -1 || paramListEnd == -1)
+                {
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
+                }
+
+                // パラメーターリスト内のテキストを取得
+                string parameters = lineText.Substring(paramListStart + 1, paramListEnd - paramListStart - 1);
+                var paramArray = parameters.Split(',').Select(p => p.Trim()).ToList();
+
+                // カレット位置がどのパラメーターを指しているか特定
+                int currentPos = currentPosition.Position - currentLine.Start - paramListStart - 1;
+                int currentParam = -1;
+                int accumulatedLength = 0;
+
+                for (int i = 0; i < paramArray.Count; i++)
+                {
+                    int paramLength = paramArray[i].Length;
+                    if (i > 0)
+                    {
+                        accumulatedLength += 2; // カンマとスペース分
+                    }
+
+                    if (currentPos >= accumulatedLength && currentPos <= accumulatedLength + paramLength)
+                    {
+                        currentParam = i;
+                        break;
+                    }
+
+                    accumulatedLength += paramLength;
+                }
+
+                if (currentParam == -1)
+                {
+                    _cachedResult = (false, default(TextExtent));
+                    return _cachedResult;
+                }
+
+                // パラメーターの範囲を計算
+                int paramStart = paramListStart + 1;
+                for (int i = 0; i < currentParam; i++)
+                {
+                    paramStart += paramArray[i].Length + 2; // +2 for ", "
+                }
+
+                int paramEnd = paramStart + paramArray[currentParam].Length;
+
+                // カンマの処理
+                if (currentParam < paramArray.Count - 1)
+                {
+                    // 後続のパラメーターがある場合、カンマとスペースも含める
+                    paramEnd += 2;
+                }
+                else if (currentParam > 0)
+                {
+                    // 前のパラメーターがある場合、前のカンマとスペースも含める
+                    paramStart -= 2;
+                }
+
+                // スナップショット内の正しい位置に変換
+                int absoluteStart = currentLine.Start + paramStart;
+                int length = paramEnd - paramStart;
+
+                var span = new SnapshotSpan(currentPosition.Snapshot, absoluteStart, length);
+                var wordExtent = new TextExtent(span, true);
+
+                // 結果をキャッシュして返す
+                _lastAnalysisTime = now;
+                _cachedResult = (true, wordExtent);
+                return _cachedResult;
+            }
+            catch (Exception ex)
             {
-                return (false, default(TextExtent));
+                System.Diagnostics.Debug.WriteLine($"Error in TryGetWordUnderCaret: {ex.Message}");
+                _cachedResult = (false, default(TextExtent));
+                return _cachedResult;
             }
-
-            // パラメーターの範囲を計算
-            int paramStart = paramListStart + 1;
-            for (int i = 0; i < currentParam; i++)
-            {
-                paramStart += paramArray[i].Length + 2; // +2 for ", "
-            }
-
-            int paramEnd = paramStart + paramArray[currentParam].Length;
-
-            // カンマの処理
-            if (currentParam < paramArray.Count - 1)
-            {
-                // 後続のパラメーターがある場合、カンマとスペースも含める
-                paramEnd += 2;
-            }
-            else if (currentParam > 0)
-            {
-                // 前のパラメーターがある場合、前のカンマとスペースも含める
-                paramStart -= 2;
-            }
-
-            // スナップショット内の正しい位置に変換
-            int absoluteStart = currentLine.Start + paramStart;
-            int length = paramEnd - paramStart;
-
-            var span = new SnapshotSpan(currentPosition.Snapshot, absoluteStart, length);
-            wordExtent = new TextExtent(span, true);
-
-            return (true, wordExtent);
         }
 
         private async Task<Document> GetDocument(ITextBuffer textBuffer, CancellationToken cancellationToken)
@@ -218,12 +277,18 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
             SnapshotSpan range,
             CancellationToken cancellationToken)
         {
+            // ファイルサイズをチェック
+            if (m_textBuffer.CurrentSnapshot.Length > FILE_SIZE_THRESHOLD)
+                return false;
+
             var result = await TryGetWordUnderCaret(cancellationToken);
             return result.isValid && result.wordExtent.IsSignificant;
         }
 
         public void Dispose()
         {
+            // クリーンアップが必要な場合はここに実装
+            _cachedResult = (false, default);
         }
 
         public bool TryGetTelemetryId(out Guid telemetryId)
