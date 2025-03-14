@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
+    <Compile Include="Commands\TypeHierarchyCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Controls\LoadingSpinner.xaml.cs">
@@ -57,6 +58,8 @@
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
+    <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
+    <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterSuggestedActionsSourceProvider.cs" />
@@ -78,6 +81,7 @@
     <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
     <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
+    <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
     <Compile Include="Views\GuidSelectionDialog.xaml.cs">
       <DependentUpon>GuidSelectionDialog.xaml</DependentUpon>
     </Compile>
@@ -88,6 +92,9 @@
       <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\RenameProjectDialogViewModel.cs" />
+    <Compile Include="Views\TypeHierarchyDialog.xaml.cs">
+      <DependentUpon>TypeHierarchyDialog.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Batches\BE001.bat">
@@ -206,6 +213,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\RenameProjectDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\TypeHierarchyDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
