@@ -21,6 +21,20 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
         private readonly ITextBuffer _textBuffer;
         private readonly VisualStudioWorkspace _workspace;
 
+        // ファイルサイズの閾値 (バイト)
+        private const int FILE_SIZE_THRESHOLD = 100000;
+
+        // キャッシュのタイムアウト (ミリ秒)
+        private const int CACHE_TIMEOUT_MS = 10000;
+
+        // 最後の分析時刻
+        private DateTime _lastAnalysisTime = DateTime.MinValue;
+
+        // 分析結果キャッシュ
+        private Document _lastDocument = null;
+        private QuickInfoItem _cachedQuickInfoItem = null;
+        private int _lastPosition = -1;
+
         public UnusedParameterQuickInfoSource(ITextBuffer textBuffer, VisualStudioWorkspace workspace)
         {
             _textBuffer = textBuffer;
@@ -54,14 +68,38 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
                 var triggerPoint = session.GetTriggerPoint(_textBuffer.CurrentSnapshot);
                 if (triggerPoint == null) return null;
 
+                // ファイルサイズをチェック
+                if (_textBuffer.CurrentSnapshot.Length > FILE_SIZE_THRESHOLD)
+                    return null;
+
+                // 現在の位置
+                var position = triggerPoint.Value.Position;
+
+                // キャッシュの確認
+                var now = DateTime.Now;
+                if (_lastPosition == position &&
+                    _cachedQuickInfoItem != null &&
+                    (now - _lastAnalysisTime).TotalMilliseconds < CACHE_TIMEOUT_MS)
+                {
+                    return _cachedQuickInfoItem;
+                }
+
+                _lastPosition = position;
+
                 var document = await GetDocumentFromTextBuffer(_textBuffer);
                 if (document == null) return null;
+
+                // 同じドキュメントでない場合はキャッシュをクリア
+                if (_lastDocument != document)
+                {
+                    _lastDocument = document;
+                    _cachedQuickInfoItem = null;
+                }
 
                 var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
                 if (semanticModel == null) return null;
 
                 // Get the syntax node at the trigger position
-                var position = triggerPoint.Value.Position;
                 var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken);
                 var node = syntaxRoot.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(position, 0));
 
@@ -71,15 +109,24 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
                     //ローカル関数のパラメーターの場合
                     if (parameter.Parent.Parent is LocalFunctionStatementSyntax local)
                     {
-                        return await GenerateQuickInfoItem(cancellationToken, semanticModel, local, parameter, document);
+                        var result = await GenerateQuickInfoItem(cancellationToken, semanticModel, local, parameter, document);
+                        _cachedQuickInfoItem = result;
+                        _lastAnalysisTime = now;
+                        return result;
                     }
 
                     //メソッドのパラメーターの場合
                     if (parameter.Parent.Parent is MethodDeclarationSyntax method)
                     {
-                        return await GenerateQuickInfoItem(cancellationToken, semanticModel, method, parameter, document);
+                        var result = await GenerateQuickInfoItem(cancellationToken, semanticModel, method, parameter, document);
+                        _cachedQuickInfoItem = result;
+                        _lastAnalysisTime = now;
+                        return result;
                     }
                 }
+
+                // パラメータではない場合はキャッシュをクリア
+                _cachedQuickInfoItem = null;
             }
             catch (Exception ex)
             {
@@ -129,6 +176,8 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
         public void Dispose()
         {
             // Cleanup if needed
+            _cachedQuickInfoItem = null;
+            _lastDocument = null;
         }
     }
 }
