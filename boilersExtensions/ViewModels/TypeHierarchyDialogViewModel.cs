@@ -304,7 +304,7 @@ namespace boilersExtensions.ViewModels
                 var originalTypeSpan = _typeSpan;
 
                 // 型名を置換
-                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.FullName);
+                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName);
                 Debug.WriteLine($"Replacing type: '{originalTypeSpan.GetText()}' with '{newTypeName}'");
 
                 // テキストを置換
