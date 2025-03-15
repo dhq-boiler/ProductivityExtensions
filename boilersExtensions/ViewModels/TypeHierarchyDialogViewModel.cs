@@ -338,7 +338,18 @@ namespace boilersExtensions.ViewModels
 
                     // ジェネリック部分を抽出 (例: System.Collections.Generic.List<int> -> System.Collections.Generic.List と <int>)
                     string baseTypeName = fullName.Substring(0, genericStart);
-                    string typeParams = originalTypeText.Substring(originalGenericStart); // <int> 部分
+                    string typeParams = fullName.Substring(genericStart); // <int> 部分
+                    string originalTypeParams = originalTypeText.Substring(originalGenericStart); // <int> 部分
+
+                    // 型パラメーターの数が異なる場合は元の型名をそのまま返す
+                    if (typeParams.Count(x => x == ',') != originalTypeParams.Count(x => x == ','))
+                    {
+                        MessageBox.Show("型パラメーターの数に互換がないため、型パラメーターにプレースホルダーを設定します。",
+                            "警告",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        return fullName;
+                    }
 
                     // 名前空間を含まない型名を取得
                     int lastDot = baseTypeName.LastIndexOf('.');
@@ -348,7 +359,7 @@ namespace boilersExtensions.ViewModels
                     }
 
                     // 名前空間なしの型名 + 元のジェネリックパラメーター
-                    return baseTypeName + typeParams;
+                    return baseTypeName + originalTypeParams;
                 }
                 else
                 {
