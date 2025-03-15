@@ -11,7 +11,7 @@ namespace boilersExtensions.Utils
         public DiffViewer() => _differenceService =
             Package.GetGlobalService(typeof(SVsDifferenceService)) as IVsDifferenceService;
 
-        public IVsWindowFrame ShowDiff(string originalCode, string newCode, bool isReadOnly = true)
+        public IVsWindowFrame ShowDiff(string originalCode, string newCode, bool isReadOnly = true, string caption = "コード変更の推薦", string tooltip = "以下の変更を推薦します")
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -35,8 +35,8 @@ namespace boilersExtensions.Utils
             var windowFrame = _differenceService.OpenComparisonWindow2(
                 leftFile, // 左側（オリジナル）
                 rightFile, // 右側（変更後）
-                "コード変更の推薦", // キャプション
-                "以下の変更を推薦します", // ツールチップ
+                caption, // キャプション
+                tooltip, // ツールチップ
                 null, //left label
                 null, //right label
                 null, //inline label
