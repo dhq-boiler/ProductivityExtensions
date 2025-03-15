@@ -11,7 +11,7 @@ namespace boilersExtensions.Utils
         public DiffViewer() => _differenceService =
             Package.GetGlobalService(typeof(SVsDifferenceService)) as IVsDifferenceService;
 
-        public void ShowDiff(string originalCode, string newCode, bool isReadOnly = true)
+        public IVsWindowFrame ShowDiff(string originalCode, string newCode, bool isReadOnly = true)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -45,6 +45,7 @@ namespace boilersExtensions.Utils
             );
 
             windowFrame.Show();
+            return windowFrame;
         }
 
         private string CreateTempFile(string content, string filename)

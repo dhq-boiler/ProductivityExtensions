@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Prism.Mvvm;
 using Reactive.Bindings;
@@ -28,7 +29,8 @@ namespace boilersExtensions.ViewModels
     internal class TypeHierarchyDialogViewModel : BindableBase, IDisposable
     {
         private readonly CompositeDisposable _compositeDisposable = new CompositeDisposable();
-        private Document _document;
+        private Document _document; 
+        private IVsWindowFrame _diffWindowFrame;
 
         // 完全な型スパン情報
         private TextSpan _fullTypeSpan;
@@ -81,7 +83,30 @@ namespace boilersExtensions.ViewModels
             // キャンセル処理
             CancelCommand.Subscribe(() =>
                 {
+                    // Diffウィンドウが開いていれば閉じる
+                    if (_diffWindowFrame != null)
+                    {
+                        _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                        _diffWindowFrame = null;
+                    }
+
                     Window.Close();
+                })
+                .AddTo(_compositeDisposable);
+
+            PreviewCommand = SelectedType.Select(st => st != null && st.FullName != _originalTypeSymbol.ToDisplayString())
+                .ToReactiveCommand();
+
+            PreviewCommand.Subscribe(async () =>
+                {
+                    // Diffウィンドウが開いていれば閉じる
+                    if (_diffWindowFrame != null)
+                    {
+                        _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                        _diffWindowFrame = null;
+                    }
+
+                    await ShowTypeChangePreview();
                 })
                 .AddTo(_compositeDisposable);
 
@@ -94,6 +119,7 @@ namespace boilersExtensions.ViewModels
         // コマンド
         public ReactiveCommand ApplyCommand { get; }
         public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand PreviewCommand { get; }
 
         // プロパティ
         public ReactivePropertySlim<string> OriginalTypeName { get; } = new ReactivePropertySlim<string>();
@@ -288,6 +314,13 @@ namespace boilersExtensions.ViewModels
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+            // Diffウィンドウが開いていれば閉じる
+            if (_diffWindowFrame != null)
+            {
+                _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                _diffWindowFrame = null;
+            }
+
             // 選択された型が現在の型と同じなら何もしない
             if (SelectedType.Value.FullName == _originalTypeSymbol.ToDisplayString())
             {
@@ -444,6 +477,52 @@ namespace boilersExtensions.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in AddRequiredUsingDirectiveAsync: {ex.Message}");
+            }
+        }
+
+        public async Task ShowTypeChangePreview()
+        {
+            try
+            {
+                if (SelectedType.Value == null || _document == null)
+                {
+                    return;
+                }
+
+                IsProcessing.Value = true;
+                ProcessingStatus.Value = "コード変更をプレビュー中...";
+
+                // 現在のドキュメントのテキストを取得
+                var sourceText = await _document.GetTextAsync();
+                var originalCode = sourceText.ToString();
+
+                // 型を置換した新しいコードを生成
+                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _typeSpan.GetText());
+
+                // 置換後のテキストを作成
+                var start = _typeSpan.Span.Start;
+                var end = _typeSpan.Span.End;
+                var newCode = originalCode.Substring(0, start) +
+                              newTypeName +
+                              originalCode.Substring(end);
+
+                // DiffViewerを使って差分を表示
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var diffViewer = new DiffViewer();
+                _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in ShowTypeChangePreview: {ex.Message}");
+                MessageBox.Show($"プレビューの表示中にエラーが発生しました: {ex.Message}",
+                    "プレビューエラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsProcessing.Value = false;
+                ProcessingStatus.Value = "準備完了";
             }
         }
 
