@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Utils;
+using boilersExtensions.Views;
 using EnvDTE;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -110,6 +113,15 @@ namespace boilersExtensions.ViewModels
                 })
                 .AddTo(_compositeDisposable);
 
+            AnalyzeImpactCommand = SelectedType.Select(st => st != null && st.FullName != _originalTypeSymbol?.ToDisplayString())
+                .ToReactiveCommand();
+
+            AnalyzeImpactCommand.Subscribe(async () =>
+                {
+                    await ShowImpactAnalysis();
+                })
+                .AddTo(_compositeDisposable);
+
             // 選択された型が変更されたらDiffプレビューを更新
             SelectedType.Subscribe(async selectedType =>
                 {
@@ -145,6 +157,7 @@ namespace boilersExtensions.ViewModels
         public ReactiveCommand ApplyCommand { get; }
         public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
         public ReactiveCommand PreviewCommand { get; }
+        public ReactiveCommand AnalyzeImpactCommand { get; }
 
         // プロパティ
         public ReactivePropertySlim<string> OriginalTypeName { get; } = new ReactivePropertySlim<string>();
@@ -555,5 +568,233 @@ namespace boilersExtensions.ViewModels
         ///     ダイアログが開かれた時の処理
         /// </summary>
         public void OnDialogOpened(Window window) => Window = window;
+
+        public void OnDialogClosing(TypeHierarchyDialog typeHierarchyDialog)
+        {
+            // Diffウィンドウが開いていれば閉じる
+            if (_diffWindowFrame != null)
+            {
+                _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                _diffWindowFrame = null;
+            }
+        }
+
+        #region 影響範囲分析
+
+        public async Task ShowImpactAnalysis()
+        {
+            try
+            {
+                IsProcessing.Value = true;
+                ProcessingStatus.Value = "影響範囲を分析中...";
+
+                // 選択された型のシンボルを取得
+                if (_originalTypeSymbol == null || _document == null)
+                    return;
+
+                // 変更対象の変数/パラメータを特定
+                // シンタックスツリーから変更対象のノードを探す
+                var syntaxRoot = await _document.GetSyntaxRootAsync();
+                var semanticModel = await _document.GetSemanticModelAsync();
+
+                // カーソル位置のパラメータシンボルを特定
+                var nodeAtPosition = syntaxRoot.FindNode(new TextSpan(_position, 0), getInnermostNodeForTie: true);
+
+                // 変数/パラメータ宣言ノードを探す
+                var parameterNode = nodeAtPosition.AncestorsAndSelf()
+                    .OfType<ParameterSyntax>()
+                    .FirstOrDefault();
+
+                // パラメータが見つからない場合は変数宣言を探す
+                if (parameterNode == null)
+                {
+                    var variableNode = nodeAtPosition.AncestorsAndSelf()
+                        .OfType<VariableDeclaratorSyntax>()
+                        .FirstOrDefault();
+
+                    if (variableNode != null)
+                    {
+                        // 変数のシンボルを取得
+                        var variableSymbol = semanticModel.GetDeclaredSymbol(variableNode) as ILocalSymbol;
+                        if (variableSymbol != null)
+                        {
+                            await ShowImpactForSymbol(variableSymbol);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    // パラメータのシンボルを取得
+                    var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode) as IParameterSymbol;
+                    if (parameterSymbol != null)
+                    {
+                        await ShowImpactForSymbol(parameterSymbol);
+                        return;
+                    }
+                }
+
+                // 特定の変数/パラメータが見つからない場合、
+                // 型全体に対する参照検索を行う（こちらは過剰検出につながるため避けるべき）
+                MessageBox.Show("特定のパラメータや変数が見つかりませんでした。型全体に対する参照を検索します。",
+                               "警告",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Warning);
+
+                await ShowImpactForSymbol(_originalTypeSymbol);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in ShowImpactAnalysis: {ex.Message}");
+                MessageBox.Show($"影響範囲の分析中にエラーが発生しました: {ex.Message}",
+                               "エラー",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsProcessing.Value = false;
+                ProcessingStatus.Value = "準備完了";
+            }
+        }
+
+        private async Task ShowImpactForSymbol(ISymbol symbol)
+        {
+            var solution = _document.Project.Solution;
+            var references = await SymbolFinder.FindReferencesAsync(symbol, solution);
+
+            // 参照の一覧を構築
+            var impactList = new List<TypeReferenceInfo>();
+
+            foreach (var reference in references)
+            {
+                foreach (var location in reference.Locations)
+                {
+                    var sourceTree = await location.Document.GetSyntaxTreeAsync();
+                    var lineSpan = sourceTree.GetLineSpan(location.Location.SourceSpan);
+                    var line = lineSpan.StartLinePosition.Line + 1;
+
+                    // メソッド内での参照かどうかを判定
+                    var semanticModel = await location.Document.GetSemanticModelAsync();
+                    var node = (await sourceTree.GetRootAsync()).FindNode(location.Location.SourceSpan);
+                    var containingMethod = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+                    string methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
+
+                    impactList.Add(new TypeReferenceInfo
+                    {
+                        FilePath = location.Document.FilePath,
+                        FileName = Path.GetFileName(location.Document.FilePath),
+                        LineNumber = line,
+                        Column = lineSpan.StartLinePosition.Character + 1,
+                        Text = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line),
+                        ReferenceType = $"{(symbol is IParameterSymbol ? "パラメータ" : "変数")}の使用 ({methodContext}内)"
+                    });
+                }
+            }
+
+            // 影響範囲ダイアログを表示
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var dialog = new ImpactAnalysisDialog
+            {
+                DataContext = new ImpactAnalysisViewModel
+                {
+                    OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
+                    NewTypeName = SelectedType.Value.DisplayName,
+                    ReferencesCount = impactList.Count,
+                    References = impactList
+                }
+            };
+
+            (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
+            dialog.ShowDialog();
+        }
+
+        private async Task<string> GetLineTextAsync(Document document, int lineNumber)
+        {
+            var text = await document.GetTextAsync();
+            var line = text.Lines[lineNumber];
+            return line.ToString();
+        }
+
+        public async Task<ImpactAnalysisResult> AnalyzeCompatibility()
+        {
+            var result = new ImpactAnalysisResult
+            {
+                OriginalType = _originalTypeSymbol.ToDisplayString(),
+                NewType = SelectedType.Value.DisplayName,
+                TotalReferences = 0,
+                PotentialIssues = new List<PotentialIssue>()
+            };
+
+            var solution = _document.Project.Solution;
+            var references = await SymbolFinder.FindReferencesAsync(_originalTypeSymbol, solution);
+
+            foreach (var reference in references)
+            {
+                result.TotalReferences += reference.Locations.Count();
+
+                foreach (var location in reference.Locations)
+                {
+                    // 参照箇所のシンタックスノードを取得
+                    var syntaxTree = await location.Document.GetSyntaxTreeAsync();
+                    var semanticModel = await location.Document.GetSemanticModelAsync();
+                    var node = await syntaxTree.GetRootAsync();
+                    var referenceNode = node.FindNode(location.Location.SourceSpan);
+
+                    // 互換性チェック
+                    var issues = CheckCompatibility(referenceNode, semanticModel, _originalTypeSymbol, SelectedType.Value);
+
+                    if (issues.Any())
+                    {
+                        result.PotentialIssues.AddRange(issues);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private List<PotentialIssue> CheckCompatibility(SyntaxNode node, SemanticModel semanticModel,
+            ITypeSymbol originalType, TypeHierarchyAnalyzer.TypeHierarchyInfo newType)
+        {
+            var issues = new List<PotentialIssue>();
+
+            // メソッドコールの場合
+            if (node.Parent is InvocationExpressionSyntax invocation)
+            {
+                // 呼び出しメソッドの解析
+                // 新しい型に同名のメソッドが存在するか、引数の互換性など
+            }
+
+            // プロパティアクセスの場合
+            if (node.Parent is MemberAccessExpressionSyntax memberAccess)
+            {
+                // 新しい型に同名のプロパティが存在するかなど
+            }
+
+            // その他、型の使用状況に応じたチェック
+            // ...
+
+            return issues;
+        }
+
+        public class ImpactAnalysisResult
+        {
+            public string OriginalType { get; set; }
+            public string NewType { get; set; }
+            public int TotalReferences { get; set; }
+            public List<PotentialIssue> PotentialIssues { get; set; }
+        }
+
+        public class PotentialIssue
+        {
+            public string FilePath { get; set; }
+            public int LineNumber { get; set; }
+            public string IssueType { get; set; } // MethodMissing, PropertyMissing など
+            public string Description { get; set; }
+            public string SuggestedFix { get; set; }
+        }
+
+        #endregion
     }
 }
