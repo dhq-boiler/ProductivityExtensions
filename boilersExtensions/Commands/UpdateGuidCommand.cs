@@ -1,11 +1,10 @@
-﻿using EnvDTE;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.TextManager.Interop;
-using System;
+﻿using System;
 using System.ComponentModel.Design;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Package = Microsoft.VisualStudio.Shell.Package;
 
 namespace boilersExtensions.Commands
@@ -13,24 +12,28 @@ namespace boilersExtensions.Commands
     internal class UpdateGuidCommand : OleMenuCommand
     {
         /// <summary>
-        /// Command ID.
+        ///     Command ID.
         /// </summary>
         public const int CommandId = 0x0100;
 
         /// <summary>
-        /// Command menu group (command set GUID).
+        ///     Command menu group (command set GUID).
         /// </summary>
         public static readonly Guid CommandSet = new Guid("5d92efdf-28cc-4a31-9c52-7f633ee6b0e6");
 
         /// <summary>
-        /// VS Package that provides this command, not null.
+        ///     VS Package that provides this command, not null.
         /// </summary>
         private static AsyncPackage package;
 
         private static OleMenuCommand menuItem;
 
+        private UpdateGuidCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        {
+        }
+
         /// <summary>
-        /// Gets the instance of the command.
+        ///     Gets the instance of the command.
         /// </summary>
         public static UpdateGuidCommand Instance
         {
@@ -39,13 +42,9 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// Gets the service provider from the owner package.
+        ///     Gets the service provider from the owner package.
         /// </summary>
         private static IAsyncServiceProvider ServiceProvider => package;
-
-        private UpdateGuidCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
-        {
-        }
 
         public static async Task InitializeAsync(AsyncPackage package)
         {
@@ -63,20 +62,20 @@ namespace boilersExtensions.Commands
             ThreadHelper.ThrowIfNotOnUIThread();
 
             // DTEオブジェクトを取得
-            DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+            var dte = (DTE)Package.GetGlobalService(typeof(DTE));
             var textDocument = dte.ActiveDocument.Object("TextDocument") as TextDocument;
 
             if (textDocument != null)
             {
                 // 選択範囲を取得
                 var selection = textDocument.Selection;
-                string selectedText = selection.Text;
+                var selectedText = selection.Text;
 
                 // GUIDの形式をチェック
                 if (IsGuid(selectedText))
                 {
                     // 新しいGUIDを生成
-                    string newGuid = Guid.NewGuid().ToString();
+                    var newGuid = Guid.NewGuid().ToString();
                     if (selectedText.StartsWith("{") && selectedText.EndsWith("}"))
                     {
                         newGuid = "{" + newGuid + "}";
@@ -120,7 +119,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// ドキュメント内のすべての一致するGUIDを新しいGUIDで置換
+        ///     ドキュメント内のすべての一致するGUIDを新しいGUIDで置換
         /// </summary>
         private static void ReplaceAllGuidOccurrences(TextDocument textDocument, string oldGuid, string newGuid)
         {
@@ -131,7 +130,7 @@ namespace boilersExtensions.Commands
 
             // 最初の出現箇所を検索
             TextRanges replacements = null;
-            bool found = searchPoint.FindPattern(oldGuid, (int)EnvDTE.vsFindOptions.vsFindOptionsMatchCase, Tags: replacements);
+            var found = searchPoint.FindPattern(oldGuid, (int)vsFindOptions.vsFindOptionsMatchCase, Tags: replacements);
 
             // 見つかる限り置換を続ける
             while (found)
@@ -144,7 +143,7 @@ namespace boilersExtensions.Commands
                 editPoint.Insert(newGuid);
 
                 // 次の出現を検索
-                found = searchPoint.FindPattern(oldGuid, (int)EnvDTE.vsFindOptions.vsFindOptionsMatchCase, Tags: replacements);
+                found = searchPoint.FindPattern(oldGuid, (int)vsFindOptions.vsFindOptionsMatchCase, Tags: replacements);
             }
         }
 
@@ -155,7 +154,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // DTEオブジェクトを取得
-                DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
                 // アクティブなドキュメントがある場合のみ有効化
                 if (dte.ActiveDocument != null)
@@ -176,12 +175,13 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 与えられた文字列がGUID形式かどうかをチェック
+        ///     与えられた文字列がGUID形式かどうかをチェック
         /// </summary>
         private static bool IsGuid(string text)
         {
             // GUIDの基本パターン: 8-4-4-4-12の16進数
-            string guidPattern = @"^(\{?)[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\}?)$";
+            var guidPattern =
+                @"^(\{?)[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\}?)$";
             return Regex.IsMatch(text, guidPattern);
         }
     }

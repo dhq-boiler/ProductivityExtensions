@@ -1,9 +1,9 @@
-﻿using boilersExtensions.TextEditor.QuickInfoSources;
+﻿using System.ComponentModel.Composition;
+using boilersExtensions.TextEditor.QuickInfoSources;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
-using System.ComponentModel.Composition;
 
 namespace boilersExtensions.TextEditor.Providers
 {
@@ -13,12 +13,9 @@ namespace boilersExtensions.TextEditor.Providers
     [Order]
     internal class UnusedParameterQuickInfoSourceProvider : IAsyncQuickInfoSourceProvider
     {
-        [Import]
-        internal VisualStudioWorkspace Workspace { get; set; }
+        [Import] internal VisualStudioWorkspace Workspace { get; set; }
 
-        public IAsyncQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer)
-        {
-            return new UnusedParameterQuickInfoSource(textBuffer, Workspace);
-        }
+        public IAsyncQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer) =>
+            new UnusedParameterQuickInfoSource(textBuffer, Workspace);
     }
 }

@@ -1,11 +1,4 @@
 ﻿using System;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Utilities;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
@@ -16,6 +9,13 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Utilities;
 
 namespace boilersExtensions.TextEditor.Adornments
 {
@@ -38,34 +38,33 @@ namespace boilersExtensions.TextEditor.Adornments
 
     internal sealed class UnusedParameterAdornment
     {
-        private readonly IWpfTextView _view;
-        private readonly IAdornmentLayer _layer;
-        private readonly List<UIElement> _adornments = new List<UIElement>();
-
-        // 分析が一時停止中かどうかのフラグ
-        private static bool _isPaused = false;
-
-        // スロットリング用のタイマー
-        private DispatcherTimer _throttleTimer;
-
-        // 遅延初期化用のタイマー
-        private DispatcherTimer _initialAnalysisTimer;
-
-        // 最終分析時刻を記録
-        private DateTime _lastAnalysisTime = DateTime.MinValue;
-
         // 分析間の最小間隔（ミリ秒）
         private const int THROTTLE_INTERVAL_MS = 1000;
 
         // 初期分析の遅延（ミリ秒）
         private const int INITIAL_ANALYSIS_DELAY_MS = 1000;
 
-        // 変更要求があったかどうかのフラグ
-        private bool _analysisRequested = false;
+        // 分析が一時停止中かどうかのフラグ
+        private static bool _isPaused;
+        private readonly List<UIElement> _adornments = new List<UIElement>();
+
+        // 遅延初期化用のタイマー
+        private readonly DispatcherTimer _initialAnalysisTimer;
+        private readonly IAdornmentLayer _layer;
 
         // 装飾スタイル
         private readonly Brush _strikeThroughBrush = Brushes.Gray;
         private readonly double _strikeThroughThickness = 1.0;
+
+        // スロットリング用のタイマー
+        private readonly DispatcherTimer _throttleTimer;
+        private readonly IWpfTextView _view;
+
+        // 変更要求があったかどうかのフラグ
+        private bool _analysisRequested;
+
+        // 最終分析時刻を記録
+        private DateTime _lastAnalysisTime = DateTime.MinValue;
 
         public UnusedParameterAdornment(IWpfTextView view)
         {
@@ -125,16 +124,10 @@ namespace boilersExtensions.TextEditor.Adornments
         }
 
         // 分析を一時停止するメソッド
-        public static void PauseAnalysis()
-        {
-            _isPaused = true;
-        }
+        public static void PauseAnalysis() => _isPaused = true;
 
         // 分析を再開するメソッド
-        public static void ResumeAnalysis()
-        {
-            _isPaused = false;
-        }
+        public static void ResumeAnalysis() => _isPaused = false;
 
         private void OnTextBufferChanged(object sender, TextContentChangedEventArgs e)
         {
@@ -190,11 +183,15 @@ namespace boilersExtensions.TextEditor.Adornments
         {
             // 分析が一時停止中なら何もしない
             if (_isPaused)
+            {
                 return;
+            }
 
             // 大きなドキュメントの場合はスキップ
             if (_view.TextBuffer.CurrentSnapshot.Length > 100000)
+            {
                 return;
+            }
 
             // 既存の装飾をクリア
             _layer.RemoveAllAdornments();
@@ -208,12 +205,14 @@ namespace boilersExtensions.TextEditor.Adornments
                     try
                     {
                         // Get the current snapshot
-                        ITextSnapshot snapshot = _view.TextBuffer.CurrentSnapshot;
+                        var snapshot = _view.TextBuffer.CurrentSnapshot;
                         var text = snapshot.GetText();
 
                         // 明らかに長すぎるテキストはスキップ
                         if (text.Length > 100000)
+                        {
                             return;
+                        }
 
                         var tree = CSharpSyntaxTree.ParseText(text);
                         var root = tree.GetRoot();
@@ -248,7 +247,8 @@ namespace boilersExtensions.TextEditor.Adornments
                                 {
                                     var references = method.DescendantNodes()
                                         .OfType<IdentifierNameSyntax>()
-                                        .Where(id => semanticModel.GetSymbolInfo(id).Symbol?.Equals(parameterSymbol) == true)
+                                        .Where(id =>
+                                            semanticModel.GetSymbolInfo(id).Symbol?.Equals(parameterSymbol) == true)
                                         .ToList();
 
                                     if (!references.Any())
@@ -272,7 +272,8 @@ namespace boilersExtensions.TextEditor.Adornments
                                     var nodes = localFunction.DescendantNodes();
                                     var references = nodes
                                         .OfType<IdentifierNameSyntax>()
-                                        .Where(id => semanticModel.GetSymbolInfo(id).Symbol?.Equals(parameterSymbol) == true)
+                                        .Where(id =>
+                                            semanticModel.GetSymbolInfo(id).Symbol?.Equals(parameterSymbol) == true)
                                         .ToList();
 
                                     if (!references.Any())
@@ -310,7 +311,7 @@ namespace boilersExtensions.TextEditor.Adornments
             try
             {
                 // パラメータの実際の位置を取得
-                SnapshotSpan snapshotSpan = new SnapshotSpan(_view.TextBuffer.CurrentSnapshot,
+                var snapshotSpan = new SnapshotSpan(_view.TextBuffer.CurrentSnapshot,
                     new Span(span.Start, span.End - span.Start));
 
                 // テキストスパンに含まれる各行を取得
@@ -335,12 +336,13 @@ namespace boilersExtensions.TextEditor.Adornments
                 var firstLineEnd = startLine.End;
                 if (firstLineEnd.Position > startPosition)
                 {
-                    var firstLineSpan = new SnapshotSpan(snapshot, startPosition, firstLineEnd.Position - startPosition);
+                    var firstLineSpan =
+                        new SnapshotSpan(snapshot, startPosition, firstLineEnd.Position - startPosition);
                     AddSingleLineStrikethrough(firstLineSpan);
                 }
 
                 // 中間の行
-                for (int lineNumber = startLine.LineNumber + 1; lineNumber < endLine.LineNumber; lineNumber++)
+                for (var lineNumber = startLine.LineNumber + 1; lineNumber < endLine.LineNumber; lineNumber++)
                 {
                     var line = snapshot.GetLineFromLineNumber(lineNumber);
                     var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
@@ -375,7 +377,9 @@ namespace boilersExtensions.TextEditor.Adornments
 
                 // テキストの境界を取得
                 var startBounds = line.GetCharacterBounds(span.Start);
-                var endBounds = span.End <= line.End ? line.GetCharacterBounds(span.End) : line.GetCharacterBounds(line.End);
+                var endBounds = span.End <= line.End
+                    ? line.GetCharacterBounds(span.End)
+                    : line.GetCharacterBounds(line.End);
 
                 // グレーのテキストオーバーレイ
                 var text = new TextBlock

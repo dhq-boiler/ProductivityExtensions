@@ -1,10 +1,4 @@
-﻿using boilersExtensions.Properties;
-using EnvDTE;
-using Microsoft.VisualStudio.Shell;
-using Prism.Mvvm;
-using Reactive.Bindings;
-using Reactive.Bindings.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,34 +8,27 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows;
+using boilersExtensions.Properties;
+using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using Prism.Mvvm;
+using Reactive.Bindings;
+using Reactive.Bindings.Extensions;
 using MessageBox = System.Windows.MessageBox;
+using Process = System.Diagnostics.Process;
+using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
 {
     internal class RenameSolutionDialogViewModel : BindableBase, IDisposable
     {
-        private CompositeDisposable _compositeDisposable = new CompositeDisposable();
-
-        public ReactiveCommand RenameSolutionCommand { get; }
-        public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
-
-        public ReactivePropertySlim<string> OldSolutionName { get; } = new ReactivePropertySlim<string>();
-
-        public ReactivePropertySlim<string> NewSolutionName { get; } = new ReactivePropertySlim<string>();
-
-        public ReactivePropertySlim<bool> WillRenameParentDir { get; } = new ReactivePropertySlim<bool>(true);
-
-        public System.Windows.Window Window { get; set; }
-
-        public AsyncPackage Package { get; set; }
-
-        public string Title => Resource.Title_RenameProject;
+        private readonly CompositeDisposable _compositeDisposable = new CompositeDisposable();
 
         public RenameSolutionDialogViewModel()
         {
-            RenameSolutionCommand = OldSolutionName.CombineLatest(NewSolutionName, (oldName, newName) => oldName != null && newName != null && !oldName.Equals(newName))
-                                                 .ToReactiveCommand();
+            RenameSolutionCommand = OldSolutionName.CombineLatest(NewSolutionName,
+                    (oldName, newName) => oldName != null && newName != null && !oldName.Equals(newName))
+                .ToReactiveCommand();
             RenameSolutionCommand.Subscribe(() =>
                 {
                     //プロジェクト名変更の手続き...
@@ -59,20 +46,47 @@ namespace boilersExtensions.ViewModels
                 .AddTo(_compositeDisposable);
         }
 
+        public ReactiveCommand RenameSolutionCommand { get; }
+        public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
+
+        public ReactivePropertySlim<string> OldSolutionName { get; } = new ReactivePropertySlim<string>();
+
+        public ReactivePropertySlim<string> NewSolutionName { get; } = new ReactivePropertySlim<string>();
+
+        public ReactivePropertySlim<bool> WillRenameParentDir { get; } = new ReactivePropertySlim<bool>(true);
+
+        public Window Window { get; set; }
+
+        public AsyncPackage Package { get; set; }
+
+        public string Title => Resource.Title_RenameProject;
+
+        public void Dispose()
+        {
+            _compositeDisposable?.Dispose();
+            RenameSolutionCommand?.Dispose();
+            CancelCommand?.Dispose();
+            OldSolutionName?.Dispose();
+            NewSolutionName?.Dispose();
+            OldSolutionName?.Dispose();
+            NewSolutionName?.Dispose();
+            WillRenameParentDir?.Dispose();
+        }
+
         private async Task RenameSolution()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(Package.DisposalToken);
-            
+
             // DTE オブジェクトの取得
-            DTE dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+            var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
 
-            Solution solution = dte.Solution;
+            var solution = dte.Solution;
 
-            Projects projects = dte.Solution.Projects;
+            var projects = dte.Solution.Projects;
 
-            bool hasProjects = projects.Count != 0;
+            var hasProjects = projects.Count != 0;
 
-            bool isSameDir = false;
+            var isSameDir = false;
 
             if (hasProjects)
             {
@@ -84,19 +98,20 @@ namespace boilersExtensions.ViewModels
 
             if (WillRenameParentDir.Value)
             {
-                newSolutionPath = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(newSolutionPath)), NewSolutionName.Value,
+                newSolutionPath = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(newSolutionPath)),
+                    NewSolutionName.Value,
                     Path.GetFileName(newSolutionPath));
             }
 
             if (isSameDir)
             {
                 // Visual Studioのパス（通常はこれですが、環境によって異なる場合があります）
-                string[] vsPath = GetVisualStudio2022Path();
+                var vsPath = GetVisualStudio2022Path();
 
                 //// Visual Studioを新しいソリューションで再起動
                 var args = new List<string>();
                 args.AddRange(vsPath);
-                Regex regex =
+                var regex =
                     new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
                 if (regex.IsMatch(args.Last()))
                 {
@@ -108,11 +123,11 @@ namespace boilersExtensions.ViewModels
                 var argumentsStr = string.Join(" ", arguments);
 
                 // 拡張機能のインストールパスを取得
-                string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-                string extensionDirectory = Path.GetDirectoryName(assemblyLocation);
+                var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+                var extensionDirectory = Path.GetDirectoryName(assemblyLocation);
 
                 // バッチファイルのパスを構築
-                string batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
+                var batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
 
                 // バッチファイルの存在を確認
                 if (!File.Exists(batchFilePath))
@@ -132,10 +147,7 @@ namespace boilersExtensions.ViewModels
                     UseShellExecute = false, // シェル実行を使用しない
                     Arguments = argumentsStr
                 };
-                var process = new System.Diagnostics.Process
-                {
-                    StartInfo = startInfo
-                };
+                var process = new Process { StartInfo = startInfo };
                 process.Start();
 
                 // Visual Studioを閉じる
@@ -144,12 +156,12 @@ namespace boilersExtensions.ViewModels
             else
             {
                 // Visual Studioのパス（通常はこれですが、環境によって異なる場合があります）
-                string[] vsPath = GetVisualStudio2022Path();
+                var vsPath = GetVisualStudio2022Path();
 
                 //// Visual Studioを新しいソリューションで再起動
                 var args = new List<string>();
                 args.AddRange(vsPath);
-                Regex regex =
+                var regex =
                     new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
                 if (regex.IsMatch(args.Last()))
                 {
@@ -161,11 +173,11 @@ namespace boilersExtensions.ViewModels
                 var argumentsStr = string.Join(" ", arguments);
 
                 // 拡張機能のインストールパスを取得
-                string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-                string extensionDirectory = Path.GetDirectoryName(assemblyLocation);
+                var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+                var extensionDirectory = Path.GetDirectoryName(assemblyLocation);
 
                 // バッチファイルのパスを構築
-                string batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
+                var batchFilePath = Path.Combine(extensionDirectory, "Batches", "BE001.bat");
 
                 // バッチファイルの存在を確認
                 if (!File.Exists(batchFilePath))
@@ -185,10 +197,7 @@ namespace boilersExtensions.ViewModels
                     UseShellExecute = false, // シェル実行を使用しない
                     Arguments = argumentsStr
                 };
-                var process = new System.Diagnostics.Process
-                {
-                    StartInfo = startInfo
-                };
+                var process = new Process { StartInfo = startInfo };
                 process.Start();
 
                 // Visual Studioを閉じる
@@ -198,15 +207,12 @@ namespace boilersExtensions.ViewModels
 
         private bool BothSolutionDirAndProjectDirIsSame(string solutionFilePath, string projectFilePath)
         {
-            var slnDir = Path.GetDirectoryName(solutionFilePath); 
+            var slnDir = Path.GetDirectoryName(solutionFilePath);
             var prjDir = Path.GetDirectoryName(projectFilePath);
             return slnDir == prjDir;
         }
 
-        private string[] GetVisualStudio2022Path()
-        {
-            return Environment.GetCommandLineArgs();
-        }
+        private string[] GetVisualStudio2022Path() => Environment.GetCommandLineArgs();
 
         private string RenameParentDirectoryName(string solutionFileName)
         {
@@ -223,9 +229,16 @@ namespace boilersExtensions.ViewModels
             return ret;
         }
 
-        #region https://qiita.com/soi/items/18d5b10b20f5e221efca
+        public void OnDialogOpened(Window window)
+        {
+            Window = window;
+            NewSolutionName.Value = OldSolutionName.Value;
+        }
+
+        #region https: //qiita.com/soi/items/18d5b10b20f5e221efca
+
         /// <summary>
-        /// 確実にファイル／ディレクトリの名前を変更する
+        ///     確実にファイル／ディレクトリの名前を変更する
         /// </summary>
         /// <param name="sourceFilePath">変更元ファイルパス</param>
         /// <param name="outputFilePath">変更後ファイルパス</param>
@@ -244,7 +257,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 確実にディレクトリの名前を変更する
+        ///     確実にディレクトリの名前を変更する
         /// </summary>
         /// <param name="sourceFilePath">変更元ファイルパス</param>
         /// <param name="outputFilePath">変更後ファイルパス</param>
@@ -252,7 +265,7 @@ namespace boilersExtensions.ViewModels
         {
             //Directory.Moveはなぜか、大文字小文字だけの変更だとエラーする
             //なので、大文字小文字だけの変更の場合は一度別のファイル名に変更する
-            if ((String.Compare(sourceFilePath, outputFilePath, true) == 0))
+            if (string.Compare(sourceFilePath, outputFilePath, true) == 0)
             {
                 var tempPath = GetSafeTempName(outputFilePath);
 
@@ -266,7 +279,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 指定したファイルパスが他のファイルパスとかぶらなくなるまで"_"を足して返す
+        ///     指定したファイルパスが他のファイルパスとかぶらなくなるまで"_"を足して返す
         /// </summary>
         private static string GetSafeTempName(string outputFilePath)
         {
@@ -275,27 +288,10 @@ namespace boilersExtensions.ViewModels
             {
                 outputFilePath += "_";
             }
+
             return outputFilePath;
         }
 
         #endregion //https://qiita.com/soi/items/18d5b10b20f5e221efca
-
-        public void OnDialogOpened(System.Windows.Window window)
-        {
-            this.Window = window;
-            NewSolutionName.Value = OldSolutionName.Value;
-        }
-
-        public void Dispose()
-        {
-            _compositeDisposable?.Dispose();
-            RenameSolutionCommand?.Dispose();
-            CancelCommand?.Dispose();
-            OldSolutionName?.Dispose();
-            NewSolutionName?.Dispose();
-            OldSolutionName?.Dispose();
-            NewSolutionName?.Dispose();
-            WillRenameParentDir?.Dispose();
-        }
     }
 }

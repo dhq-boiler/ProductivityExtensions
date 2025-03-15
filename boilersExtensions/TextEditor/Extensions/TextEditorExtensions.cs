@@ -1,17 +1,19 @@
-﻿using boilersExtensions.Commands;
+﻿using System;
+using System.ComponentModel.Composition;
+using System.Diagnostics;
+using System.Windows.Forms;
+using System.Windows.Input;
+using System.Windows.Threading;
+using boilersExtensions.Commands;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Utilities;
-using System;
-using System.ComponentModel.Composition;
-using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace boilersExtensions.TextEditor.Extensions
 {
     /// <summary>
-    /// テキストエディターの拡張機能ファクトリ
+    ///     テキストエディターの拡張機能ファクトリ
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType("text")]
@@ -19,13 +21,13 @@ namespace boilersExtensions.TextEditor.Extensions
     internal sealed class TextEditorExtensionsFactory : IWpfTextViewCreationListener
     {
         /// <summary>
-        /// テキスト構造ナビゲーションサービス
+        ///     テキスト構造ナビゲーションサービス
         /// </summary>
         [Import]
         internal ITextStructureNavigatorSelectorService NavigatorService { get; set; }
 
         /// <summary>
-        /// テキストビュー作成時の処理
+        ///     テキストビュー作成時の処理
         /// </summary>
         public void TextViewCreated(IWpfTextView textView)
         {
@@ -36,17 +38,17 @@ namespace boilersExtensions.TextEditor.Extensions
     }
 
     /// <summary>
-    /// テキストエディタの拡張機能
+    ///     テキストエディタの拡張機能
     /// </summary>
     internal sealed class TextEditorExtensions
     {
-        private readonly IWpfTextView _textView;
-        private readonly ITextStructureNavigatorSelectorService _navigatorService;
         private readonly DispatcherTimer _doubleClickTimer;
-        private bool _isSingleClickProcessed = false;
+        private readonly ITextStructureNavigatorSelectorService _navigatorService;
+        private readonly IWpfTextView _textView;
+        private bool _isSingleClickProcessed;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public TextEditorExtensions(IWpfTextView textView, ITextStructureNavigatorSelectorService navigatorService)
         {
@@ -56,7 +58,7 @@ namespace boilersExtensions.TextEditor.Extensions
             // ダブルクリック検出用のタイマー
             _doubleClickTimer = new DispatcherTimer(DispatcherPriority.Background)
             {
-                Interval = TimeSpan.FromMilliseconds(System.Windows.Forms.SystemInformation.DoubleClickTime)
+                Interval = TimeSpan.FromMilliseconds(SystemInformation.DoubleClickTime)
             };
             _doubleClickTimer.Tick += OnDoubleClickTimerElapsed;
 
@@ -67,7 +69,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// マウスの左ボタンが押されたときの処理
+        ///     マウスの左ボタンが押されたときの処理
         /// </summary>
         private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -97,7 +99,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// マウスの左ボタンが離されたときの処理
+        ///     マウスの左ボタンが離されたときの処理
         /// </summary>
         private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -118,7 +120,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// ダブルクリックタイマーが終了したときの処理
+        ///     ダブルクリックタイマーが終了したときの処理
         /// </summary>
         private void OnDoubleClickTimerElapsed(object sender, EventArgs e)
         {
@@ -127,7 +129,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// 型階層コマンドを実行
+        ///     型階層コマンドを実行
         /// </summary>
         private void ExecuteTypeHierarchyCommand()
         {
@@ -148,12 +150,12 @@ namespace boilersExtensions.TextEditor.Extensions
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error executing TypeHierarchyCommand: {ex.Message}");
+                Debug.WriteLine($"Error executing TypeHierarchyCommand: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// テキストビューが閉じられたときのクリーンアップ
+        ///     テキストビューが閉じられたときのクリーンアップ
         /// </summary>
         private void OnTextViewClosed(object sender, EventArgs e)
         {

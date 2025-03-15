@@ -1,100 +1,56 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Shell;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace boilersExtensions.Utils
 {
     /// <summary>
-    /// 型の継承階層や実装インターフェースを分析するクラス
+    ///     型の継承階層や実装インターフェースを分析するクラス
     /// </summary>
     public class TypeHierarchyAnalyzer
     {
         /// <summary>
-        /// 型階層情報を格納するクラス
+        ///     カーソル位置の型シンボルとその親要素を取得
         /// </summary>
-        public class TypeHierarchyInfo
-        {
-            /// <summary>
-            /// 型名（表示用）
-            /// </summary>
-            public string DisplayName { get; set; }
-
-            /// <summary>
-            /// 型の完全修飾名
-            /// </summary>
-            public string FullName { get; set; }
-
-            /// <summary>
-            /// 継承ベースクラス
-            /// </summary>
-            public TypeHierarchyInfo BaseClass { get; set; }
-
-            /// <summary>
-            /// 実装インターフェースのリスト
-            /// </summary>
-            public List<TypeHierarchyInfo> Interfaces { get; set; } = new List<TypeHierarchyInfo>();
-
-            /// <summary>
-            /// この型を継承するサブクラスのリスト
-            /// </summary>
-            public List<TypeHierarchyInfo> DerivedClasses { get; set; } = new List<TypeHierarchyInfo>();
-
-            /// <summary>
-            /// この型はインターフェースか
-            /// </summary>
-            public bool IsInterface { get; set; }
-
-            /// <summary>
-            /// アクセシビリティ（public, internal, private等）
-            /// </summary>
-            public string Accessibility { get; set; }
-
-            /// <summary>
-            /// ソリューション内で定義されている型か
-            /// </summary>
-            public bool IsDefinedInSolution { get; set; }
-
-            /// <summary>
-            /// アセンブリ名
-            /// </summary>
-            public string AssemblyName { get; set; }
-
-            /// <summary>
-            /// この型を使用する場合に必要な using ステートメント
-            /// </summary>
-            public string RequiredNamespace { get; set; }
-        }
-
-        /// <summary>
-        /// カーソル位置の型シンボルとその親要素を取得
-        /// </summary>
-        public static async Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, Microsoft.CodeAnalysis.Text.TextSpan fullTypeSpan, Microsoft.CodeAnalysis.Text.TextSpan? baseTypeSpan)> GetTypeSymbolAtPositionAsync(Document document, int position)
+        public static async
+            Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, TextSpan fullTypeSpan, TextSpan? baseTypeSpan)>
+            GetTypeSymbolAtPositionAsync(Document document, int position)
         {
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 if (document == null)
+                {
                     return (null, null, default, null);
+                }
 
                 var semanticModel = await document.GetSemanticModelAsync();
                 if (semanticModel == null)
+                {
                     return (null, null, default, null);
+                }
 
                 var syntaxRoot = await document.GetSyntaxRootAsync();
                 if (syntaxRoot == null)
+                {
                     return (null, null, default, null);
+                }
 
                 // カーソル位置のノードを取得
-                var node = syntaxRoot.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(position, 0), getInnermostNodeForTie: true);
+                var node = syntaxRoot.FindNode(new TextSpan(position, 0), getInnermostNodeForTie: true);
                 if (node == null)
+                {
                     return (null, null, default, null);
+                }
 
                 // 型名を参照するノードを特定
                 TypeSyntax typeSyntax = null;
@@ -149,6 +105,7 @@ namespace boilersExtensions.Utils
                     {
                         parent = parent.Parent;
                     }
+
                     typeSyntax = parent as TypeSyntax;
                     parentNode = parent?.Parent;
                 }
@@ -160,24 +117,26 @@ namespace boilersExtensions.Utils
                 }
 
                 if (typeSyntax == null)
+                {
                     return (null, null, default, null);
+                }
 
                 // 型の完全なスパンを取得
                 var fullTypeSpan = typeSyntax.Span;
 
                 // ジェネリック型の場合は、基本型名部分のみのスパンを計算
-                Microsoft.CodeAnalysis.Text.TextSpan? baseTypeSpan = null;
+                TextSpan? baseTypeSpan = null;
                 if (typeSyntax is GenericNameSyntax genericName)
                 {
                     // ジェネリック型の基本名だけのスパン（例: List<int>のうちのList部分）
-                    baseTypeSpan = new Microsoft.CodeAnalysis.Text.TextSpan(
+                    baseTypeSpan = new TextSpan(
                         genericName.SpanStart,
                         genericName.Span.Length);
 
                     // デバッグ情報出力
-                    System.Diagnostics.Debug.WriteLine($"Generic type: {genericName}, Base name: {genericName.Identifier.Text}, " +
-                        $"Identifier Span: ({genericName.Identifier.Span.Start}, {genericName.Identifier.Span.Length}), " +
-                        $"Full Span: ({genericName.Span.Start}, {genericName.Span.Length})");
+                    Debug.WriteLine($"Generic type: {genericName}, Base name: {genericName.Identifier.Text}, " +
+                                    $"Identifier Span: ({genericName.Identifier.Span.Start}, {genericName.Identifier.Span.Length}), " +
+                                    $"Full Span: ({genericName.Span.Start}, {genericName.Span.Length})");
                 }
                 else if (typeSyntax is QualifiedNameSyntax qualifiedName)
                 {
@@ -196,20 +155,23 @@ namespace boilersExtensions.Utils
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in GetTypeSymbolAtPositionAsync: {ex.Message}");
+                Debug.WriteLine($"Error in GetTypeSymbolAtPositionAsync: {ex.Message}");
                 return (null, null, default, null);
             }
         }
 
         /// <summary>
-        /// 型の継承階層を取得
+        ///     型の継承階層を取得
         /// </summary>
-        public static async Task<TypeHierarchyInfo> GetTypeHierarchyAsync(ITypeSymbol typeSymbol, Document document, bool includeInternalTypes = true)
+        public static async Task<TypeHierarchyInfo> GetTypeHierarchyAsync(ITypeSymbol typeSymbol, Document document,
+            bool includeInternalTypes = true)
         {
             try
             {
                 if (typeSymbol == null || document == null)
+                {
                     return null;
+                }
 
                 var solution = document.Project.Solution;
                 var compilation = await document.Project.GetCompilationAsync();
@@ -240,15 +202,16 @@ namespace boilersExtensions.Utils
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in GetTypeHierarchyAsync: {ex.Message}");
+                Debug.WriteLine($"Error in GetTypeHierarchyAsync: {ex.Message}");
                 return null;
             }
         }
 
         /// <summary>
-        /// 派生型を検索
+        ///     派生型を検索
         /// </summary>
-        private static async Task FindDerivedTypesAsync(ITypeSymbol baseType, TypeHierarchyInfo typeInfo, Solution solution, bool includeInternalTypes)
+        private static async Task FindDerivedTypesAsync(ITypeSymbol baseType, TypeHierarchyInfo typeInfo,
+            Solution solution, bool includeInternalTypes)
         {
             try
             {
@@ -287,12 +250,12 @@ namespace boilersExtensions.Utils
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in FindDerivedTypesAsync: {ex.Message}");
+                Debug.WriteLine($"Error in FindDerivedTypesAsync: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 型シンボルから型階層情報を作成
+        ///     型シンボルから型階層情報を作成
         /// </summary>
         private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol)
         {
@@ -311,7 +274,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 継承階層を含めた型置換候補を取得
+        ///     継承階層を含めた型置換候補を取得
         /// </summary>
         public static async Task<List<TypeHierarchyInfo>> GetTypeReplacementCandidatesAsync(
             ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true)
@@ -321,7 +284,9 @@ namespace boilersExtensions.Utils
             // 元の型の階層情報を取得
             var typeHierarchy = await GetTypeHierarchyAsync(originalType, document);
             if (typeHierarchy == null)
+            {
                 return candidates;
+            }
 
             // 現在の型自体も候補に含める
             candidates.Add(typeHierarchy);
@@ -354,6 +319,62 @@ namespace boilersExtensions.Utils
             }
 
             return candidates;
+        }
+
+        /// <summary>
+        ///     型階層情報を格納するクラス
+        /// </summary>
+        public class TypeHierarchyInfo
+        {
+            /// <summary>
+            ///     型名（表示用）
+            /// </summary>
+            public string DisplayName { get; set; }
+
+            /// <summary>
+            ///     型の完全修飾名
+            /// </summary>
+            public string FullName { get; set; }
+
+            /// <summary>
+            ///     継承ベースクラス
+            /// </summary>
+            public TypeHierarchyInfo BaseClass { get; set; }
+
+            /// <summary>
+            ///     実装インターフェースのリスト
+            /// </summary>
+            public List<TypeHierarchyInfo> Interfaces { get; set; } = new List<TypeHierarchyInfo>();
+
+            /// <summary>
+            ///     この型を継承するサブクラスのリスト
+            /// </summary>
+            public List<TypeHierarchyInfo> DerivedClasses { get; set; } = new List<TypeHierarchyInfo>();
+
+            /// <summary>
+            ///     この型はインターフェースか
+            /// </summary>
+            public bool IsInterface { get; set; }
+
+            /// <summary>
+            ///     アクセシビリティ（public, internal, private等）
+            /// </summary>
+            public string Accessibility { get; set; }
+
+            /// <summary>
+            ///     ソリューション内で定義されている型か
+            /// </summary>
+            public bool IsDefinedInSolution { get; set; }
+
+            /// <summary>
+            ///     アセンブリ名
+            /// </summary>
+            public string AssemblyName { get; set; }
+
+            /// <summary>
+            ///     この型を使用する場合に必要な using ステートメント
+            /// </summary>
+            public string RequiredNamespace { get; set; }
         }
     }
 }

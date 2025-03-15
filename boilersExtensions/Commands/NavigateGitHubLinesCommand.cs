@@ -1,43 +1,44 @@
-﻿using EnvDTE;
+﻿using System;
+using System.ComponentModel.Design;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using EnvDTE;
 using LibGit2Sharp;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
 using Microsoft.VisualStudio.TextManager.Interop;
-using System;
-using System.ComponentModel.Design;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using Process = System.Diagnostics.Process;
 using Task = System.Threading.Tasks.Task;
 
 namespace boilersExtensions
 {
     /// <summary>
-    /// Command handler
+    ///     Command handler
     /// </summary>
     internal sealed class NavigateGitHubLinesCommand : OleMenuCommand
     {
         /// <summary>
-        /// Command ID.
+        ///     Command ID.
         /// </summary>
         public const int CommandId = 0x0100;
 
         /// <summary>
-        /// Command menu group (command set GUID).
+        ///     Command menu group (command set GUID).
         /// </summary>
         public static readonly Guid CommandSet = new Guid("b19148c9-0670-418f-bce5-1845978d4302");
 
         /// <summary>
-        /// VS Package that provides this command, not null.
+        ///     VS Package that provides this command, not null.
         /// </summary>
         private static AsyncPackage package;
 
         private static OleMenuCommand menuItem;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NavigateGitHubLinesCommand"/> class.
-        /// Adds our command handlers for menu (commands must exist in the command table file)
+        ///     Initializes a new instance of the <see cref="NavigateGitHubLinesCommand" /> class.
+        ///     Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
@@ -45,16 +46,8 @@ namespace boilersExtensions
         {
         }
 
-        private static async void OnBeforeQueryStatus(object sender, EventArgs e)
-        {
-            if (sender is OleMenuCommand command)
-            {
-                command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
-            }
-        }
-        
         /// <summary>
-        /// Gets the instance of the command.
+        ///     Gets the instance of the command.
         /// </summary>
         public static NavigateGitHubLinesCommand Instance
         {
@@ -63,18 +56,26 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// Gets the service provider from the owner package.
+        ///     Gets the service provider from the owner package.
         /// </summary>
         private static IAsyncServiceProvider ServiceProvider => package;
 
+        private static async void OnBeforeQueryStatus(object sender, EventArgs e)
+        {
+            if (sender is OleMenuCommand command)
+            {
+                command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
+            }
+        }
+
         /// <summary>
-        /// Initializes the singleton instance of the command.
+        ///     Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         public static async Task InitializeAsync(AsyncPackage package)
         {
             NavigateGitHubLinesCommand.package = package;
-            
+
             // Switch to the main thread - the call to AddCommand in NavigateGitHubLinesCommand's constructor requires
             // the UI thread.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
@@ -85,9 +86,9 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
+        ///     This function is the callback used to execute the command when the menu item is clicked.
+        ///     See the constructor to see how the menu item is associated with this function using
+        ///     OleMenuCommandService service and MenuCommand class.
         /// </summary>
         /// <param name="sender">Event sender.</param>
         /// <param name="e">Event args.</param>
@@ -107,7 +108,7 @@ namespace boilersExtensions
             //    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             OpenWebBrowserAndNavigateGitHubPage();
         }
-        
+
         private static async Task OpenWebBrowserAndNavigateGitHubPage()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -125,6 +126,7 @@ namespace boilersExtensions
             {
                 filePath = document.FullName;
             }
+
             if (projectItem != null)
             {
                 filePath = projectItem.Properties.Item("FullPath").Value.ToString();
@@ -151,10 +153,10 @@ namespace boilersExtensions
                 var gitRepository = new Repository(repoPath);
                 var repositoryUrl = gitRepository.Network.Remotes.FirstOrDefault()?.Url;
                 var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://")
-                                                                           .Replace("git://", "https://")
-                                                                           .Replace("git@", "https://")
-                                                                           .Replace("github.com:", "github.com/");
-                var branchName =  Uri.EscapeDataString(gitRepository.Head.FriendlyName);
+                    .Replace("git://", "https://")
+                    .Replace("git@", "https://")
+                    .Replace("github.com:", "github.com/");
+                var branchName = Uri.EscapeDataString(gitRepository.Head.FriendlyName);
                 var relativeFilePath = filePath?.Substring(Path.GetDirectoryName(projectPath).Length);
                 relativeFilePath = relativeFilePath?.Replace('\\', '/');
                 var lineNumberBegin = startLine + 1;
@@ -164,7 +166,8 @@ namespace boilersExtensions
                 {
                     fileUrl += $"-L{lineNumberEnd}";
                 }
-                System.Diagnostics.Process.Start(fileUrl);
+
+                Process.Start(fileUrl);
             }
         }
 
@@ -178,7 +181,7 @@ namespace boilersExtensions
         private static async Task<IGitRepositoryInfo> GetGitRepositoryInfo()
         {
             // Get an instance of the IGitExt object
-            IGitExt gitService = await ServiceProvider.GetServiceAsync(typeof(IGitExt)) as IGitExt;
+            var gitService = await ServiceProvider.GetServiceAsync(typeof(IGitExt)) as IGitExt;
 
             // Get the active repository object
             return gitService.ActiveRepositories.FirstOrDefault();

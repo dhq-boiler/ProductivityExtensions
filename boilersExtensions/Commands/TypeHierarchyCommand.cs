@@ -1,4 +1,9 @@
-﻿using boilersExtensions.Utils;
+﻿using System;
+using System.ComponentModel.Design;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using boilersExtensions.Utils;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Views;
 using EnvDTE;
@@ -11,17 +16,14 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.TextManager.Interop;
-using System;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Threading.Tasks;
+using Document = Microsoft.CodeAnalysis.Document;
 using Package = Microsoft.VisualStudio.Shell.Package;
 using TextSpan = Microsoft.CodeAnalysis.Text.TextSpan;
 
 namespace boilersExtensions.Commands
 {
     /// <summary>
-    /// 型階層選択コマンド
+    ///     型階層選択コマンド
     /// </summary>
     internal sealed class TypeHierarchyCommand : OleMenuCommand
     {
@@ -30,18 +32,18 @@ namespace boilersExtensions.Commands
         private static AsyncPackage package;
         private static OleMenuCommand menuItem;
 
-        public static TypeHierarchyCommand Instance { get; private set; }
-        private static IAsyncServiceProvider ServiceProvider => package;
-
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         private TypeHierarchyCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
         {
         }
 
+        public static TypeHierarchyCommand Instance { get; private set; }
+        private static IAsyncServiceProvider ServiceProvider => package;
+
         /// <summary>
-        /// 初期化
+        ///     初期化
         /// </summary>
         public static async Task InitializeAsync(AsyncPackage package)
         {
@@ -55,7 +57,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// コマンド実行時の処理
+        ///     コマンド実行時の処理
         /// </summary>
         private static void Execute(object sender, EventArgs e)
         {
@@ -65,19 +67,31 @@ namespace boilersExtensions.Commands
             {
                 // 現在のテキストビューを取得
                 var textView = GetCurrentTextView();
-                if (textView == null) return;
+                if (textView == null)
+                {
+                    return;
+                }
 
                 // カーソル位置を取得
                 var caretPosition = textView.Caret.Position.BufferPosition;
-                if (caretPosition == null) return;
+                if (caretPosition == null)
+                {
+                    return;
+                }
 
                 // ダブルクリックされた単語の範囲を取得
                 var selectedSpan = GetSelectedWordSpan(textView);
-                if (selectedSpan == null || selectedSpan.Value.IsEmpty) return;
+                if (selectedSpan == null || selectedSpan.Value.IsEmpty)
+                {
+                    return;
+                }
 
                 // ドキュメントを取得
                 var document = GetDocumentFromTextView(textView);
-                if (document == null) return;
+                if (document == null)
+                {
+                    return;
+                }
 
                 // 型解析と型階層ダイアログの表示を非同期で実行
                 Task.Run(async () =>
@@ -85,11 +99,14 @@ namespace boilersExtensions.Commands
                     try
                     {
                         // カーソル位置の型シンボルを取得
-                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan) = await TypeHierarchyAnalyzer.GetTypeSymbolAtPositionAsync(
-                            document, selectedSpan.Value.Start.Position);
+                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan) =
+                            await TypeHierarchyAnalyzer.GetTypeSymbolAtPositionAsync(
+                                document, selectedSpan.Value.Start.Position);
 
                         if (typeSymbol == null)
+                        {
                             return;
+                        }
 
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -115,26 +132,27 @@ namespace boilersExtensions.Commands
                         {
                             // 選択されたスパンを使用
                             replacementSpan = selectedSpan.Value;
-                            System.Diagnostics.Debug.WriteLine($"Using selected span: {selectedSpan.Value.GetText()}");
+                            Debug.WriteLine($"Using selected span: {selectedSpan.Value.GetText()}");
                         }
 
                         // ダイアログを表示（完全な型スパン情報も追加）
-                        ShowTypeHierarchyDialog(typeSymbol, document, selectedSpan.Value.Start.Position, replacementSpan, textView.TextBuffer, fullTypeSpan);
+                        ShowTypeHierarchyDialog(typeSymbol, document, selectedSpan.Value.Start.Position,
+                            replacementSpan, textView.TextBuffer, fullTypeSpan);
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error in Execute: {ex.Message}");
+                        Debug.WriteLine($"Error in Execute: {ex.Message}");
                     }
                 });
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in Execute: {ex.Message}");
+                Debug.WriteLine($"Error in Execute: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// コマンドの有効/無効状態を更新
+        ///     コマンドの有効/無効状態を更新
         /// </summary>
         private static void BeforeQueryStatus(object sender, EventArgs e)
         {
@@ -143,7 +161,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // DTEオブジェクトを取得
-                DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
                 // アクティブなドキュメントがある場合のみ有効化
                 command.Enabled = dte.ActiveDocument != null;
@@ -151,10 +169,11 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 型階層ダイアログを表示
+        ///     型階層ダイアログを表示
         /// </summary>
         private static void ShowTypeHierarchyDialog(
-            ITypeSymbol typeSymbol, Microsoft.CodeAnalysis.Document document, int position, SnapshotSpan selectedSpan, ITextBuffer textBuffer, TextSpan fullTypeSpan)
+            ITypeSymbol typeSymbol, Document document, int position, SnapshotSpan selectedSpan, ITextBuffer textBuffer,
+            TextSpan fullTypeSpan)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -162,10 +181,7 @@ namespace boilersExtensions.Commands
             {
                 // ダイアログを作成
                 var window = new TypeHierarchyDialog();
-                var viewModel = new TypeHierarchyDialogViewModel
-                {
-                    Package = package
-                };
+                var viewModel = new TypeHierarchyDialogViewModel { Package = package };
                 window.DataContext = viewModel;
 
                 // ダイアログを初期化
@@ -174,7 +190,8 @@ namespace boilersExtensions.Commands
                 // 非同期で型階層を初期化
                 Task.Run(async () =>
                 {
-                    await viewModel.InitializeAsync(typeSymbol, document, position, selectedSpan, textBuffer, fullTypeSpan);
+                    await viewModel.InitializeAsync(typeSymbol, document, position, selectedSpan, textBuffer,
+                        fullTypeSpan);
                 });
 
                 // ダイアログを表示
@@ -182,30 +199,30 @@ namespace boilersExtensions.Commands
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in ShowTypeHierarchyDialog: {ex.Message}");
+                Debug.WriteLine($"Error in ShowTypeHierarchyDialog: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 現在のテキストビューを取得
+        ///     現在のテキストビューを取得
         /// </summary>
         private static IWpfTextView GetCurrentTextView()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             var textManager = (IVsTextManager)ServiceProvider.GetServiceAsync(typeof(SVsTextManager)).Result;
-            textManager.GetActiveView(1, null, out IVsTextView textViewCurrent);
+            textManager.GetActiveView(1, null, out var textViewCurrent);
 
-            IComponentModel componentModel = (IComponentModel)ServiceProvider.GetServiceAsync(typeof(SComponentModel)).Result;
+            var componentModel = (IComponentModel)ServiceProvider.GetServiceAsync(typeof(SComponentModel)).Result;
             var editor = componentModel.GetService<IVsEditorAdaptersFactoryService>();
 
             return editor.GetWpfTextView(textViewCurrent);
         }
 
         /// <summary>
-        /// テキストビューからドキュメントを取得
+        ///     テキストビューからドキュメントを取得
         /// </summary>
-        private static Microsoft.CodeAnalysis.Document GetDocumentFromTextView(IWpfTextView textView)
+        private static Document GetDocumentFromTextView(IWpfTextView textView)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -231,7 +248,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 選択されたワードの範囲を取得
+        ///     選択されたワードの範囲を取得
         /// </summary>
         private static SnapshotSpan? GetSelectedWordSpan(IWpfTextView textView)
         {
@@ -257,13 +274,9 @@ namespace boilersExtensions.Commands
 
                 return null;
             }
-            else
-            {
-                // 選択範囲がある場合はそれを使用
-                return textView.Selection.StreamSelectionSpan.SnapshotSpan;
-            }
+
+            // 選択範囲がある場合はそれを使用
+            return textView.Selection.StreamSelectionSpan.SnapshotSpan;
         }
-
-
     }
 }

@@ -1,9 +1,9 @@
-﻿using boilersExtensions.TextEditor.SuggestedActionsSources;
+﻿using System.ComponentModel.Composition;
+using boilersExtensions.TextEditor.SuggestedActionsSources;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
-using System.ComponentModel.Composition;
 
 namespace boilersExtensions.TextEditor.Providers
 {
@@ -18,6 +18,7 @@ namespace boilersExtensions.TextEditor.Providers
             {
                 return null;
             }
+
             return new ExtractMethodSuggestedActionsSource(textView, textBuffer);
         }
     }

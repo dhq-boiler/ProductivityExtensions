@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.Shell;
+﻿using System.IO;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using System.IO;
 
 namespace boilersExtensions.Utils
 {
@@ -8,10 +8,8 @@ namespace boilersExtensions.Utils
     {
         private readonly IVsDifferenceService _differenceService;
 
-        public DiffViewer()
-        {
-            _differenceService = Package.GetGlobalService(typeof(SVsDifferenceService)) as IVsDifferenceService;
-        }
+        public DiffViewer() => _differenceService =
+            Package.GetGlobalService(typeof(SVsDifferenceService)) as IVsDifferenceService;
 
         public void ShowDiff(string originalCode, string newCode, bool isReadOnly = true)
         {
@@ -22,15 +20,15 @@ namespace boilersExtensions.Utils
             var rightFile = CreateTempFile(newCode, "modified.cs");
 
             // VSDIFFOPTフラグの設定
-            uint diffOptions = (uint)(
-                __VSDIFFSERVICEOPTIONS.VSDIFFOPT_DetectBinaryFiles |     // バイナリファイルの検出
-                __VSDIFFSERVICEOPTIONS.VSDIFFOPT_LeftFileIsTemporary |     // 左側を一時ファイルとして扱う
-                __VSDIFFSERVICEOPTIONS.VSDIFFOPT_RightFileIsTemporary      // 右側を一時ファイルとして扱う
+            var diffOptions = (uint)(
+                __VSDIFFSERVICEOPTIONS.VSDIFFOPT_DetectBinaryFiles | // バイナリファイルの検出
+                __VSDIFFSERVICEOPTIONS.VSDIFFOPT_LeftFileIsTemporary | // 左側を一時ファイルとして扱う
+                __VSDIFFSERVICEOPTIONS.VSDIFFOPT_RightFileIsTemporary // 右側を一時ファイルとして扱う
             );
 
             if (isReadOnly)
             {
-                diffOptions |= (uint)__VSDIFFSERVICEOPTIONS.VSDIFFOPT_RightFileIsTemporary;  // 右側も読み取り専用にする場合
+                diffOptions |= (uint)__VSDIFFSERVICEOPTIONS.VSDIFFOPT_RightFileIsTemporary; // 右側も読み取り専用にする場合
             }
 
             // Diffビューの表示
