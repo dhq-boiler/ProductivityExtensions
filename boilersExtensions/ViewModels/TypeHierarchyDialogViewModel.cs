@@ -110,6 +110,31 @@ namespace boilersExtensions.ViewModels
                 })
                 .AddTo(_compositeDisposable);
 
+            // 選択された型が変更されたらDiffプレビューを更新
+            SelectedType.Subscribe(async selectedType =>
+                {
+                    // 選択されている型があり、元の型と異なる場合のみプレビュー表示
+                    if (selectedType != null && _originalTypeSymbol != null &&
+                        selectedType.FullName != _originalTypeSymbol.ToDisplayString())
+                    {
+                        // Diffウィンドウが開いていれば閉じる
+                        if (_diffWindowFrame != null)
+                        {
+                            _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                            _diffWindowFrame = null;
+                        }
+
+                        await ShowTypeChangePreview();
+                    }
+                    else if (_diffWindowFrame != null)
+                    {
+                        // 選択が元の型に戻った場合やnullになった場合はDiffウィンドウを閉じるだけ
+                        _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                        _diffWindowFrame = null;
+                    }
+                })
+                .AddTo(_compositeDisposable);
+
             // 表示モード変更時に候補を再取得
             ShowBaseTypes.CombineLatest(ShowDerivedTypes, (b, d) => true)
                 .Subscribe(async _ => await RefreshTypeCandidates())
@@ -509,7 +534,7 @@ namespace boilersExtensions.ViewModels
                 // DiffViewerを使って差分を表示
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var diffViewer = new DiffViewer();
-                _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true);
+                _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true, caption: "型変更のプレビュー", tooltip: "型変更を適用するか検討してください");
             }
             catch (Exception ex)
             {

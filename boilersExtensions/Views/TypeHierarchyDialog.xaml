@@ -193,11 +193,11 @@
                 HorizontalAlignment="Right"
                 DockPanel.Dock="Right"
                 Orientation="Horizontal">
-                <Button
+                <!--<Button
                     Margin="5"
                     Command="{Binding PreviewCommand}"
                     Content="変更をプレビュー"
-                    IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
+                    IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />-->
                 <Button
                     Margin="5"
                     Command="{Binding ApplyCommand}"
