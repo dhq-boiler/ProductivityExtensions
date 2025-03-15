@@ -304,7 +304,7 @@ namespace boilersExtensions.ViewModels
                 var originalTypeSpan = _typeSpan;
 
                 // 型名を置換
-                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName);
+                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeSpan.GetText());
                 Debug.WriteLine($"Replacing type: '{originalTypeSpan.GetText()}' with '{newTypeName}'");
 
                 // テキストを置換
@@ -323,7 +323,7 @@ namespace boilersExtensions.ViewModels
         /// <summary>
         /// 表示用に型名を簡略化
         /// </summary>
-        private string GetSimplifiedTypeName(string fullName)
+        private string GetSimplifiedTypeName(string fullName, string originalTypeText)
         {
             try
             {
@@ -334,10 +334,11 @@ namespace boilersExtensions.ViewModels
                 if (fullName.Contains("<"))
                 {
                     int genericStart = fullName.IndexOf('<');
+                    int originalGenericStart = originalTypeText.IndexOf('<');
 
                     // ジェネリック部分を抽出 (例: System.Collections.Generic.List<int> -> System.Collections.Generic.List と <int>)
                     string baseTypeName = fullName.Substring(0, genericStart);
-                    string typeParams = fullName.Substring(genericStart); // <int> 部分
+                    string typeParams = originalTypeText.Substring(originalGenericStart); // <int> 部分
 
                     // 名前空間を含まない型名を取得
                     int lastDot = baseTypeName.LastIndexOf('.');
