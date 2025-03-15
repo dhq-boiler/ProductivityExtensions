@@ -107,6 +107,8 @@ namespace boilersExtensions.ViewModels
         // 表示モード
         public ReactivePropertySlim<bool> ShowBaseTypes { get; } = new ReactivePropertySlim<bool>(true);
         public ReactivePropertySlim<bool> ShowDerivedTypes { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> ShowUseSpecialTypes { get; } = new ReactivePropertySlim<bool>(true);
+
 
         // 処理中フラグ
         public ReactivePropertySlim<bool> IsProcessing { get; } = new ReactivePropertySlim<bool>();
@@ -136,10 +138,10 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        ///     初期化
+        /// 初期化
         /// </summary>
         public async Task InitializeAsync(ITypeSymbol typeSymbol, Document document, int position,
-            SnapshotSpan typeSpan, ITextBuffer textBuffer, TextSpan fullTypeSpan)
+            SnapshotSpan typeSpan, ITextBuffer textBuffer, Microsoft.CodeAnalysis.Text.TextSpan fullTypeSpan)
         {
             try
             {
@@ -150,21 +152,90 @@ namespace boilersExtensions.ViewModels
                 _textBuffer = textBuffer;
                 _fullTypeSpan = fullTypeSpan;
 
+                // 実際のコードの文字列を取得（これが元のコードでの型表記を正確に反映している）
+                string actualTypeText = typeSpan.GetText();
+
+                // デバッグ情報
+                System.Diagnostics.Debug.WriteLine($"InitializeAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
+                System.Diagnostics.Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
+                System.Diagnostics.Debug.WriteLine($"Type with special types={typeSymbol.ToDisplayString(new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))}");
+                System.Diagnostics.Debug.WriteLine($"Type without special types={typeSymbol.ToDisplayString()}");
+                System.Diagnostics.Debug.WriteLine($"Type Span: '{typeSpan.GetText()}', Full Type Span: Start={fullTypeSpan.Start}, Length={fullTypeSpan.Length}");
+
                 // 元の型名を表示
                 OriginalTypeName.Value = typeSymbol.ToDisplayString();
 
-                // デバッグ情報
-                Debug.WriteLine($"InitializeAsync: Original Type={OriginalTypeName.Value}");
-                Debug.WriteLine(
-                    $"Type Span: '{typeSpan.GetText()}', Full Type Span: Start={fullTypeSpan.Start}, Length={fullTypeSpan.Length}");
+                // 実際のコードの表記に基づいてフォーマットを判定
+                bool usePrimitiveTypes = DeterminePrimitiveTypeUsage(actualTypeText);
+
+                // デバッグ出力
+                System.Diagnostics.Debug.WriteLine($"Using primitive types: {usePrimitiveTypes}");
+
+                // 型候補リストを再取得（プリミティブ型の使用有無を設定）
+                ShowUseSpecialTypes.Value = usePrimitiveTypes;
 
                 // 型の候補を取得
                 await RefreshTypeCandidates();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in Initialize: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in Initialize: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 実際のコードの表記からプリミティブ型が使用されているかを判定
+        /// </summary>
+        private bool DeterminePrimitiveTypeUsage(string actualTypeText)
+        {
+            // プリミティブ型の対応表
+            var primitiveTypes = new Dictionary<string, string>
+            {
+                { "System.Int32", "int" },
+                { "System.Int64", "long" },
+                { "System.Single", "float" },
+                { "System.Double", "double" },
+                { "System.Boolean", "bool" },
+                { "System.String", "string" },
+                { "System.Char", "char" },
+                { "System.Byte", "byte" },
+                { "System.SByte", "sbyte" },
+                { "System.Int16", "short" },
+                { "System.UInt16", "ushort" },
+                { "System.UInt32", "uint" },
+                { "System.UInt64", "ulong" },
+                { "System.Decimal", "decimal" },
+                { "System.Object", "object" }
+            };
+
+            // まず、プリミティブ型（int など）が含まれているかチェック
+            foreach (var primitiveType in primitiveTypes.Values)
+            {
+                // ジェネリック型パラメータとして現れる可能性のあるパターン
+                if (actualTypeText.Contains($"<{primitiveType}>") ||
+                    actualTypeText.Contains($"<{primitiveType},") ||
+                    actualTypeText.Contains($", {primitiveType}>") ||
+                    actualTypeText.Contains($", {primitiveType},"))
+                {
+                    return true; // プリミティブ型表記を使用
+                }
+            }
+
+            // 次に、.NET型（System.Int32 など）が含まれているかチェック
+            foreach (var netType in primitiveTypes.Keys)
+            {
+                string shortNetType = netType.Substring(netType.LastIndexOf('.') + 1); // "Int32" など
+                if (actualTypeText.Contains($"<{shortNetType}>") ||
+                    actualTypeText.Contains($"<{shortNetType},") ||
+                    actualTypeText.Contains($", {shortNetType}>") ||
+                    actualTypeText.Contains($", {shortNetType},"))
+                {
+                    return false; // .NET型表記を使用
+                }
+            }
+
+            // デフォルトではプリミティブ型表記を使用
+            return true;
         }
 
         /// <summary>
@@ -187,7 +258,8 @@ namespace boilersExtensions.ViewModels
                     _originalTypeSymbol,
                     _document,
                     ShowBaseTypes.Value,
-                    ShowDerivedTypes.Value);
+                    ShowDerivedTypes.Value,
+                    ShowUseSpecialTypes.Value);
 
                 // 候補を設定
                 TypeCandidates.Value = candidates;
@@ -247,28 +319,26 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        ///     表示用に型名を簡略化
+        /// 表示用に型名を簡略化
         /// </summary>
         private string GetSimplifiedTypeName(string fullName)
         {
             try
             {
                 if (string.IsNullOrEmpty(fullName))
-                {
                     return string.Empty;
-                }
 
                 // ジェネリック型かどうか確認
                 if (fullName.Contains("<"))
                 {
-                    var genericStart = fullName.IndexOf('<');
+                    int genericStart = fullName.IndexOf('<');
 
                     // ジェネリック部分を抽出 (例: System.Collections.Generic.List<int> -> System.Collections.Generic.List と <int>)
-                    var baseTypeName = fullName.Substring(0, genericStart);
-                    var typeParams = fullName.Substring(genericStart); // <int> 部分
+                    string baseTypeName = fullName.Substring(0, genericStart);
+                    string typeParams = fullName.Substring(genericStart); // <int> 部分
 
                     // 名前空間を含まない型名を取得
-                    var lastDot = baseTypeName.LastIndexOf('.');
+                    int lastDot = baseTypeName.LastIndexOf('.');
                     if (lastDot >= 0)
                     {
                         baseTypeName = baseTypeName.Substring(lastDot + 1);
@@ -280,18 +350,17 @@ namespace boilersExtensions.ViewModels
                 else
                 {
                     // 非ジェネリック型
-                    var lastDot = fullName.LastIndexOf('.');
+                    int lastDot = fullName.LastIndexOf('.');
                     if (lastDot >= 0)
                     {
                         return fullName.Substring(lastDot + 1);
                     }
-
                     return fullName;
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in GetSimplifiedTypeName: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in GetSimplifiedTypeName: {ex.Message}");
                 return fullName; // エラー時は元の型名をそのまま返す
             }
         }

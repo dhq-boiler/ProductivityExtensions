@@ -164,7 +164,7 @@ namespace boilersExtensions.Utils
         ///     型の継承階層を取得
         /// </summary>
         public static async Task<TypeHierarchyInfo> GetTypeHierarchyAsync(ITypeSymbol typeSymbol, Document document,
-            bool includeInternalTypes = true)
+            bool includeInternalTypes = true, bool showUseSpecialTypes = false)
         {
             try
             {
@@ -177,12 +177,12 @@ namespace boilersExtensions.Utils
                 var compilation = await document.Project.GetCompilationAsync();
 
                 // 型情報の作成
-                var typeInfo = CreateTypeHierarchyInfo(typeSymbol);
+                var typeInfo = CreateTypeHierarchyInfo(typeSymbol, showUseSpecialTypes);
 
                 // ベースクラスを取得
                 if (typeSymbol.BaseType != null)
                 {
-                    typeInfo.BaseClass = CreateTypeHierarchyInfo(typeSymbol.BaseType);
+                    typeInfo.BaseClass = CreateTypeHierarchyInfo(typeSymbol.BaseType, showUseSpecialTypes);
                 }
 
                 // 実装インターフェースを取得
@@ -191,12 +191,12 @@ namespace boilersExtensions.Utils
                     // アクセス可能なインターフェースのみ（必要に応じて調整）
                     if (includeInternalTypes || interfaceSymbol.DeclaredAccessibility == Accessibility.Public)
                     {
-                        typeInfo.Interfaces.Add(CreateTypeHierarchyInfo(interfaceSymbol));
+                        typeInfo.Interfaces.Add(CreateTypeHierarchyInfo(interfaceSymbol, showUseSpecialTypes));
                     }
                 }
 
                 // この型から派生した型を探す (ソリューション内)
-                await FindDerivedTypesAsync(typeSymbol, typeInfo, solution, includeInternalTypes);
+                await FindDerivedTypesAsync(typeSymbol, typeInfo, solution, includeInternalTypes, showUseSpecialTypes);
 
                 return typeInfo;
             }
@@ -211,7 +211,7 @@ namespace boilersExtensions.Utils
         ///     派生型を検索
         /// </summary>
         private static async Task FindDerivedTypesAsync(ITypeSymbol baseType, TypeHierarchyInfo typeInfo,
-            Solution solution, bool includeInternalTypes)
+            Solution solution, bool includeInternalTypes, bool showUseSpecialTypes = false)
         {
             try
             {
@@ -225,7 +225,7 @@ namespace boilersExtensions.Utils
                         // アクセス可能な派生型のみ
                         if (includeInternalTypes || derivedType.DeclaredAccessibility == Accessibility.Public)
                         {
-                            typeInfo.DerivedClasses.Add(CreateTypeHierarchyInfo(derivedType));
+                            typeInfo.DerivedClasses.Add(CreateTypeHierarchyInfo(derivedType, showUseSpecialTypes));
                         }
                     }
                 }
@@ -242,7 +242,7 @@ namespace boilersExtensions.Utils
                             if (!typeInfo.DerivedClasses.Any(t => t.FullName == implType.ToDisplayString()) &&
                                 (includeInternalTypes || implType.DeclaredAccessibility == Accessibility.Public))
                             {
-                                typeInfo.DerivedClasses.Add(CreateTypeHierarchyInfo(implType));
+                                typeInfo.DerivedClasses.Add(CreateTypeHierarchyInfo(implType, showUseSpecialTypes));
                             }
                         }
                     }
@@ -255,14 +255,49 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        ///     型シンボルから型階層情報を作成
+        /// 型シンボルから型階層情報を作成
         /// </summary>
-        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol)
+        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes)
         {
+            string displayName;
+            
+            if (typeSymbol is INamedTypeSymbol namedType && namedType.IsGenericType)
+            {
+                // フォーマットオプションを設定
+                var format = new SymbolDisplayFormat(
+                    typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
+                    genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
+
+                // 元の型がプリミティブ型表記を使っている場合はオプションを追加
+                if (showUseSpecialTypes)
+                {
+                    format = format.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+                }
+
+                // このフォーマットで表示すると設定に応じて「List<int>」または「List<Int32>」のような形式になる
+                displayName = namedType.ToDisplayString(format);
+            }
+            else
+            {
+                displayName = typeSymbol.Name;
+            }
+
+            // FullNameも同じ表記規則を適用
+            string fullName;
+            if (showUseSpecialTypes)
+            {
+                fullName = typeSymbol.ToDisplayString(
+                    new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes));
+            }
+            else
+            {
+                fullName = typeSymbol.ToDisplayString();
+            }
+
             var typeInfo = new TypeHierarchyInfo
             {
-                DisplayName = typeSymbol.Name,
-                FullName = typeSymbol.ToDisplayString(),
+                DisplayName = displayName,
+                FullName = fullName,
                 IsInterface = typeSymbol.TypeKind == TypeKind.Interface,
                 Accessibility = typeSymbol.DeclaredAccessibility.ToString(),
                 IsDefinedInSolution = !typeSymbol.Locations.All(loc => loc.IsInMetadata),
@@ -274,15 +309,81 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
+        /// 型パラメータがプリミティブ型表記かどうかを判断
+        /// </summary>
+        private static bool DeterminePrimitiveTypeUsage(string actualTypeText)
+        {
+            // プリミティブ型の対応表（C#プリミティブ型と.NET型）
+            var primitiveTypes = new Dictionary<string, string>
+            {
+                { "int", "Int32" },
+                { "long", "Int64" },
+                { "float", "Single" },
+                { "double", "Double" },
+                { "bool", "Boolean" },
+                { "string", "String" },
+                { "char", "Char" },
+                { "byte", "Byte" },
+                { "sbyte", "SByte" },
+                { "short", "Int16" },
+                { "ushort", "UInt16" },
+                { "uint", "UInt32" },
+                { "ulong", "UInt64" },
+                { "decimal", "Decimal" },
+                { "object", "Object" }
+            };
+
+            // まず、プリミティブ型（int など）が含まれているかチェック
+            foreach (var primitiveType in primitiveTypes.Keys)
+            {
+                // ジェネリック型パラメータとして現れる可能性のあるパターン
+                if (actualTypeText.Contains($"<{primitiveType}>") ||
+                    actualTypeText.Contains($"<{primitiveType},") ||
+                    actualTypeText.Contains($", {primitiveType}>") ||
+                    actualTypeText.Contains($", {primitiveType},"))
+                {
+                    return true; // プリミティブ型表記を使用
+                }
+            }
+
+            // 次に、.NET型（Int32 など）が含まれているかチェック（名前空間を省略した短い名前）
+            foreach (var netType in primitiveTypes.Values)
+            {
+                if (actualTypeText.Contains($"<{netType}>") ||
+                    actualTypeText.Contains($"<{netType},") ||
+                    actualTypeText.Contains($", {netType}>") ||
+                    actualTypeText.Contains($", {netType},"))
+                {
+                    return false; // .NET型表記を使用
+                }
+            }
+
+            // デフォルトでは一般的なC#コードの慣習に従い、プリミティブ型表記を使用
+            return true;
+        }
+
+        /// <summary>
+        /// 型パラメータが文字列内に存在するかチェック
+        /// </summary>
+        private static bool IsTypeParamInString(string typeString, string paramType)
+        {
+            // ジェネリック型パラメータとして現れる可能性のあるパターン
+            return typeString.Contains($"<{paramType}>") ||
+                   typeString.Contains($"<{paramType},") ||
+                   typeString.Contains($", {paramType}>") ||
+                   typeString.Contains($", {paramType},");
+        }
+
+        /// <summary>
         ///     継承階層を含めた型置換候補を取得
         /// </summary>
         public static async Task<List<TypeHierarchyInfo>> GetTypeReplacementCandidatesAsync(
-            ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true)
+            ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true, bool showUseSpecialTypes = false)
         {
             var candidates = new List<TypeHierarchyInfo>();
 
             // 元の型の階層情報を取得
-            var typeHierarchy = await GetTypeHierarchyAsync(originalType, document);
+            var typeHierarchy = await GetTypeHierarchyAsync(originalType, document, showUseSpecialTypes: showUseSpecialTypes);
             if (typeHierarchy == null)
             {
                 return candidates;
