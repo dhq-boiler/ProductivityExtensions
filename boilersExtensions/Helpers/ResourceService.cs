@@ -1,12 +1,11 @@
-﻿using boilersExtensions.Properties;
+﻿using System.Globalization;
+using boilersExtensions.Properties;
 using Prism.Mvvm;
-using System.Globalization;
 
 namespace boilersExtensions.Helpers
 {
-
     /// <summary>
-    /// https://qiita.com/YSRKEN/items/a96bcec8dfb0a8340a5f
+    ///     https://qiita.com/YSRKEN/items/a96bcec8dfb0a8340a5f
     /// </summary>
     public class ResourceService : BindableBase
     {

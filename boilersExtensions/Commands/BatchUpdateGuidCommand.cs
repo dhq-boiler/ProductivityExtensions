@@ -1,43 +1,45 @@
-﻿using EnvDTE;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Views;
-using Package = Microsoft.VisualStudio.Shell.Package;
+using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Reactive.Bindings;
 using Reactive.Bindings.Disposables;
 using Reactive.Bindings.Extensions;
+using Package = Microsoft.VisualStudio.Shell.Package;
 
 namespace boilersExtensions.Commands
 {
     internal class BatchUpdateGuidCommand : OleMenuCommand
     {
         /// <summary>
-        /// Command ID.
+        ///     Command ID.
         /// </summary>
         public const int CommandId = 0x0100;
 
         /// <summary>
-        /// Command menu group (command set GUID).
+        ///     Command menu group (command set GUID).
         /// </summary>
         public static readonly Guid CommandSet = new Guid("6f89e4ab-2b85-49b6-a2d9-3f9b78e02acf");
 
         /// <summary>
-        /// VS Package that provides this command, not null.
+        ///     VS Package that provides this command, not null.
         /// </summary>
         private static AsyncPackage package;
 
         private static OleMenuCommand menuItem;
 
+        private BatchUpdateGuidCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        {
+        }
+
         /// <summary>
-        /// Gets the instance of the command.
+        ///     Gets the instance of the command.
         /// </summary>
         public static BatchUpdateGuidCommand Instance
         {
@@ -46,13 +48,9 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// Gets the service provider from the owner package.
+        ///     Gets the service provider from the owner package.
         /// </summary>
         private static IAsyncServiceProvider ServiceProvider => package;
-
-        private BatchUpdateGuidCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
-        {
-        }
 
         public static async Task InitializeAsync(AsyncPackage package)
         {
@@ -70,13 +68,13 @@ namespace boilersExtensions.Commands
             ThreadHelper.ThrowIfNotOnUIThread();
 
             // DTEオブジェクトを取得
-            DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+            var dte = (DTE)Package.GetGlobalService(typeof(DTE));
             var textDocument = dte.ActiveDocument.Object("TextDocument") as TextDocument;
 
             if (textDocument != null)
             {
                 // ドキュメント内のすべてのGUIDを検出
-                List<GuidInfo> guids = FindAllGuidsInDocument(textDocument);
+                var guids = FindAllGuidsInDocument(textDocument);
 
                 if (guids.Count == 0)
                 {
@@ -92,13 +90,11 @@ namespace boilersExtensions.Commands
                 }
 
                 // ダイアログを表示してGUIDの選択を行う
-                var window = new GuidSelectionDialog()
+                var window = new GuidSelectionDialog
                 {
-                    DataContext = new GuidSelectionDialogViewModel()
+                    DataContext = new GuidSelectionDialogViewModel
                     {
-                        GuidList = guids,
-                        Package = package,
-                        Document = textDocument
+                        GuidList = guids, Package = package, Document = textDocument
                     }
                 };
                 (window.DataContext as GuidSelectionDialogViewModel).OnDialogOpened(window);
@@ -113,7 +109,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // DTEオブジェクトを取得
-                DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
                 // アクティブなドキュメントがある場合のみ有効化
                 command.Enabled = dte.ActiveDocument != null;
@@ -121,7 +117,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// ドキュメント内のすべてのGUIDを検出する
+        ///     ドキュメント内のすべてのGUIDを検出する
         /// </summary>
         private static List<GuidInfo> FindAllGuidsInDocument(TextDocument textDocument)
         {
@@ -131,10 +127,10 @@ namespace boilersExtensions.Commands
 
             // ドキュメント全体のテキストを取得
             var editPoint = textDocument.StartPoint.CreateEditPoint();
-            string documentText = editPoint.GetText(textDocument.EndPoint);
+            var documentText = editPoint.GetText(textDocument.EndPoint);
 
             // GUIDパターンの正規表現
-            string guidPattern = @"(\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?)";
+            var guidPattern = @"(\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?)";
 
             // すべての一致を検索
             var matches = Regex.Matches(documentText, guidPattern);
@@ -142,14 +138,14 @@ namespace boilersExtensions.Commands
 
             foreach (Match match in matches)
             {
-                string guidText = match.Groups[1].Value;
+                var guidText = match.Groups[1].Value;
                 if (uniqueGuids.Add(guidText))
                 {
                     result.Add(new GuidInfo(
-                        originalGuid: guidText,
-                        newGuid: null,
-                        isSelected: true,
-                        occurrences: CountOccurrences(documentText, guidText)
+                        guidText,
+                        null,
+                        true,
+                        CountOccurrences(documentText, guidText)
                     ));
                 }
             }
@@ -158,23 +154,24 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// テキスト内での特定の文字列の出現回数をカウント
+        ///     テキスト内での特定の文字列の出現回数をカウント
         /// </summary>
         private static int CountOccurrences(string text, string pattern)
         {
-            int count = 0;
-            int i = 0;
+            var count = 0;
+            var i = 0;
             while ((i = text.IndexOf(pattern, i)) != -1)
             {
                 i += pattern.Length;
                 count++;
             }
+
             return count;
         }
     }
 
     /// <summary>
-    /// GUIDの位置情報を保持するクラス
+    ///     GUIDの位置情報を保持するクラス
     /// </summary>
     public class GuidPositionInfo
     {
@@ -184,7 +181,7 @@ namespace boilersExtensions.Commands
     }
 
     /// <summary>
-    /// テキスト内の位置を表すクラス
+    ///     テキスト内の位置を表すクラス
     /// </summary>
     public class TextPosition
     {
@@ -193,23 +190,18 @@ namespace boilersExtensions.Commands
     }
 
     /// <summary>
-    /// Reactive版GUID情報を保持するクラス
+    ///     Reactive版GUID情報を保持するクラス
     /// </summary>
     public class GuidInfo : IDisposable
     {
-        private CompositeDisposable _disposables = new CompositeDisposable();
-
-        public ReactivePropertySlim<string> OriginalGuid { get; }
-        public ReactivePropertySlim<string> NewGuid { get; }
-        public ReactivePropertySlim<bool> IsSelected { get; }
-        public ReactivePropertySlim<int> Occurrences { get; }
+        private readonly CompositeDisposable _disposables = new CompositeDisposable();
 
         public GuidInfo()
         {
             OriginalGuid = new ReactivePropertySlim<string>().AddTo(_disposables);
             NewGuid = new ReactivePropertySlim<string>().AddTo(_disposables);
             IsSelected = new ReactivePropertySlim<bool>(true).AddTo(_disposables);
-            Occurrences = new ReactivePropertySlim<int>(0).AddTo(_disposables);
+            Occurrences = new ReactivePropertySlim<int>().AddTo(_disposables);
         }
 
         public GuidInfo(string originalGuid, string newGuid, bool isSelected, int occurrences)
@@ -220,9 +212,11 @@ namespace boilersExtensions.Commands
             Occurrences = new ReactivePropertySlim<int>(occurrences).AddTo(_disposables);
         }
 
-        public void Dispose()
-        {
-            _disposables.Dispose();
-        }
+        public ReactivePropertySlim<string> OriginalGuid { get; }
+        public ReactivePropertySlim<string> NewGuid { get; }
+        public ReactivePropertySlim<bool> IsSelected { get; }
+        public ReactivePropertySlim<int> Occurrences { get; }
+
+        public void Dispose() => _disposables.Dispose();
     }
 }

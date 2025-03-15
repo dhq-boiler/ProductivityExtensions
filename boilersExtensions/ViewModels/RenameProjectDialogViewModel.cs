@@ -1,42 +1,30 @@
-﻿using boilersExtensions.Properties;
-using EnvDTE;
-using Microsoft.VisualStudio.Shell;
-using Prism.Mvvm;
-using Reactive.Bindings;
-using Reactive.Bindings.Extensions;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Xml.Linq;
+using boilersExtensions.Properties;
+using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using Prism.Mvvm;
+using Reactive.Bindings;
+using Reactive.Bindings.Extensions;
+using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
 {
     internal class RenameProjectDialogViewModel : BindableBase, IDisposable
     {
-        private CompositeDisposable _compositeDisposable = new CompositeDisposable();
-
-        public ReactiveCommand RenameProjectCommand { get; }
-        public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
-
-        public ReactivePropertySlim<string> OldProjectName { get; } = new ReactivePropertySlim<string>();
-
-        public ReactivePropertySlim<string> NewProjectName { get; } = new ReactivePropertySlim<string>();
-
-        public System.Windows.Window Window { get; set; }
-
-        public AsyncPackage Package { get; set; }
-
-        public string Title => Resource.Title_RenameProject;
+        private readonly CompositeDisposable _compositeDisposable = new CompositeDisposable();
 
         public RenameProjectDialogViewModel()
         {
-            RenameProjectCommand = OldProjectName.CombineLatest(NewProjectName, (oldName, newName) => oldName != null && newName != null && !oldName.Equals(newName))
-                                                 .ToReactiveCommand();
+            RenameProjectCommand = OldProjectName.CombineLatest(NewProjectName,
+                    (oldName, newName) => oldName != null && newName != null && !oldName.Equals(newName))
+                .ToReactiveCommand();
             RenameProjectCommand.Subscribe(() =>
                 {
                     //プロジェクト名変更の手続き...
@@ -55,24 +43,46 @@ namespace boilersExtensions.ViewModels
                 .AddTo(_compositeDisposable);
         }
 
+        public ReactiveCommand RenameProjectCommand { get; }
+        public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
+
+        public ReactivePropertySlim<string> OldProjectName { get; } = new ReactivePropertySlim<string>();
+
+        public ReactivePropertySlim<string> NewProjectName { get; } = new ReactivePropertySlim<string>();
+
+        public Window Window { get; set; }
+
+        public AsyncPackage Package { get; set; }
+
+        public string Title => Resource.Title_RenameProject;
+
+        public void Dispose()
+        {
+            _compositeDisposable?.Dispose();
+            RenameProjectCommand?.Dispose();
+            CancelCommand?.Dispose();
+            OldProjectName?.Dispose();
+            NewProjectName?.Dispose();
+        }
+
         private async Task RenameProject()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(Package.DisposalToken);
-            
+
             // DTE オブジェクトの取得
-            DTE dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+            var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
 
             // アクティブなプロジェクトの配列を取得
-            Array activeSolutionProjects = dte.ActiveSolutionProjects as Array;
+            var activeSolutionProjects = dte.ActiveSolutionProjects as Array;
 
             // 配列から最初のプロジェクトを取得（通常、アクティブなプロジェクト）
-            Project activeProject = activeSolutionProjects?.GetValue(0) as Project;
+            var activeProject = activeSolutionProjects?.GetValue(0) as Project;
 
-            Projects projects = dte.Solution.Projects;
+            var projects = dte.Solution.Projects;
 
-            bool hasProjects = projects.Count != 0;
+            var hasProjects = projects.Count != 0;
 
-            bool isSameDir = false;
+            var isSameDir = false;
 
             if (hasProjects)
             {
@@ -100,7 +110,7 @@ namespace boilersExtensions.ViewModels
 
         private static void RenameInSolutionFile(string solutionFilePath, string oldProjectName, string newProjectName)
         {
-            string text = File.ReadAllText(solutionFilePath);
+            var text = File.ReadAllText(solutionFilePath);
             text = Regex.Replace(text, oldProjectName, newProjectName);
             File.WriteAllText(solutionFilePath, text);
         }
@@ -112,10 +122,8 @@ namespace boilersExtensions.ViewModels
             Rename(parentDir, Path.Combine(Path.GetDirectoryName(parentDir), NewProjectName.Value));
         }
 
-        private async Task RenameCSharpFiles(string solutionFileName)
-        {
+        private async Task RenameCSharpFiles(string solutionFileName) =>
             await NamespaceRenamer.RenameNamespaceAsync(solutionFileName, OldProjectName.Value, NewProjectName.Value);
-        }
 
         private void RenameRootNamespace(Project activeProject)
         {
@@ -135,12 +143,21 @@ namespace boilersExtensions.ViewModels
         private void RenameCsproj(Project activeProject)
         {
             var csprojFileName = activeProject?.FileName;
-            Rename(csprojFileName, Path.Combine(Path.GetDirectoryName(csprojFileName), NewProjectName.Value) + Path.GetExtension(csprojFileName));
+            Rename(csprojFileName,
+                Path.Combine(Path.GetDirectoryName(csprojFileName), NewProjectName.Value) +
+                Path.GetExtension(csprojFileName));
         }
 
-        #region https://qiita.com/soi/items/18d5b10b20f5e221efca
+        public void OnDialogOpened(Window window)
+        {
+            Window = window;
+            NewProjectName.Value = OldProjectName.Value;
+        }
+
+        #region https: //qiita.com/soi/items/18d5b10b20f5e221efca
+
         /// <summary>
-        /// 確実にファイル／ディレクトリの名前を変更する
+        ///     確実にファイル／ディレクトリの名前を変更する
         /// </summary>
         /// <param name="sourceFilePath">変更元ファイルパス</param>
         /// <param name="outputFilePath">変更後ファイルパス</param>
@@ -159,7 +176,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 確実にディレクトリの名前を変更する
+        ///     確実にディレクトリの名前を変更する
         /// </summary>
         /// <param name="sourceFilePath">変更元ファイルパス</param>
         /// <param name="outputFilePath">変更後ファイルパス</param>
@@ -167,7 +184,7 @@ namespace boilersExtensions.ViewModels
         {
             //Directory.Moveはなぜか、大文字小文字だけの変更だとエラーする
             //なので、大文字小文字だけの変更の場合は一度別のファイル名に変更する
-            if ((String.Compare(sourceFilePath, outputFilePath, true) == 0))
+            if (string.Compare(sourceFilePath, outputFilePath, true) == 0)
             {
                 var tempPath = GetSafeTempName(outputFilePath);
 
@@ -181,7 +198,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 指定したファイルパスが他のファイルパスとかぶらなくなるまで"_"を足して返す
+        ///     指定したファイルパスが他のファイルパスとかぶらなくなるまで"_"を足して返す
         /// </summary>
         private static string GetSafeTempName(string outputFilePath)
         {
@@ -190,24 +207,10 @@ namespace boilersExtensions.ViewModels
             {
                 outputFilePath += "_";
             }
+
             return outputFilePath;
         }
 
         #endregion //https://qiita.com/soi/items/18d5b10b20f5e221efca
-
-        public void OnDialogOpened(System.Windows.Window window)
-        {
-            this.Window = window;
-            NewProjectName.Value = OldProjectName.Value;
-        }
-
-        public void Dispose()
-        {
-            _compositeDisposable?.Dispose();
-            RenameProjectCommand?.Dispose();
-            CancelCommand?.Dispose();
-            OldProjectName?.Dispose();
-            NewProjectName?.Dispose();
-        }
     }
 }

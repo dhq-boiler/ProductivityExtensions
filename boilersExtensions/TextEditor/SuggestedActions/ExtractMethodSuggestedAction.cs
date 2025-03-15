@@ -1,27 +1,29 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.VisualStudio.Imaging.Interop;
-using Microsoft.VisualStudio.Language.Intellisense;
-using Microsoft.VisualStudio.Text;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using Microsoft.VisualStudio.Imaging.Interop;
+using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Text;
 
 namespace boilersExtensions.TextEditor.SuggestedActions
 {
     internal class ExtractMethodSuggestedAction : ISuggestedAction
     {
-        private ITrackingSpan m_span;
-        private ITextSnapshot m_snapshot;
+        private readonly ITextSnapshot m_snapshot;
+        private readonly ITrackingSpan m_span;
 
         public ExtractMethodSuggestedAction(ITrackingSpan span)
         {
             m_span = span;
             m_snapshot = span.TextBuffer.CurrentSnapshot;
         }
+
+        public string DefaultMethodName => "NewMethod";
 
         public void Dispose()
         {
@@ -34,20 +36,18 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             return false;
         }
 
-        public Task<IEnumerable<SuggestedActionSet>> GetActionSetsAsync(CancellationToken cancellationToken)
-        {
-            return Task.FromResult<IEnumerable<SuggestedActionSet>>(null);
-        }
+        public Task<IEnumerable<SuggestedActionSet>> GetActionSetsAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IEnumerable<SuggestedActionSet>>(null);
 
-        public Task<object> GetPreviewAsync(CancellationToken cancellationToken)
-        {
-            return Task.FromResult<object>(null);
-        }
+        public Task<object> GetPreviewAsync(CancellationToken cancellationToken) => Task.FromResult<object>(null);
 
         public void Invoke(CancellationToken cancellationToken)
         {
             var document = m_snapshot.GetOpenDocumentInCurrentContextWithChanges();
-            if (document == null) return;
+            if (document == null)
+            {
+                return;
+            }
 
             // 選択範囲のテキストを取得
             var selectedSpan = m_span.GetSpan(m_snapshot);
@@ -91,6 +91,13 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             }
         }
 
+        public bool HasActionSets => false;
+        public string DisplayText => "メソッドの抽出";
+        public ImageMoniker IconMoniker => default;
+        public string IconAutomationText => null;
+        public string InputGestureText => null;
+        public bool HasPreview => false;
+
         private (List<(string type, string name)> parameters, List<string> localVars) AnalyzeVariables(
             SyntaxNode node,
             SemanticModel semanticModel)
@@ -105,7 +112,10 @@ namespace boilersExtensions.TextEditor.SuggestedActions
                 // 読み取られる変数をパラメータとして追加
                 foreach (var variable in dataFlowAnalysis.ReadInside)
                 {
-                    if (dataFlowAnalysis.WrittenInside.Contains(variable)) continue;
+                    if (dataFlowAnalysis.WrittenInside.Contains(variable))
+                    {
+                        continue;
+                    }
 
                     var type = variable.GetType().ToString();
                     var name = variable.Name;
@@ -128,7 +138,10 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             List<string> localVariables)
         {
             var dataFlowAnalysis = semanticModel.AnalyzeDataFlow(node);
-            if (!dataFlowAnalysis.Succeeded) return "void";
+            if (!dataFlowAnalysis.Succeeded)
+            {
+                return "void";
+            }
 
             // 変更された変数が1つだけの場合、その型を返り値として使用
             var writtenOutside = dataFlowAnalysis.WrittenInside.Intersect(dataFlowAnalysis.WrittenOutside).ToList();
@@ -190,13 +203,5 @@ namespace boilersExtensions.TextEditor.SuggestedActions
 
             return selectedNode.Span.End;
         }
-
-        public bool HasActionSets => false;
-        public string DisplayText => "メソッドの抽出";
-        public ImageMoniker IconMoniker => default;
-        public string IconAutomationText => null;
-        public string InputGestureText => null;
-        public bool HasPreview => false;
-        public string DefaultMethodName => "NewMethod";
     }
 }
