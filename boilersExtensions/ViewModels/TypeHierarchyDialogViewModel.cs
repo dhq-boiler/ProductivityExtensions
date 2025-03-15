@@ -163,7 +163,9 @@ namespace boilersExtensions.ViewModels
                 System.Diagnostics.Debug.WriteLine($"Type Span: '{typeSpan.GetText()}', Full Type Span: Start={fullTypeSpan.Start}, Length={fullTypeSpan.Length}");
 
                 // 元の型名を表示
-                OriginalTypeName.Value = typeSymbol.ToDisplayString();
+                OriginalTypeName.Value = string.IsNullOrEmpty(typeSymbol.ContainingNamespace.ToString()) && actualTypeText.Contains(typeSymbol.ContainingNamespace.ToString())
+                    ? actualTypeText
+                    : $"{typeSymbol.ContainingNamespace}.{actualTypeText}";
 
                 // 実際のコードの表記に基づいてフォーマットを判定
                 bool usePrimitiveTypes = DeterminePrimitiveTypeUsage(actualTypeText);
