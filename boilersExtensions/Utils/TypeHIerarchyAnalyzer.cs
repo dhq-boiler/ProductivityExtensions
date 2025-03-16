@@ -415,7 +415,7 @@ namespace boilersExtensions.Utils
         ///     継承階層を含めた型置換候補を取得
         /// </summary>
         public static async Task<List<TypeHierarchyInfo>> GetTypeReplacementCandidatesAsync(
-    ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true, bool showUseSpecialTypes = false)
+    ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true, bool includeRelatedTypes = true, bool showUseSpecialTypes = false)
         {
             var candidates = new List<TypeHierarchyInfo>();
             var compilation = await document.Project.GetCompilationAsync();
@@ -528,7 +528,78 @@ namespace boilersExtensions.Utils
                 }
             }
 
+            if (includeRelatedTypes)
+            {
+                // Get related types by naming pattern, common usages, etc.
+                var relatedTypes = await FindRelatedTypesAsync(originalType, document, compilation);
+                foreach (var relatedType in relatedTypes)
+                {
+                    // Only add if not already in the list
+                    if (!candidates.Any(c => c.FullName == relatedType.ToDisplayString()))
+                    {
+                        candidates.Add(CreateTypeHierarchyInfo(relatedType, showUseSpecialTypes));
+                    }
+                }
+            }
+
             return candidates;
+        }
+
+        private static async Task<List<ITypeSymbol>> FindRelatedTypesAsync(ITypeSymbol originalType, Document document, Compilation compilation)
+        {
+            var relatedTypes = new List<ITypeSymbol>();
+
+            // Find types with similar names
+            string typeName = originalType.Name;
+            string searchPattern = typeName;
+
+            // For interface types, try finding implementation classes
+            if (originalType.TypeKind == TypeKind.Interface)
+            {
+                // Look for implementation classes
+                var implementingTypes = await SymbolFinder.FindImplementationsAsync(originalType as INamedTypeSymbol, document.Project.Solution);
+                foreach (var implementingType in implementingTypes)
+                {
+                    if (implementingType is ITypeSymbol typeSymbol)
+                    {
+                        relatedTypes.Add(typeSymbol);
+                    }
+                }
+
+                // For interfaces with "I" prefix, look for similar names without the "I"
+                if (typeName.StartsWith("I") && typeName.Length > 1)
+                {
+                    searchPattern = typeName.Substring(1);
+                }
+            }
+
+            // Search for types with similar names in all referenced assemblies
+            foreach (var assembly in compilation.References.Select(r => compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+            {
+                if (assembly != null)
+                {
+                    SearchForSimilarTypes(assembly.GlobalNamespace, searchPattern, relatedTypes, originalType);
+                }
+            }
+
+            return relatedTypes;
+        }
+
+        private static void SearchForSimilarTypes(INamespaceSymbol ns, string pattern, List<ITypeSymbol> relatedTypes, ITypeSymbol originalType)
+        {
+            foreach (var member in ns.GetMembers())
+            {
+                if (member is ITypeSymbol typeSymbol &&
+                    !SymbolEqualityComparer.Default.Equals(typeSymbol, originalType) &&
+                    typeSymbol.Name.Contains(pattern))
+                {
+                    relatedTypes.Add(typeSymbol);
+                }
+                else if (member is INamespaceSymbol subNamespace)
+                {
+                    SearchForSimilarTypes(subNamespace, pattern, relatedTypes, originalType);
+                }
+            }
         }
 
         // すべての型を収集するヘルパーメソッド

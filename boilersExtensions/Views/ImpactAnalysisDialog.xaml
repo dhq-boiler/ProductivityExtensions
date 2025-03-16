@@ -27,6 +27,14 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="2" />
         </Style>
+        <!--  Expanderのスタイル  -->
+        <Style x:Key="IssueExpanderStyle" TargetType="Expander">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#333333" />
+            <Setter Property="BorderBrush" Value="#555555" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Margin" Value="0,5,0,0" />
+        </Style>
         <!--  その他既存のスタイル  -->
     </Window.Resources>
 
@@ -151,7 +159,8 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
-            <TabItem Header="潜在的な問題" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <TabItem Header="潜在的な問題（従来表示）" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ListView
                     Background="#222222"
                     Foreground="White"
@@ -205,6 +214,179 @@
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
+            </TabItem>
+
+            <!--  グループ化された潜在的な問題のタブ  -->
+            <TabItem Header="潜在的な問題（整理済み）" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ScrollViewer Background="#222222">
+                    <ItemsControl ItemsSource="{Binding GroupedIssues}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}" Style="{StaticResource IssueExpanderStyle}">
+                                    <Expander.Header>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                FontWeight="Bold"
+                                                Text="{Binding IssueType}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Margin="10,0,0,0"
+                                                Text="{Binding Description}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2" Margin="5,0,0,0">
+                                                <Run Text="(" />
+                                                <Run Text="{Binding UniqueIssueCount, Mode=OneWay}" />
+                                                <Run Text=" 箇所 [元: " />
+                                                <Run Text="{Binding TotalIssueCount, Mode=OneWay}" />
+                                                <Run Text="], " />
+                                                <Run Text="{Binding AffectedFileCount, Mode=OneWay}" />
+                                                <Run Text=" ファイル)" />
+                                            </TextBlock>
+                                        </Grid>
+                                    </Expander.Header>
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!--  コードサンプル  -->
+                                        <Border
+                                            Grid.Row="0"
+                                            Margin="0,5,0,10"
+                                            Padding="10"
+                                            Background="#333333"
+                                            BorderBrush="#555555"
+                                            BorderThickness="1"
+                                            CornerRadius="3">
+                                            <TextBlock
+                                                FontFamily="Consolas"
+                                                Foreground="#CCCCCC"
+                                                Text="{Binding RepresentativeCodeSnippet}"
+                                                TextWrapping="Wrap" />
+                                        </Border>
+
+                                        <!--  提案  -->
+                                        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                                            <TextBlock FontWeight="Bold" Text="修正の提案:" />
+                                            <TextBlock
+                                                Margin="10,5,0,0"
+                                                Foreground="#CCCCCC"
+                                                Text="{Binding SuggestedFix}"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+
+                                        <!--  影響を受けるファイル一覧  -->
+                                        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+                                            <TextBlock FontWeight="Bold" Text="影響を受けるファイル:" />
+                                            <ItemsControl Margin="10,5,0,0" ItemsSource="{Binding AffectedFiles}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Foreground="#CCCCCC" Text="{Binding}" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!--  詳細な問題リスト  -->
+                                        <StackPanel Grid.Row="3">
+                                            <TextBlock FontWeight="Bold" Text="詳細な問題箇所:" />
+                                            <DataGrid
+                                                MaxHeight="200"
+                                                Margin="0,5,0,0"
+                                                AutoGenerateColumns="False"
+                                                Background="#333333"
+                                                BorderBrush="#555555"
+                                                BorderThickness="1"
+                                                Foreground="White"
+                                                GridLinesVisibility="All"
+                                                HeadersVisibility="Column"
+                                                IsReadOnly="True"
+                                                ItemsSource="{Binding Issues}">
+                                                <DataGrid.Resources>
+                                                    <!--  セルのスタイル  -->
+                                                    <Style TargetType="DataGridCell">
+                                                        <Setter Property="Foreground" Value="White" />
+                                                        <Setter Property="Background" Value="#444444" />
+                                                        <Setter Property="BorderBrush" Value="#555555" />
+                                                        <Setter Property="BorderThickness" Value="0,0,1,1" />
+                                                        <Setter Property="Padding" Value="5" />
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter Property="Background" Value="#0A78D7" />
+                                                                <Setter Property="Foreground" Value="White" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+
+                                                    <!--  ヘッダーのスタイル  -->
+                                                    <Style TargetType="DataGridColumnHeader">
+                                                        <Setter Property="Background" Value="#333333" />
+                                                        <Setter Property="Foreground" Value="White" />
+                                                        <Setter Property="Padding" Value="5" />
+                                                        <Setter Property="BorderBrush" Value="#555555" />
+                                                        <Setter Property="BorderThickness" Value="0,0,1,1" />
+                                                    </Style>
+                                                </DataGrid.Resources>
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn
+                                                        Width="200"
+                                                        Binding="{Binding FileName}"
+                                                        Header="ファイル">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="White" />
+                                                                <Setter Property="Margin" Value="5" />
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                    <DataGridTextColumn
+                                                        Width="50"
+                                                        Binding="{Binding LineNumber}"
+                                                        Header="行">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="White" />
+                                                                <Setter Property="Margin" Value="5" />
+                                                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                    <DataGridTemplateColumn Width="*" Header="コード">
+                                                        <DataGridTemplateColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <Button
+                                                                    Background="Transparent"
+                                                                    BorderBrush="Transparent"
+                                                                    Command="{Binding DataContext.NavigateToIssueCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Foreground="White">
+                                                                    <TextBlock
+                                                                        Foreground="White"
+                                                                        Text="{Binding CodeSnippet}"
+                                                                        TextTrimming="CharacterEllipsis"
+                                                                        ToolTip="{Binding CodeSnippet}" />
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </DataGridTemplateColumn.CellTemplate>
+                                                    </DataGridTemplateColumn>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </StackPanel>
+                                    </Grid>
+                                </Expander>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
 
