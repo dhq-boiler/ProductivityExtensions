@@ -692,9 +692,6 @@ namespace boilersExtensions.ViewModels
                         ReferenceType = $"{(symbol is IParameterSymbol ? "パラメータ" : "変数")}の使用 ({methodContext}内)"
                     };
 
-                    // ブックマークの初期状態を確認
-                    await CheckBookmarkStatusAsync(referenceInfo);
-
                     impactList.Add(referenceInfo);
                 }
 
@@ -722,32 +719,6 @@ namespace boilersExtensions.ViewModels
 
             (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
             dialog.Show();
-        }
-
-        // ブックマークの状態をチェックするメソッド
-        private async Task CheckBookmarkStatusAsync(TypeReferenceInfo reference)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            try
-            {
-                var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
-                if (dte == null)
-                    return;
-
-                // この方法では既存のブックマーク状態を直接確認できないため、
-                // 初期状態は全てfalseとし、UIの操作で変更していく方針としています
-                reference.IsBookmarked.Value = false;
-
-                // 注：既存のブックマーク状態を取得するためには、
-                // Visual Studio拡張APIの中でBookmark関連のサービスを
-                // 利用する必要があります。より高度なソリューションが必要な場合は
-                // IBookmarkServiceやIVsBookmarkServiceなどを検討してください。
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error checking bookmark status: {ex.Message}");
-            }
         }
 
         private async Task<string> GetLineTextAsync(Document document, int lineNumber)
