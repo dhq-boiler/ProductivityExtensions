@@ -925,9 +925,42 @@ namespace boilersExtensions.ViewModels
                         }
                     }
                 }
+                else if (eventSymbol.DeclaredAccessibility != correspondingEvent.DeclaredAccessibility)
+                {
+                    // アクセシビリティが異なる場合
+                    var references = await SymbolFinder.FindReferencesAsync(eventSymbol, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            issues.Add(await CreateEventAccessibilityIssue(eventSymbol, correspondingEvent, location));
+                        }
+                    }
+                }
             }
 
             return issues;
+        }
+
+        /// <summary>
+        /// イベントのアクセシビリティ不一致に関する問題を作成
+        /// </summary>
+        private async Task<PotentialIssue> CreateEventAccessibilityIssue(IEventSymbol originalEvent, IEventSymbol newEvent, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "イベントアクセシビリティの不一致",
+                Description = $"イベント '{originalEvent.Name}' のアクセシビリティが異なります: '{originalEvent.DeclaredAccessibility}' → '{newEvent.DeclaredAccessibility}'",
+                SuggestedFix = "アクセシビリティの変更により、一部のコードで参照できなくなる可能性があります。コードの構造を見直すか、アクセサメソッドの実装を検討してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
         }
 
         // イベントの互換性を検査するサンプルコード
