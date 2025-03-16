@@ -35,5 +35,20 @@ namespace boilersExtensions.Views
                 }
             }
         }
+
+        private void BookmarkCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && checkBox.Tag is TypeReferenceInfo reference)
+            {
+                if (DataContext is ImpactAnalysisViewModel viewModel)
+                {
+                    // イベントが2回発生するのを防ぐためにルーティングされたイベントを処理済みとしてマーク
+                    e.Handled = true;
+
+                    // ブックマークトグルコマンドを実行
+                    viewModel.ToggleBookmarkCommand.Execute(reference);
+                }
+            }
+        }
     }
 }

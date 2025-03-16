@@ -96,6 +96,17 @@
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="ブックマーク" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox 
+                                        IsChecked="{Binding IsBookmarked.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                        HorizontalAlignment="Center"
+                                        Click="BookmarkCheckBox_Click"
+                                        Tag="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn
                             Width="200"
                             Binding="{Binding FileName}"

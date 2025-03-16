@@ -680,7 +680,7 @@ namespace boilersExtensions.ViewModels
                     var containingMethod = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
                     string methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
 
-                    impactList.Add(new TypeReferenceInfo
+                    var referenceInfo = new TypeReferenceInfo
                     {
                         FilePath = location.Document.FilePath,
                         FileName = Path.GetFileName(location.Document.FilePath),
@@ -688,8 +688,15 @@ namespace boilersExtensions.ViewModels
                         Column = lineSpan.StartLinePosition.Character + 1,
                         Text = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line),
                         ReferenceType = $"{(symbol is IParameterSymbol ? "パラメータ" : "変数")}の使用 ({methodContext}内)"
-                    });
+                    };
+
+                    // ブックマークの初期状態を確認
+                    await CheckBookmarkStatusAsync(referenceInfo);
+
+                    impactList.Add(referenceInfo);
                 }
+
+
             }
 
             // 影響範囲ダイアログを表示
@@ -707,6 +714,32 @@ namespace boilersExtensions.ViewModels
 
             (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
             dialog.ShowDialog();
+        }
+
+        // ブックマークの状態をチェックするメソッド
+        private async Task CheckBookmarkStatusAsync(TypeReferenceInfo reference)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            try
+            {
+                var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                if (dte == null)
+                    return;
+
+                // この方法では既存のブックマーク状態を直接確認できないため、
+                // 初期状態は全てfalseとし、UIの操作で変更していく方針としています
+                reference.IsBookmarked.Value = false;
+
+                // 注：既存のブックマーク状態を取得するためには、
+                // Visual Studio拡張APIの中でBookmark関連のサービスを
+                // 利用する必要があります。より高度なソリューションが必要な場合は
+                // IBookmarkServiceやIVsBookmarkServiceなどを検討してください。
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking bookmark status: {ex.Message}");
+            }
         }
 
         private async Task<string> GetLineTextAsync(Document document, int lineNumber)

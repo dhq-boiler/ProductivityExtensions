@@ -31,7 +31,7 @@ namespace boilersExtensions.Utils
             })
             .AddTo(_compositeDisposable);
 
-            // 参照箇所に移動するコマンドを追加
+            // 参照箇所に移動するコマンド
             NavigateToReferenceCommand = new ReactiveCommand<TypeReferenceInfo>()
                 .AddTo(_compositeDisposable);
 
@@ -43,11 +43,25 @@ namespace boilersExtensions.Utils
                     }
                 })
                 .AddTo(_compositeDisposable);
+
+            // ブックマークトグルコマンド
+            ToggleBookmarkCommand = new ReactiveCommand<TypeReferenceInfo>()
+                .AddTo(_compositeDisposable);
+
+            ToggleBookmarkCommand.Subscribe(reference =>
+                {
+                    if (reference != null)
+                    {
+                        ToggleBookmark(reference);
+                    }
+                })
+                .AddTo(_compositeDisposable);
         }
 
         // コマンド
         public ReactiveCommand CloseCommand { get; }
         public ReactiveCommand<TypeReferenceInfo> NavigateToReferenceCommand { get; }
+        public ReactiveCommand<TypeReferenceInfo> ToggleBookmarkCommand { get; }
 
         // 影響分析の基本情報
         public string OriginalTypeName { get; set; }
@@ -114,6 +128,51 @@ namespace boilersExtensions.Utils
             });
         }
 
+        // ブックマークをトグルするメソッド
+        private void ToggleBookmark(TypeReferenceInfo reference)
+        {
+            // UIスレッドで実行
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                try
+                {
+                    // DTEサービスを取得
+                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    if (dte == null)
+                        return;
+
+                    // ファイルを開く (既に開いている場合は既存のウィンドウを取得)
+                    var window = dte.ItemOperations.OpenFile(reference.FilePath);
+                    if (window != null)
+                    {
+                        // TextDocumentを取得
+                        var textDoc = window.Document.Object("TextDocument") as EnvDTE.TextDocument;
+                        if (textDoc != null)
+                        {
+                            // 指定した行に移動
+                            var point = textDoc.StartPoint.CreateEditPoint();
+                            point.MoveToLineAndOffset(reference.LineNumber, 1); // 行の先頭に移動
+
+                            // カーソルを指定位置に設定
+                            textDoc.Selection.MoveToPoint(point);
+
+                            // ブックマークをトグル
+                            dte.ExecuteCommand("Edit.ToggleBookmark");
+
+                            // UIの状態を更新
+                            reference.IsBookmarked.Value = !reference.IsBookmarked.Value;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Bookmark toggle error: {ex.Message}");
+                }
+            });
+        }
+
         public void Dispose()
         {
             _compositeDisposable?.Dispose();
@@ -138,6 +197,9 @@ namespace boilersExtensions.Utils
         public int Column { get; set; }
         public string Text { get; set; }
         public string ReferenceType { get; set; } // Method parameter, variable declaration, etc.
+
+        // ブックマーク状態を保持するプロパティを追加
+        public ReactivePropertySlim<bool> IsBookmarked { get; } = new ReactivePropertySlim<bool>(false);
     }
 
     /// <summary>
