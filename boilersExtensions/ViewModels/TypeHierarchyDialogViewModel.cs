@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Utils;
@@ -699,6 +700,9 @@ namespace boilersExtensions.ViewModels
 
             }
 
+            // 潜在的な問題の分析を追加
+            var potentialIssues = await AnalyzePotentialIssues(symbol, _originalTypeSymbol, SelectedType.Value);
+
             // 影響範囲ダイアログを表示
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var dialog = new ImpactAnalysisDialog
@@ -708,7 +712,8 @@ namespace boilersExtensions.ViewModels
                     OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
                     NewTypeName = SelectedType.Value.DisplayName,
                     ReferencesCount = impactList.Count,
-                    References = impactList
+                    References = impactList,
+                    PotentialIssues = potentialIssues
                 }
             };
 
@@ -811,21 +816,474 @@ namespace boilersExtensions.ViewModels
             return issues;
         }
 
+        private async Task<List<PotentialIssue>> AnalyzePotentialIssues(ISymbol symbol, ITypeSymbol originalType, TypeHierarchyAnalyzer.TypeHierarchyInfo newTypeInfo)
+        {
+            var issues = new List<PotentialIssue>();
+
+            // Roslyn APIを使用してシンボルから型情報を取得
+            var solution = _document.Project.Solution;
+            var compilation = await _document.Project.GetCompilationAsync();
+
+            // 元の型と新しい型のシンボルを取得
+            var newTypeSymbol = await GetTypeSymbolFromFullName(newTypeInfo.FullName, compilation);
+
+            if (newTypeSymbol == null)
+                return issues;
+
+            // 元の型のメンバーを取得
+            var originalMembers = GetTypeMembers(originalType);
+            var newMembers = GetTypeMembers(newTypeSymbol);
+
+            // 欠落しているメソッドのチェック
+            foreach (var member in originalMembers.Where(m => m.Kind == SymbolKind.Method))
+            {
+                var method = (IMethodSymbol)member;
+
+                // 同名の新しいメソッドを検索
+                var correspondingMethod = newMembers
+                    .Where(m => m.Kind == SymbolKind.Method && m.Name == method.Name)
+                    .Cast<IMethodSymbol>()
+                    .FirstOrDefault();
+
+                if (correspondingMethod == null)
+                {
+                    // メソッドが見つからない - 最も深刻な問題
+                    var references = await SymbolFinder.FindReferencesAsync(method, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            // 参照ごとに問題を追加
+                            issues.Add(await CreateMethodMissingIssue(method, location));
+                        }
+                    }
+                }
+                else if (!AreMethodSignaturesCompatible(method, correspondingMethod))
+                {
+                    // シグネチャの不一致がある
+                    var references = await SymbolFinder.FindReferencesAsync(method, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            // 参照ごとに問題を追加
+                            issues.Add(await CreateMethodSignatureIssue(method, correspondingMethod, location));
+                        }
+                    }
+                }
+            }
+
+            // プロパティの不一致をチェック
+            foreach (var member in originalMembers.Where(m => m.Kind == SymbolKind.Property))
+            {
+                var property = (IPropertySymbol)member;
+
+                // 同名の新しいプロパティを検索
+                var correspondingProperty = newMembers
+                    .Where(m => m.Kind == SymbolKind.Property && m.Name == property.Name)
+                    .Cast<IPropertySymbol>()
+                    .FirstOrDefault();
+
+                if (correspondingProperty == null)
+                {
+                    // プロパティが見つからない
+                    var references = await SymbolFinder.FindReferencesAsync(property, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            issues.Add(await CreatePropertyMissingIssue(property, location));
+                        }
+                    }
+                }
+                else if (!IsTypeCompatible(property.Type, correspondingProperty.Type))
+                {
+                    // プロパティの型が互換性ない
+                    var references = await SymbolFinder.FindReferencesAsync(property, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            issues.Add(await CreatePropertyTypeIssue(property, correspondingProperty, location));
+                        }
+                    }
+                }
+            }
+
+            // イベントの不一致もチェック
+            // ...
+
+            return issues;
+        }
+
+        private async Task<INamedTypeSymbol> GetTypeSymbolFromFullName(string fullTypeName, Compilation compilation)
+        {
+            // ジェネリック型かどうかを判断
+            bool isGenericType = fullTypeName.Contains("<");
+
+            if (!isGenericType)
+            {
+                // 非ジェネリック型の場合は直接取得
+                return compilation.GetTypeByMetadataName(fullTypeName);
+            }
+
+            // ジェネリック型の場合、型引数を抽出
+            int genericStart = fullTypeName.IndexOf('<');
+            int genericEnd = fullTypeName.LastIndexOf('>');
+
+            if (genericStart < 0 || genericEnd < 0 || genericEnd <= genericStart)
+                return null;
+
+            // 基本型名（例：System.Collections.Generic.ICollection）
+            string baseTypeName = fullTypeName.Substring(0, genericStart);
+
+            // 型引数部分（例：<int>の中身）
+            string typeArgsString = fullTypeName.Substring(genericStart + 1, genericEnd - genericStart - 1);
+
+            // 型引数を分割（複数の場合はカンマで区切られている）
+            string[] typeArgNames = typeArgsString.Split(',').Select(arg => arg.Trim()).ToArray();
+            
+            // 正しいメタデータ名を取得
+            string metadataTypeName = baseTypeName;
+            if (isGenericType)
+            {
+                // 型パラメータの数を数える
+                int typeParamCount = typeArgNames.Length;
+                metadataTypeName = $"{baseTypeName}`{typeParamCount}";
+            }
+
+            // 型シンボルを取得
+            var baseType = compilation.GetTypeByMetadataName(metadataTypeName);
+            if (baseType == null)
+                return null;
+
+            // 型引数のシンボルを取得
+            var typeArgs = new List<ITypeSymbol>();
+            foreach (var argName in typeArgNames)
+            {
+                // プリミティブ型の場合の特殊処理
+                ITypeSymbol argType = null;
+                switch (argName.ToLowerInvariant())
+                {
+                    case "int":
+                        argType = compilation.GetSpecialType(SpecialType.System_Int32);
+                        break;
+                    case "string":
+                        argType = compilation.GetSpecialType(SpecialType.System_String);
+                        break;
+                    case "bool":
+                        argType = compilation.GetSpecialType(SpecialType.System_Boolean);
+                        break;
+                    case "double":
+                        argType = compilation.GetSpecialType(SpecialType.System_Double);
+                        break;
+                    case "decimal":
+                        argType = compilation.GetSpecialType(SpecialType.System_Decimal);
+                        break;
+                    // 他のプリミティブ型もここに追加
+                    default:
+                        // 非プリミティブ型の場合は再帰的に取得
+                        // 注意：これは入れ子のジェネリック型には対応していません
+                        argType = await GetTypeSymbolFromFullName(argName, compilation);
+                        break;
+                }
+
+                if (argType == null)
+                    return null;
+
+                typeArgs.Add(argType);
+            }
+
+            // ジェネリック型インスタンスを構築
+            return baseType.Construct(typeArgs.ToArray());
+        }
+
+        private async Task<PotentialIssue> CreateMethodMissingIssue(IMethodSymbol method, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "メソッド欠落",
+                Description = $"メソッド '{method.Name}' は新しい型に存在しません。",
+                SuggestedFix = $"新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
+        }
+
+        /// <summary>
+        /// 型のすべてのメンバー（メソッド、プロパティなど）を取得
+        /// </summary>
+        private IEnumerable<ISymbol> GetTypeMembers(ITypeSymbol typeSymbol)
+        {
+            var members = new List<ISymbol>();
+
+            // 直接のメンバーを取得
+            members.AddRange(typeSymbol.GetMembers());
+
+            // インターフェース実装のメンバーも含める
+            foreach (var iface in typeSymbol.AllInterfaces)
+            {
+                members.AddRange(iface.GetMembers());
+            }
+
+            // 基底クラスのメンバーも含める（オプション）
+            var baseType = typeSymbol.BaseType;
+            while (baseType != null && baseType.SpecialType != SpecialType.System_Object)
+            {
+                members.AddRange(baseType.GetMembers());
+                baseType = baseType.BaseType;
+            }
+
+            // メンバーをフィルタリング（特殊なメンバーを除外）
+            return members.Where(m =>
+                !m.IsImplicitlyDeclared &&
+                m.DeclaredAccessibility != Accessibility.Private &&
+                !m.IsStatic &&
+                m.Name != ".ctor" && // コンストラクタを除外
+                !m.Name.StartsWith("op_")); // 演算子オーバーロードを除外
+        }
+
+        /// <summary>
+        /// 2つのメソッドのシグネチャが互換性があるかチェック
+        /// </summary>
+        private bool AreMethodSignaturesCompatible(IMethodSymbol original, IMethodSymbol newMethod)
+        {
+            // パラメータ数が異なる場合は互換性なし
+            if (original.Parameters.Length != newMethod.Parameters.Length)
+                return false;
+
+            // 戻り値の型をチェック
+            if (!IsTypeCompatible(original.ReturnType, newMethod.ReturnType))
+                return false;
+
+            // 各パラメータの型をチェック
+            for (int i = 0; i < original.Parameters.Length; i++)
+            {
+                var origParam = original.Parameters[i];
+                var newParam = newMethod.Parameters[i];
+
+                if (!IsTypeCompatible(origParam.Type, newParam.Type))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 型の互換性チェック
+        /// </summary>
+        private bool IsTypeCompatible(ITypeSymbol originalType, ITypeSymbol newType)
+        {
+            // 同じ型は互換性あり
+            if (originalType.Equals(newType, SymbolEqualityComparer.Default))
+                return true;
+
+            // 数値型の場合、拡大変換は許容（int → longなど）
+            if (IsNumericType(originalType) && IsNumericType(newType))
+            {
+                return GetNumericTypeRank(newType) >= GetNumericTypeRank(originalType);
+            }
+
+            // 継承関係のチェック
+            if (originalType.TypeKind == TypeKind.Class && newType.TypeKind == TypeKind.Class)
+            {
+                var baseType = newType;
+                while (baseType != null)
+                {
+                    if (baseType.Equals(originalType, SymbolEqualityComparer.Default))
+                        return true;
+                    baseType = baseType.BaseType;
+                }
+            }
+
+            // インターフェース実装のチェック
+            if (originalType.TypeKind == TypeKind.Interface)
+            {
+                return newType.AllInterfaces.Any(i =>
+                    i.Equals(originalType, SymbolEqualityComparer.Default));
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 数値型かどうかをチェック
+        /// </summary>
+        private bool IsNumericType(ITypeSymbol type)
+        {
+            switch (type.SpecialType)
+            {
+                case SpecialType.System_Byte:
+                case SpecialType.System_SByte:
+                case SpecialType.System_Int16:
+                case SpecialType.System_UInt16:
+                case SpecialType.System_Int32:
+                case SpecialType.System_UInt32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_UInt64:
+                case SpecialType.System_Single:
+                case SpecialType.System_Double:
+                case SpecialType.System_Decimal:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 数値型のランク（サイズ）を取得
+        /// </summary>
+        private int GetNumericTypeRank(ITypeSymbol type)
+        {
+            switch (type.SpecialType)
+            {
+                case SpecialType.System_Byte:
+                case SpecialType.System_SByte:
+                    return 1;
+                case SpecialType.System_Int16:
+                case SpecialType.System_UInt16:
+                    return 2;
+                case SpecialType.System_Int32:
+                case SpecialType.System_UInt32:
+                    return 3;
+                case SpecialType.System_Int64:
+                case SpecialType.System_UInt64:
+                    return 4;
+                case SpecialType.System_Single:
+                    return 5;
+                case SpecialType.System_Double:
+                    return 6;
+                case SpecialType.System_Decimal:
+                    return 7;
+                default:
+                    return 0;
+            }
+        }
+
+        /// <summary>
+        /// メソッドシグネチャの不一致に関する問題を作成
+        /// </summary>
+        private async Task<PotentialIssue> CreateMethodSignatureIssue(IMethodSymbol original, IMethodSymbol newMethod, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            // シグネチャの違いを特定
+            string incompatibilityDetails = "";
+
+            // 戻り値の型が異なる場合
+            if (!original.ReturnType.Equals(newMethod.ReturnType, SymbolEqualityComparer.Default))
+            {
+                incompatibilityDetails += $"戻り値の型が異なります: '{original.ReturnType}' → '{newMethod.ReturnType}' ";
+            }
+
+            // パラメータの違いを確認
+            for (int i = 0; i < original.Parameters.Length; i++)
+            {
+                var origParam = original.Parameters[i];
+                var newParam = newMethod.Parameters[i];
+
+                if (!origParam.Type.Equals(newParam.Type, SymbolEqualityComparer.Default))
+                {
+                    incompatibilityDetails += $"パラメータ #{i + 1} ({origParam.Name}) の型が異なります: '{origParam.Type}' → '{newParam.Type}' ";
+                }
+            }
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "メソッドシグネチャの不一致",
+                Description = $"メソッド '{original.Name}' のシグネチャが新しい型では異なります。{incompatibilityDetails}",
+                SuggestedFix = "メソッド呼び出しを修正するか、アダプターを実装して互換性を確保してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
+        }
+
+        /// <summary>
+        /// 指定された行のコードスニペットを取得
+        /// </summary>
+        private async Task<string> GetCodeSnippet(Document document, int lineNumber, int contextLines = 1)
+        {
+            var sourceText = await document.GetTextAsync();
+            var lines = sourceText.Lines;
+
+            // 範囲内に収める
+            int startLine = Math.Max(0, lineNumber - contextLines);
+            int endLine = Math.Min(lines.Count - 1, lineNumber + contextLines);
+
+            var snippetBuilder = new StringBuilder();
+
+            // 前後の行を含めてスニペットを構築
+            for (int i = startLine; i <= endLine; i++)
+            {
+                var line = lines[i];
+                var lineText = sourceText.GetSubText(line.Span).ToString();
+
+                // 現在の行を強調表示
+                if (i == lineNumber)
+                {
+                    snippetBuilder.AppendLine($"→ {lineText}");
+                }
+                else
+                {
+                    snippetBuilder.AppendLine($"  {lineText}");
+                }
+            }
+
+            return snippetBuilder.ToString();
+        }
+
+        private async Task<PotentialIssue> CreatePropertyMissingIssue(IPropertySymbol property, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "プロパティ欠落",
+                Description = $"プロパティ '{property.Name}' は新しい型に存在しません。",
+                SuggestedFix = $"新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
+        }
+
+        private async Task<PotentialIssue> CreatePropertyTypeIssue(IPropertySymbol original, IPropertySymbol newProperty, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "プロパティ型の不一致",
+                Description = $"プロパティ '{original.Name}' の型が異なります: '{original.Type}' → '{newProperty.Type}'",
+                SuggestedFix = "型変換または拡張メソッドを使用して互換性を確保することを検討してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
+        }
+
         public class ImpactAnalysisResult
         {
             public string OriginalType { get; set; }
             public string NewType { get; set; }
             public int TotalReferences { get; set; }
             public List<PotentialIssue> PotentialIssues { get; set; }
-        }
-
-        public class PotentialIssue
-        {
-            public string FilePath { get; set; }
-            public int LineNumber { get; set; }
-            public string IssueType { get; set; } // MethodMissing, PropertyMissing など
-            public string Description { get; set; }
-            public string SuggestedFix { get; set; }
         }
 
         #endregion
