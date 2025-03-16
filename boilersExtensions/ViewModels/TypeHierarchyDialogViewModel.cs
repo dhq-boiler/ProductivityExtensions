@@ -888,10 +888,180 @@ namespace boilersExtensions.ViewModels
                 }
             }
 
-            // イベントの不一致もチェック
-            // ...
+            // イベントの不一致をチェック
+            foreach (var member in originalMembers.Where(m => m.Kind == SymbolKind.Event))
+            {
+                var eventSymbol = (IEventSymbol)member;
+
+                // 同名の新しいイベントを検索
+                var correspondingEvent = newMembers
+                    .Where(m => m.Kind == SymbolKind.Event && m.Name == eventSymbol.Name)
+                    .Cast<IEventSymbol>()
+                    .FirstOrDefault();
+
+                if (correspondingEvent == null)
+                {
+                    // イベントが見つからない場合
+                    var references = await SymbolFinder.FindReferencesAsync(eventSymbol, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            issues.Add(await CreateEventMissingIssue(eventSymbol, location));
+                        }
+                    }
+                }
+                else if (!AreEventTypesCompatible(eventSymbol, correspondingEvent))
+                {
+                    // イベントの型が互換性ない場合
+                    var references = await SymbolFinder.FindReferencesAsync(eventSymbol, solution);
+
+                    foreach (var reference in references)
+                    {
+                        foreach (var location in reference.Locations)
+                        {
+                            issues.Add(await CreateEventTypeIssue(eventSymbol, correspondingEvent, location));
+                        }
+                    }
+                }
+            }
 
             return issues;
+        }
+
+        // イベントの互換性を検査するサンプルコード
+        public async Task<List<string>> CheckEventCompatibility(INamedTypeSymbol originalType, INamedTypeSymbol newType, Microsoft.CodeAnalysis.Solution solution)
+        {
+            var issues = new List<string>();
+
+            // 元の型のすべてのイベントを取得
+            var originalEvents = originalType.GetMembers()
+                .Where(m => m.Kind == SymbolKind.Event)
+                .Cast<IEventSymbol>()
+                .ToList();
+
+            // 新しい型のすべてのイベントを取得
+            var newEvents = newType.GetMembers()
+                .Where(m => m.Kind == SymbolKind.Event)
+                .Cast<IEventSymbol>()
+                .ToList();
+
+            // 各イベントをチェック
+            foreach (var originalEvent in originalEvents)
+            {
+                // 新しい型に同名のイベントがあるか確認
+                var correspondingEvent = newEvents.FirstOrDefault(e => e.Name == originalEvent.Name);
+
+                if (correspondingEvent == null)
+                {
+                    // イベントが見つからない場合
+                    issues.Add($"イベント '{originalEvent.Name}' は新しい型に存在しません");
+
+                    // このイベントへの参照を探す
+                    var references = await SymbolFinder.FindReferencesAsync(originalEvent, solution);
+                    foreach (var reference in references)
+                    {
+                        issues.Add($"  - 参照箇所: {reference.Definition.Name}, {reference.Locations.Count()}箇所");
+                    }
+                }
+                else
+                {
+                    // イベントデリゲート型の互換性を確認
+                    if (!AreEventTypesCompatible(originalEvent, correspondingEvent))
+                    {
+                        issues.Add($"イベント '{originalEvent.Name}' のデリゲート型が不一致: " +
+                                   $"'{originalEvent.Type.ToDisplayString()}' → '{correspondingEvent.Type.ToDisplayString()}'");
+                    }
+
+                    // アクセシビリティの違いをチェック
+                    if (originalEvent.DeclaredAccessibility != correspondingEvent.DeclaredAccessibility)
+                    {
+                        issues.Add($"イベント '{originalEvent.Name}' のアクセシビリティが異なります: " +
+                                   $"'{originalEvent.DeclaredAccessibility}' → '{correspondingEvent.DeclaredAccessibility}'");
+                    }
+                }
+            }
+
+            return issues;
+        }
+
+        // イベントデリゲート型の互換性チェック
+        private bool AreEventTypesCompatible(IEventSymbol originalEvent, IEventSymbol newEvent)
+        {
+            // 同じ型は互換性あり
+            if (SymbolEqualityComparer.Default.Equals(originalEvent.Type, newEvent.Type))
+                return true;
+
+            // デリゲート型を取得
+            if (originalEvent.Type is INamedTypeSymbol originalDelegateType &&
+                newEvent.Type is INamedTypeSymbol newDelegateType)
+            {
+                // デリゲートメソッド（Invoke）のシグネチャを比較
+                var originalInvokeMethod = originalDelegateType.DelegateInvokeMethod;
+                var newInvokeMethod = newDelegateType.DelegateInvokeMethod;
+
+                if (originalInvokeMethod == null || newInvokeMethod == null)
+                    return false;
+
+                // 戻り値の型をチェック
+                if (!SymbolEqualityComparer.Default.Equals(originalInvokeMethod.ReturnType, newInvokeMethod.ReturnType))
+                    return false;
+
+                // パラメータの数が違う場合は互換性なし
+                if (originalInvokeMethod.Parameters.Length != newInvokeMethod.Parameters.Length)
+                    return false;
+
+                // 各パラメータの型をチェック
+                for (int i = 0; i < originalInvokeMethod.Parameters.Length; i++)
+                {
+                    var originalParam = originalInvokeMethod.Parameters[i];
+                    var newParam = newInvokeMethod.Parameters[i];
+
+                    // パラメータの型が互換性ない場合
+                    if (!SymbolEqualityComparer.Default.Equals(originalParam.Type, newParam.Type))
+                        return false;
+                }
+
+                // すべてのチェックをパスしたら互換性あり
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task<PotentialIssue> CreateEventMissingIssue(IEventSymbol eventSymbol, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "イベント欠落",
+                Description = $"イベント '{eventSymbol.Name}' は新しい型に存在しません。",
+                SuggestedFix = $"新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
+        }
+
+        private async Task<PotentialIssue> CreateEventTypeIssue(IEventSymbol originalEvent, IEventSymbol newEvent, ReferenceLocation location)
+        {
+            var lineSpan = location.Location.GetLineSpan();
+            var filePath = location.Document.FilePath;
+
+            return new PotentialIssue
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                IssueType = "イベント型の不一致",
+                Description = $"イベント '{originalEvent.Name}' のデリゲート型が異なります: '{originalEvent.Type}' → '{newEvent.Type}'",
+                SuggestedFix = "イベントハンドラーに適応するためのアダプターメソッドの実装を検討してください。",
+                CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
+            };
         }
 
         private ITypeSymbol GetTypeSymbolFromTypeInfo(TypeHierarchyAnalyzer.TypeHierarchyInfo typeInfo, Compilation compilation)
