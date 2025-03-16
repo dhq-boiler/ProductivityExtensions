@@ -257,25 +257,47 @@ namespace boilersExtensions.Utils
         /// <summary>
         /// 型シンボルから型階層情報を作成
         /// </summary>
-        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes)
+        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes, ITypeSymbol originalTypeSymbol = null)
         {
             string displayName;
-            
+
             if (typeSymbol is INamedTypeSymbol namedType && namedType.IsGenericType)
             {
-                // フォーマットオプションを設定
-                var format = new SymbolDisplayFormat(
-                    typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
-                    genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
+                // 元の型がジェネリック型であるかを確認
+                INamedTypeSymbol originalNamedType = originalTypeSymbol as INamedTypeSymbol;
+                bool canReplaceTypeParams = originalNamedType != null &&
+                                         originalNamedType.IsGenericType &&
+                                         namedType.TypeParameters.Length == originalNamedType.TypeArguments.Length;
 
-                // 元の型がプリミティブ型表記を使っている場合はオプションを追加
-                if (showUseSpecialTypes)
+                if (canReplaceTypeParams)
                 {
-                    format = format.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
-                }
+                    try
+                    {
+                        // 基本型名（ジェネリックパラメータなし）を取得
+                        string baseName = namedType.Name;
 
-                // このフォーマットで表示すると設定に応じて「List<int>」または「List<Int32>」のような形式になる
-                displayName = namedType.ToDisplayString(format);
+                        // 型パラメータを元の型から取得
+                        var typeArgs = string.Join(", ", originalNamedType.TypeArguments.Select(arg =>
+                            showUseSpecialTypes
+                                ? arg.ToDisplayString(new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
+                                : arg.ToDisplayString()
+                        ));
+
+                        // 最終的な表示名を作成 (例: IReadOnlyCollection<string>)
+                        displayName = $"{baseName}<{typeArgs}>";
+                    }
+                    catch (Exception ex)
+                    {
+                        // エラーが発生した場合は標準のフォーマットを使用
+                        Debug.WriteLine($"Error replacing type parameters: {ex.Message}");
+                        displayName = GetDefaultDisplayName(namedType, showUseSpecialTypes);
+                    }
+                }
+                else
+                {
+                    // 型パラメータの数が一致しない場合は標準のフォーマットを使用
+                    displayName = GetDefaultDisplayName(namedType, showUseSpecialTypes);
+                }
             }
             else
             {
@@ -306,6 +328,21 @@ namespace boilersExtensions.Utils
             };
 
             return typeInfo;
+        }
+
+        // 標準のフォーマットで型名を取得するヘルパーメソッド
+        private static string GetDefaultDisplayName(INamedTypeSymbol namedType, bool showUseSpecialTypes)
+        {
+            var format = new SymbolDisplayFormat(
+                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
+                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
+
+            if (showUseSpecialTypes)
+            {
+                format = format.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+            }
+
+            return namedType.ToDisplayString(format);
         }
 
         /// <summary>
@@ -484,7 +521,7 @@ namespace boilersExtensions.Utils
 
                         foreach (var type in matchingTypes)
                         {
-                            candidates.Add(CreateTypeHierarchyInfo(type, showUseSpecialTypes));
+                            candidates.Add(CreateTypeHierarchyInfo(type, showUseSpecialTypes, originalType));
                             Debug.WriteLine($"Added pattern-matched type: {type.ToDisplayString()}");
                         }
                     }

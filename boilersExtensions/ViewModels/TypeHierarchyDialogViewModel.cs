@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -702,6 +703,8 @@ namespace boilersExtensions.ViewModels
 
             // 潜在的な問題の分析を追加
             var potentialIssues = await AnalyzePotentialIssues(symbol, _originalTypeSymbol, SelectedType.Value);
+            var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
+            rcPotentialIssues.AddRange(potentialIssues);
 
             // 影響範囲ダイアログを表示
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -713,7 +716,7 @@ namespace boilersExtensions.ViewModels
                     NewTypeName = SelectedType.Value.DisplayName,
                     ReferencesCount = impactList.Count,
                     References = impactList,
-                    PotentialIssues = potentialIssues
+                    PotentialIssues = rcPotentialIssues
                 }
             };
 
@@ -825,7 +828,7 @@ namespace boilersExtensions.ViewModels
             var compilation = await _document.Project.GetCompilationAsync();
 
             // 元の型と新しい型のシンボルを取得
-            var newTypeSymbol = await GetTypeSymbolFromFullName(newTypeInfo.FullName, compilation);
+            var newTypeSymbol = GetTypeSymbolFromTypeInfo(newTypeInfo, compilation);
 
             if (newTypeSymbol == null)
                 return issues;
@@ -918,6 +921,49 @@ namespace boilersExtensions.ViewModels
             // ...
 
             return issues;
+        }
+
+        private ITypeSymbol GetTypeSymbolFromTypeInfo(TypeHierarchyAnalyzer.TypeHierarchyInfo typeInfo, Compilation compilation)
+        {
+            // 名前空間が指定されている場合はそれを使用
+            if (!string.IsNullOrEmpty(typeInfo.RequiredNamespace))
+            {
+                string fullName = $"{typeInfo.RequiredNamespace}.{typeInfo.DisplayName}";
+
+                // ジェネリック型の場合は`1などのメタデータ表記に変換
+                string metadataName = ConvertToMetadataName(fullName);
+                var typeSymbol = compilation.GetTypeByMetadataName(metadataName);
+                if (typeSymbol != null)
+                    return typeSymbol;
+            }
+
+            // フルネームをそのまま使用
+            string metadataFullName = ConvertToMetadataName(typeInfo.FullName);
+            return compilation.GetTypeByMetadataName(metadataFullName);
+        }
+
+        // ジェネリック型をメタデータ名に変換するヘルパー
+        private string ConvertToMetadataName(string typeName)
+        {
+            // 例: "List<T>" -> "List`1"
+            if (typeName.Contains("<"))
+            {
+                int startIdx = typeName.IndexOf('<');
+                int endIdx = typeName.LastIndexOf('>');
+
+                if (startIdx > 0 && endIdx > startIdx)
+                {
+                    string baseName = typeName.Substring(0, startIdx);
+                    string typeParams = typeName.Substring(startIdx + 1, endIdx - startIdx - 1);
+
+                    // カンマの数をカウントして型パラメータの数を計算
+                    int paramCount = typeParams.Count(c => c == ',') + 1;
+
+                    return $"{baseName}`{paramCount}";
+                }
+            }
+
+            return typeName;
         }
 
         private async Task<INamedTypeSymbol> GetTypeSymbolFromFullName(string fullTypeName, Compilation compilation)
