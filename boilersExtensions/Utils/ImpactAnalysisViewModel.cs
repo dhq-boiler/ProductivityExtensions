@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.VisualStudio.Shell;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Disposables;
@@ -29,10 +30,24 @@ namespace boilersExtensions.Utils
                 Window?.Close();
             })
             .AddTo(_compositeDisposable);
+
+            // 参照箇所に移動するコマンドを追加
+            NavigateToReferenceCommand = new ReactiveCommand<TypeReferenceInfo>()
+                .AddTo(_compositeDisposable);
+
+            NavigateToReferenceCommand.Subscribe(reference =>
+                {
+                    if (reference != null)
+                    {
+                        NavigateToReference(reference);
+                    }
+                })
+                .AddTo(_compositeDisposable);
         }
 
         // コマンド
         public ReactiveCommand CloseCommand { get; }
+        public ReactiveCommand<TypeReferenceInfo> NavigateToReferenceCommand { get; }
 
         // 影響分析の基本情報
         public string OriginalTypeName { get; set; }
@@ -47,6 +62,57 @@ namespace boilersExtensions.Utils
 
         // ダイアログへの参照
         public Window Window { get; set; }
+
+        // 参照箇所に移動するメソッド
+        private void NavigateToReference(TypeReferenceInfo reference)
+        {
+            // UIスレッドで実行
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                try
+                {
+                    // DTEサービスを取得
+                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    if (dte == null)
+                        return;
+
+                    // ファイルを開く
+                    var window = dte.ItemOperations.OpenFile(reference.FilePath);
+                    if (window != null)
+                    {
+                        // TextDocumentを取得
+                        var textDoc = window.Document.Object("TextDocument") as EnvDTE.TextDocument;
+                        if (textDoc != null)
+                        {
+                            // 指定した行にカーソルを移動
+                            var point = textDoc.StartPoint.CreateEditPoint();
+                            point.MoveToLineAndOffset(reference.LineNumber, reference.Column);
+
+                            // 選択状態にする
+                            var line = textDoc.StartPoint.CreateEditPoint();
+                            line.MoveToLineAndOffset(reference.LineNumber, 1);
+                            var lineEnd = line.CreateEditPoint();
+                            lineEnd.EndOfLine();
+
+                            // 行全体を選択
+                            textDoc.Selection.MoveToPoint(line);
+                            textDoc.Selection.MoveToPoint(lineEnd, true);
+
+                            // エディタにフォーカスを設定
+                            window.Activate();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+                    MessageBox.Show($"参照箇所への移動中にエラーが発生しました: {ex.Message}",
+                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            });
+        }
 
         public void Dispose()
         {

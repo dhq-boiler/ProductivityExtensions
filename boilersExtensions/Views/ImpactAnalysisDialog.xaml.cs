@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using boilersExtensions.Utils;
 
 namespace boilersExtensions.Views
@@ -19,6 +21,18 @@ namespace boilersExtensions.Views
             if (DataContext is ImpactAnalysisViewModel viewModel)
             {
                 viewModel.OnDialogOpened(this);
+            }
+        }
+
+        private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var dataGrid = sender as DataGrid;
+            if (dataGrid != null && dataGrid.SelectedItem is TypeReferenceInfo selectedReference)
+            {
+                if (DataContext is ImpactAnalysisViewModel viewModel)
+                {
+                    viewModel.NavigateToReferenceCommand.Execute(selectedReference);
+                }
             }
         }
     }

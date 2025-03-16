@@ -68,7 +68,8 @@
                     GridLinesVisibility="All"
                     HeadersVisibility="All"
                     IsReadOnly="True"
-                    ItemsSource="{Binding References}">
+                    ItemsSource="{Binding References}"
+                    MouseDoubleClick="DataGrid_MouseDoubleClick">
                     <DataGrid.Resources>
                         <!--  セル全体のスタイル  -->
                         <Style TargetType="DataGridCell">
