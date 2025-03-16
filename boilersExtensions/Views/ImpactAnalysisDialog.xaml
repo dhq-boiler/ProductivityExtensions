@@ -11,6 +11,7 @@
     Height="600"
     Background="#1F1F1F"
     ResizeMode="CanResize"
+    Topmost="True"
     mc:Ignorable="d">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />

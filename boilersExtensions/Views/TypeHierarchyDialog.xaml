@@ -10,8 +10,9 @@
     Width="640"
     Height="480"
     Background="#1F1F1F"
-    ResizeMode="CanResize"
     Closing="TypeHierarchyDialog_OnClosing"
+    ResizeMode="CanResize"
+    Topmost="True"
     mc:Ignorable="d">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />

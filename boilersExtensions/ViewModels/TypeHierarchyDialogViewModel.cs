@@ -713,7 +713,7 @@ namespace boilersExtensions.ViewModels
             };
 
             (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
-            dialog.ShowDialog();
+            dialog.Show();
         }
 
         // ブックマークの状態をチェックするメソッド
