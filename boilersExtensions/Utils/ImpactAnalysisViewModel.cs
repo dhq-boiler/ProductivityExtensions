@@ -45,6 +45,19 @@ namespace boilersExtensions.Utils
                 })
                 .AddTo(_compositeDisposable);
 
+            // 特定の問題に移動するコマンド
+            NavigateToIssueCommand = new ReactiveCommand<PotentialIssue>()
+                .AddTo(_compositeDisposable);
+
+            NavigateToIssueCommand.Subscribe(issue =>
+                {
+                    if (issue != null)
+                    {
+                        NavigateToIssue(issue);
+                    }
+                })
+                .AddTo(_compositeDisposable);
+
             // ブックマークトグルコマンド
             ToggleBookmarkCommand = new ReactiveCommand<TypeReferenceInfo>()
                 .AddTo(_compositeDisposable);
@@ -63,6 +76,7 @@ namespace boilersExtensions.Utils
         // コマンド
         public ReactiveCommand CloseCommand { get; }
         public ReactiveCommand<TypeReferenceInfo> NavigateToReferenceCommand { get; }
+        public ReactiveCommand<PotentialIssue> NavigateToIssueCommand { get; }
         public ReactiveCommand<TypeReferenceInfo> ToggleBookmarkCommand { get; }
 
         // 影響分析の基本情報
@@ -75,6 +89,10 @@ namespace boilersExtensions.Utils
 
         // 潜在的な問題のリスト
         public ReactiveCollection<PotentialIssue> PotentialIssues { get; set; } = new ReactiveCollection<PotentialIssue>();
+
+        // グループ化された問題のリスト
+        public ReactiveCollection<IssueGroupViewModel> GroupedIssues { get; set; } = new ReactiveCollection<IssueGroupViewModel>();
+
         public ReadOnlyReactivePropertySlim<bool> HasPotentialIssues => PotentialIssues
             .CollectionChangedAsObservable()
             .Select(_ => PotentialIssues.Count > 0)
@@ -82,6 +100,32 @@ namespace boilersExtensions.Utils
 
         // ダイアログへの参照
         public Window Window { get; set; }
+
+        // 問題をグループ化するメソッド
+        public void GroupIssues()
+        {
+            GroupedIssues.Clear();
+
+            // IssueTypeとDescriptionでグループ化
+            var groups = PotentialIssues
+                .GroupBy(issue => new { issue.IssueType, issue.Description })
+                .ToList();
+
+            foreach (var group in groups)
+            {
+                var issueGroup = new IssueGroupViewModel
+                {
+                    IssueType = group.Key.IssueType,
+                    Description = group.Key.Description,
+                    SuggestedFix = group.First().SuggestedFix // グループの最初の問題から提案を取得
+                };
+
+                // 問題を追加（内部でファイルパスと行番号による重複排除が行われる）
+                issueGroup.AddIssues(group.ToList());
+
+                GroupedIssues.Add(issueGroup);
+            }
+        }
 
         // 参照箇所に移動するメソッド
         private void NavigateToReference(TypeReferenceInfo reference)
@@ -134,6 +178,57 @@ namespace boilersExtensions.Utils
             });
         }
 
+        // 問題箇所に移動するメソッド
+        private void NavigateToIssue(PotentialIssue issue)
+        {
+            // UIスレッドで実行
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                try
+                {
+                    // DTEサービスを取得
+                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    if (dte == null)
+                        return;
+
+                    // ファイルを開く
+                    var window = dte.ItemOperations.OpenFile(issue.FilePath);
+                    if (window != null)
+                    {
+                        // TextDocumentを取得
+                        var textDoc = window.Document.Object("TextDocument") as EnvDTE.TextDocument;
+                        if (textDoc != null)
+                        {
+                            // 指定した行にカーソルを移動
+                            var point = textDoc.StartPoint.CreateEditPoint();
+                            point.MoveToLineAndOffset(issue.LineNumber, 1);
+
+                            // 選択状態にする
+                            var line = textDoc.StartPoint.CreateEditPoint();
+                            line.MoveToLineAndOffset(issue.LineNumber, 1);
+                            var lineEnd = line.CreateEditPoint();
+                            lineEnd.EndOfLine();
+
+                            // 行全体を選択
+                            textDoc.Selection.MoveToPoint(line);
+                            textDoc.Selection.MoveToPoint(lineEnd, true);
+
+                            // エディタにフォーカスを設定
+                            window.Activate();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+                    MessageBox.Show($"問題箇所への移動中にエラーが発生しました: {ex.Message}",
+                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            });
+        }
+
         // ダイアログが開かれた時にブックマーク状態を初期化
         public async void OnDialogOpened(Window window)
         {
@@ -141,6 +236,9 @@ namespace boilersExtensions.Utils
 
             // 各参照のブックマーク状態を初期化
             await InitializeBookmarkStatesAsync();
+
+            // 問題をグループ化
+            GroupIssues();
         }
 
         // 参照のブックマーク状態を初期化するメソッド
@@ -167,6 +265,11 @@ namespace boilersExtensions.Utils
         {
             _compositeDisposable?.Dispose();
             CloseCommand?.Dispose();
+            // その他のReactivePropertyの解放処理
+            foreach (var group in GroupedIssues)
+            {
+                group.IsExpanded?.Dispose();
+            }
         }
     }
 

@@ -1491,8 +1491,8 @@ namespace boilersExtensions.ViewModels
             var lines = sourceText.Lines;
 
             // 範囲内に収める
-            int startLine = Math.Max(0, lineNumber - contextLines);
-            int endLine = Math.Min(lines.Count - 1, lineNumber + contextLines);
+            int startLine = Math.Max(0, lineNumber - contextLines + 1);
+            int endLine = Math.Min(lines.Count - 1, lineNumber + contextLines + 1);
 
             var snippetBuilder = new StringBuilder();
 

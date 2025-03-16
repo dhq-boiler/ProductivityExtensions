@@ -61,6 +61,7 @@
     <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
     <Compile Include="Utils\BookmarkManager.cs" />
     <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
+    <Compile Include="Utils\IssueGroupViewModel.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
