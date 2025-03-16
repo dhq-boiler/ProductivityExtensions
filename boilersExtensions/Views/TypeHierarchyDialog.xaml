@@ -120,6 +120,10 @@
                 Content="ベース型/インターフェースを表示"
                 IsChecked="{Binding ShowBaseTypes.Value}" />
             <CheckBox Content="派生型を表示" IsChecked="{Binding ShowDerivedTypes.Value}" />
+            <CheckBox
+                Margin="10,0,0,0"
+                Content="関連型を表示"
+                IsChecked="{Binding ShowRelatedTypes.Value}" />
         </StackPanel>
 
         <!--  型階層リスト  -->

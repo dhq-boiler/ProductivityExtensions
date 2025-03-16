@@ -150,7 +150,7 @@ namespace boilersExtensions.ViewModels
                 .AddTo(_compositeDisposable);
 
             // 表示モード変更時に候補を再取得
-            ShowBaseTypes.CombineLatest(ShowDerivedTypes, (b, d) => true)
+            ShowBaseTypes.CombineLatest(ShowDerivedTypes, ShowRelatedTypes, (b, d, r) => true)
                 .Subscribe(async _ => await RefreshTypeCandidates())
                 .AddTo(_compositeDisposable);
         }
@@ -173,8 +173,9 @@ namespace boilersExtensions.ViewModels
         // 表示モード
         public ReactivePropertySlim<bool> ShowBaseTypes { get; } = new ReactivePropertySlim<bool>(true);
         public ReactivePropertySlim<bool> ShowDerivedTypes { get; } = new ReactivePropertySlim<bool>(true);
-        public ReactivePropertySlim<bool> ShowUseSpecialTypes { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> ShowRelatedTypes { get; } = new ReactivePropertySlim<bool>(true);
 
+        public ReactivePropertySlim<bool> ShowUseSpecialTypes { get; } = new ReactivePropertySlim<bool>(true);
 
         // 処理中フラグ
         public ReactivePropertySlim<bool> IsProcessing { get; } = new ReactivePropertySlim<bool>();
@@ -321,12 +322,13 @@ namespace boilersExtensions.ViewModels
                 IsProcessing.Value = true;
                 ProcessingStatus.Value = "型の階層を分析中...";
 
-                // 型の階層を取得
+                // 型の候補を取得
                 var candidates = await TypeHierarchyAnalyzer.GetTypeReplacementCandidatesAsync(
                     _originalTypeSymbol,
                     _document,
                     ShowBaseTypes.Value,
                     ShowDerivedTypes.Value,
+                    ShowRelatedTypes.Value,
                     ShowUseSpecialTypes.Value);
 
                 // 候補を設定
@@ -814,12 +816,12 @@ namespace boilersExtensions.ViewModels
                 var method = (IMethodSymbol)member;
 
                 // 同名の新しいメソッドを検索
-                var correspondingMethod = newMembers
+                var correspondingMethods = newMembers
                     .Where(m => m.Kind == SymbolKind.Method && m.Name == method.Name)
                     .Cast<IMethodSymbol>()
-                    .FirstOrDefault();
+                    .ToList();
 
-                if (correspondingMethod == null)
+                if (correspondingMethods.Count == 0)
                 {
                     // メソッドが見つからない - 最も深刻な問題
                     var references = await SymbolFinder.FindReferencesAsync(method, solution);
@@ -833,17 +835,32 @@ namespace boilersExtensions.ViewModels
                         }
                     }
                 }
-                else if (!AreMethodSignaturesCompatible(method, correspondingMethod))
+                else
                 {
-                    // シグネチャの不一致がある
-                    var references = await SymbolFinder.FindReferencesAsync(method, solution);
-
-                    foreach (var reference in references)
+                    // 互換性のあるオーバーロードを検索
+                    bool foundCompatibleOverload = false;
+                    foreach (var overload in correspondingMethods)
                     {
-                        foreach (var location in reference.Locations)
+                        if (AreMethodSignaturesCompatible(method, overload))
                         {
-                            // 参照ごとに問題を追加
-                            issues.Add(await CreateMethodSignatureIssue(method, correspondingMethod, location));
+                            foundCompatibleOverload = true;
+                            break;
+                        }
+                    }
+
+                    if (!foundCompatibleOverload)
+                    {
+                        // 互換性のあるオーバーロードが見つからなかった
+                        var references = await SymbolFinder.FindReferencesAsync(method, solution);
+
+                        foreach (var reference in references)
+                        {
+                            foreach (var location in reference.Locations)
+                            {
+                                // 一番似ているオーバーロードを選んで問題を表示
+                                var bestMatch = FindBestMatchingOverload(method, correspondingMethods);
+                                issues.Add(await CreateMethodSignatureIssue(method, bestMatch, location));
+                            }
                         }
                     }
                 }
@@ -941,6 +958,28 @@ namespace boilersExtensions.ViewModels
             }
 
             return issues;
+        }
+
+        /// <summary>
+        /// 元のメソッドに最も近いオーバーロードを見つける
+        /// </summary>
+        private IMethodSymbol FindBestMatchingOverload(IMethodSymbol originalMethod, List<IMethodSymbol> overloads)
+        {
+            // 戻り値の型が一致するものを優先
+            var sameReturnType = overloads.Where(o =>
+                SymbolEqualityComparer.Default.Equals(o.ReturnType, originalMethod.ReturnType)).ToList();
+
+            if (sameReturnType.Count > 0)
+                overloads = sameReturnType;
+
+            // パラメータ数が同じものを優先
+            var sameParamCount = overloads.Where(o => o.Parameters.Length == originalMethod.Parameters.Length).ToList();
+
+            if (sameParamCount.Count > 0)
+                return sameParamCount[0];
+
+            // パラメータ数が最も近いものを選択
+            return overloads.OrderBy(o => Math.Abs(o.Parameters.Length - originalMethod.Parameters.Length)).First();
         }
 
         /// <summary>
@@ -1407,7 +1446,8 @@ namespace boilersExtensions.ViewModels
             }
 
             // パラメータの違いを確認
-            for (int i = 0; i < original.Parameters.Length; i++)
+            var minParamCount = Math.Min(original.Parameters.Length, newMethod.Parameters.Length);
+            for (int i = 0; i < minParamCount; i++)
             {
                 var origParam = original.Parameters[i];
                 var newParam = newMethod.Parameters[i];
@@ -1416,6 +1456,18 @@ namespace boilersExtensions.ViewModels
                 {
                     incompatibilityDetails += $"パラメータ #{i + 1} ({origParam.Name}) の型が異なります: '{origParam.Type}' → '{newParam.Type}' ";
                 }
+            }
+
+            // 元のメソッドにあって新しいメソッドにないパラメータ
+            for (int i = minParamCount; i < original.Parameters.Length; i++)
+            {
+                incompatibilityDetails += $"パラメータ #{i + 1} ({original.Parameters[i].Name}) が新しいメソッドにありません。 ";
+            }
+
+            // 新しいメソッドにあって元のメソッドにないパラメータ
+            for (int i = minParamCount; i < newMethod.Parameters.Length; i++)
+            {
+                incompatibilityDetails += $"新しいメソッドには追加のパラメータ #{i + 1} ({newMethod.Parameters[i].Name}) があります。 ";
             }
 
             return new PotentialIssue
