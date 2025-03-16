@@ -48,11 +48,12 @@ namespace boilersExtensions.Utils
             ToggleBookmarkCommand = new ReactiveCommand<TypeReferenceInfo>()
                 .AddTo(_compositeDisposable);
 
-            ToggleBookmarkCommand.Subscribe(reference =>
+            ToggleBookmarkCommand.Subscribe(async reference =>
                 {
                     if (reference != null)
                     {
-                        ToggleBookmark(reference);
+                        // BookmarkManagerを使用してブックマークをトグル
+                        await BookmarkManager.ToggleBookmarkAsync(reference.FilePath, reference.LineNumber);
                     }
                 })
                 .AddTo(_compositeDisposable);
@@ -128,61 +129,39 @@ namespace boilersExtensions.Utils
             });
         }
 
-        // ブックマークをトグルするメソッド
-        private void ToggleBookmark(TypeReferenceInfo reference)
+        // ダイアログが開かれた時にブックマーク状態を初期化
+        public async void OnDialogOpened(Window window)
         {
-            // UIスレッドで実行
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            Window = window;
 
+            // 各参照のブックマーク状態を初期化
+            await InitializeBookmarkStatesAsync();
+        }
+
+        // 参照のブックマーク状態を初期化するメソッド
+        private async Task InitializeBookmarkStatesAsync()
+        {
+            foreach (var reference in References)
+            {
                 try
                 {
-                    // DTEサービスを取得
-                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
-                    if (dte == null)
-                        return;
-
-                    // ファイルを開く (既に開いている場合は既存のウィンドウを取得)
-                    var window = dte.ItemOperations.OpenFile(reference.FilePath);
-                    if (window != null)
-                    {
-                        // TextDocumentを取得
-                        var textDoc = window.Document.Object("TextDocument") as EnvDTE.TextDocument;
-                        if (textDoc != null)
-                        {
-                            // 指定した行に移動
-                            var point = textDoc.StartPoint.CreateEditPoint();
-                            point.MoveToLineAndOffset(reference.LineNumber, 1); // 行の先頭に移動
-
-                            // カーソルを指定位置に設定
-                            textDoc.Selection.MoveToPoint(point);
-
-                            // ブックマークをトグル
-                            dte.ExecuteCommand("Edit.ToggleBookmark");
-
-                            // UIの状態を更新
-                            reference.IsBookmarked.Value = !reference.IsBookmarked.Value;
-                        }
-                    }
+                    // 現在のブックマーク状態を確認（ファイルと行番号を指定）
+                    bool isBookmarked = BookmarkManager.IsBookmarkSet(reference.FilePath, reference.LineNumber);
+                    reference.IsBookmarked.Value = isBookmarked;
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Bookmark toggle error: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Error initializing bookmark state: {ex.Message}");
+                    // エラー時はデフォルトでfalse
+                    reference.IsBookmarked.Value = false;
                 }
-            });
+            }
         }
 
         public void Dispose()
         {
             _compositeDisposable?.Dispose();
             CloseCommand?.Dispose();
-        }
-
-        // ダイアログが開かれたときの処理
-        public void OnDialogOpened(Window window)
-        {
-            Window = window;
         }
     }
 

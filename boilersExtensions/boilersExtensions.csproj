@@ -59,6 +59,7 @@
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
+    <Compile Include="Utils\BookmarkManager.cs" />
     <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
@@ -144,6 +145,9 @@
     <PackageReference Include="Microsoft.VisualStudio.CoreUtility">
       <Version>17.12.215</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Editor">
+      <Version>17.13.226</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense">
       <Version>17.12.215</Version>
     </PackageReference>
@@ -155,6 +159,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.TeamFoundation.Git.Extensibility">
       <Version>17.0.32322.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop">
+      <Version>17.13.40008</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
