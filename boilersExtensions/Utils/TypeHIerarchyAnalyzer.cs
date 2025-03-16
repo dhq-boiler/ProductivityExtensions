@@ -257,25 +257,47 @@ namespace boilersExtensions.Utils
         /// <summary>
         /// 型シンボルから型階層情報を作成
         /// </summary>
-        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes)
+        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes, ITypeSymbol originalTypeSymbol = null)
         {
             string displayName;
-            
+
             if (typeSymbol is INamedTypeSymbol namedType && namedType.IsGenericType)
             {
-                // フォーマットオプションを設定
-                var format = new SymbolDisplayFormat(
-                    typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
-                    genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
+                // 元の型がジェネリック型であるかを確認
+                INamedTypeSymbol originalNamedType = originalTypeSymbol as INamedTypeSymbol;
+                bool canReplaceTypeParams = originalNamedType != null &&
+                                         originalNamedType.IsGenericType &&
+                                         namedType.TypeParameters.Length == originalNamedType.TypeArguments.Length;
 
-                // 元の型がプリミティブ型表記を使っている場合はオプションを追加
-                if (showUseSpecialTypes)
+                if (canReplaceTypeParams)
                 {
-                    format = format.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
-                }
+                    try
+                    {
+                        // 基本型名（ジェネリックパラメータなし）を取得
+                        string baseName = namedType.Name;
 
-                // このフォーマットで表示すると設定に応じて「List<int>」または「List<Int32>」のような形式になる
-                displayName = namedType.ToDisplayString(format);
+                        // 型パラメータを元の型から取得
+                        var typeArgs = string.Join(", ", originalNamedType.TypeArguments.Select(arg =>
+                            showUseSpecialTypes
+                                ? arg.ToDisplayString(new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
+                                : arg.ToDisplayString()
+                        ));
+
+                        // 最終的な表示名を作成 (例: IReadOnlyCollection<string>)
+                        displayName = $"{baseName}<{typeArgs}>";
+                    }
+                    catch (Exception ex)
+                    {
+                        // エラーが発生した場合は標準のフォーマットを使用
+                        Debug.WriteLine($"Error replacing type parameters: {ex.Message}");
+                        displayName = GetDefaultDisplayName(namedType, showUseSpecialTypes);
+                    }
+                }
+                else
+                {
+                    // 型パラメータの数が一致しない場合は標準のフォーマットを使用
+                    displayName = GetDefaultDisplayName(namedType, showUseSpecialTypes);
+                }
             }
             else
             {
@@ -306,6 +328,21 @@ namespace boilersExtensions.Utils
             };
 
             return typeInfo;
+        }
+
+        // 標準のフォーマットで型名を取得するヘルパーメソッド
+        private static string GetDefaultDisplayName(INamedTypeSymbol namedType, bool showUseSpecialTypes)
+        {
+            var format = new SymbolDisplayFormat(
+                typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameOnly,
+                genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters);
+
+            if (showUseSpecialTypes)
+            {
+                format = format.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+            }
+
+            return namedType.ToDisplayString(format);
         }
 
         /// <summary>
@@ -378,9 +415,10 @@ namespace boilersExtensions.Utils
         ///     継承階層を含めた型置換候補を取得
         /// </summary>
         public static async Task<List<TypeHierarchyInfo>> GetTypeReplacementCandidatesAsync(
-            ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true, bool showUseSpecialTypes = false)
+    ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true, bool showUseSpecialTypes = false)
         {
             var candidates = new List<TypeHierarchyInfo>();
+            var compilation = await document.Project.GetCompilationAsync();
 
             // 元の型の階層情報を取得
             var typeHierarchy = await GetTypeHierarchyAsync(originalType, document, showUseSpecialTypes: showUseSpecialTypes);
@@ -419,7 +457,124 @@ namespace boilersExtensions.Utils
                 }
             }
 
+            // アセンブリ内の類似インターフェースを検索（新機能）
+            if (originalType.TypeKind == TypeKind.Interface)
+            {
+                // 元のインターフェース名からパターンを作成 (例: ICollection -> I*Collection*)
+                string namePattern = originalType.Name;
+                if (namePattern.StartsWith("I"))
+                {
+                    namePattern = namePattern.Substring(1); // "I" を削除
+                }
+
+                // アセンブリ内のすべての型をチェック
+                foreach (var assembly in compilation.References.Select(r => compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+                {
+                    if (assembly == null) continue;
+
+                    // 名前空間を再帰的に探索
+                    SearchForSimilarInterfaces(assembly.GlobalNamespace, namePattern, candidates, originalType, showUseSpecialTypes);
+                }
+            }
+
+            // 名前の類似性に基づいて追加の関連型を検索
+            var typeName = originalType.Name;
+            if (originalType.TypeKind == TypeKind.Interface && typeName.StartsWith("I"))
+            {
+                // 名前のパターンを作成
+                var baseName = typeName.Substring(1); // "I" を削除
+                var patternPairs = new Dictionary<string, string>
+                {
+                    { "Data", "ReadOnlyData" },
+                    { "Mutable", "Immutable" },
+                    { "", "ReadOnly" },
+                    { "Collection", "ReadOnlyCollection" },
+                    { "List", "ReadOnlyList" },
+                    { "Dictionary", "ReadOnlyDictionary" },
+                    // 他のパターンも追加できます
+                };
+
+                // コンパイルしているプロジェクト内のすべての型シンボルを取得
+                var allTypes = new List<INamedTypeSymbol>();
+                CollectAllTypes(compilation.GlobalNamespace, allTypes);
+
+                // パターンに基づいて候補を検索
+                foreach (var pair in patternPairs)
+                {
+                    if (baseName.Contains(pair.Key))
+                    {
+                        string targetName;
+                        if (string.IsNullOrEmpty(pair.Key))
+                        {
+                            // 空キーの場合は、頭に接頭辞を追加
+                            targetName = "I" + pair.Value + baseName;
+                        }
+                        else
+                        {
+                            // 通常の置換
+                            targetName = "I" + baseName.Replace(pair.Key, pair.Value);
+                        }
+                        var matchingTypes = allTypes.Where(t =>
+                            t.Name == targetName &&
+                            t.TypeKind == TypeKind.Interface &&
+                            !candidates.Any(c => c.FullName == t.ToDisplayString()));
+
+                        foreach (var type in matchingTypes)
+                        {
+                            candidates.Add(CreateTypeHierarchyInfo(type, showUseSpecialTypes, originalType));
+                            Debug.WriteLine($"Added pattern-matched type: {type.ToDisplayString()}");
+                        }
+                    }
+                }
+            }
+
             return candidates;
+        }
+
+        // すべての型を収集するヘルパーメソッド
+        private static void CollectAllTypes(INamespaceSymbol ns, List<INamedTypeSymbol> types)
+        {
+            foreach (var member in ns.GetMembers())
+            {
+                if (member is INamedTypeSymbol type)
+                {
+                    types.Add(type);
+                }
+                else if (member is INamespaceSymbol childNs)
+                {
+                    CollectAllTypes(childNs, types);
+                }
+            }
+        }
+
+        private static void SearchForSimilarInterfaces(INamespaceSymbol ns, string pattern, List<TypeHierarchyInfo> candidates,
+            ITypeSymbol originalType, bool showUseSpecialTypes)
+        {
+            // 現在の名前空間内のすべてのメンバーを検索
+            foreach (var member in ns.GetMembers())
+            {
+                // インターフェースの場合
+                if (member is INamedTypeSymbol typeSymbol && typeSymbol.TypeKind == TypeKind.Interface)
+                {
+                    string name = typeSymbol.Name;
+
+                    // 元のインターフェースと同じでない、かつ名前が似ている場合
+                    if (!SymbolEqualityComparer.Default.Equals(typeSymbol, originalType) &&
+                        name.Contains(pattern))
+                    {
+                        // 既に追加済みでない場合は追加
+                        if (!candidates.Any(c => c.FullName == typeSymbol.ToDisplayString()))
+                        {
+                            candidates.Add(CreateTypeHierarchyInfo(typeSymbol, showUseSpecialTypes));
+                        }
+                    }
+                }
+                // サブ名前空間を再帰的に探索
+                else if (member is INamespaceSymbol subNamespace)
+                {
+                    SearchForSimilarInterfaces(subNamespace, pattern, candidates, originalType, showUseSpecialTypes);
+                }
+            }
         }
 
         /// <summary>

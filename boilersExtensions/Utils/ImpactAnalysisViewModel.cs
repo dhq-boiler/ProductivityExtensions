@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.VisualStudio.Shell;
@@ -73,7 +74,11 @@ namespace boilersExtensions.Utils
         public List<TypeReferenceInfo> References { get; set; } = new List<TypeReferenceInfo>();
 
         // 潜在的な問題のリスト
-        public List<PotentialIssue> PotentialIssues { get; set; } = new List<PotentialIssue>();
+        public ReactiveCollection<PotentialIssue> PotentialIssues { get; set; } = new ReactiveCollection<PotentialIssue>();
+        public ReadOnlyReactivePropertySlim<bool> HasPotentialIssues => PotentialIssues
+            .CollectionChangedAsObservable()
+            .Select(_ => PotentialIssues.Count > 0)
+            .ToReadOnlyReactivePropertySlim(PotentialIssues.Count > 0);
 
         // ダイアログへの参照
         public Window Window { get; set; }

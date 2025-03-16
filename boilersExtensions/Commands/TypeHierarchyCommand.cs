@@ -195,7 +195,7 @@ namespace boilersExtensions.Commands
                 });
 
                 // ダイアログを表示
-                window.ShowDialog();
+                window.Show();
             }
             catch (Exception ex)
             {

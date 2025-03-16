@@ -11,6 +11,7 @@
     Height="600"
     Background="#1F1F1F"
     ResizeMode="CanResize"
+    Topmost="True"
     mc:Ignorable="d">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -150,7 +151,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
-            <TabItem Header="潜在的な問題" Visibility="{Binding HasPotentialIssues, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TabItem Header="潜在的な問題" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ListView
                     Background="#222222"
                     Foreground="White"
