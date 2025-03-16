@@ -59,6 +59,8 @@
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
+    <Compile Include="Utils\BookmarkManager.cs" />
+    <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
@@ -84,6 +86,9 @@
     <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
     <Compile Include="Views\GuidSelectionDialog.xaml.cs">
       <DependentUpon>GuidSelectionDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ImpactAnalysisDialog.xaml.cs">
+      <DependentUpon>ImpactAnalysisDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RenameSolutionDialog.xaml.cs">
       <DependentUpon>RenameSolutionDialog.xaml</DependentUpon>
@@ -140,6 +145,9 @@
     <PackageReference Include="Microsoft.VisualStudio.CoreUtility">
       <Version>17.12.215</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Editor">
+      <Version>17.13.226</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense">
       <Version>17.12.215</Version>
     </PackageReference>
@@ -151,6 +159,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.TeamFoundation.Git.Extensibility">
       <Version>17.0.32322.3</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop">
+      <Version>17.13.40008</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -205,6 +216,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\GuidSelectionDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ImpactAnalysisDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

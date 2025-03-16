@@ -7,10 +7,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="型階層選択"
-    Width="600"
-    Height="500"
+    Width="640"
+    Height="480"
     Background="#1F1F1F"
     ResizeMode="CanResize"
+    Closing="TypeHierarchyDialog_OnClosing"
     mc:Ignorable="d">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -144,9 +145,9 @@
                                 Grid.Column="0"
                                 Width="15"
                                 Margin="0,0,5,0"
+                                FontFamily="Consolas"
                                 FontStyle="Italic"
                                 FontWeight="Bold"
-                                FontFamily="Consolas"
                                 Foreground="{Binding IsInterface, Converter={StaticResource InverseBooleanConverter}, ConverterParameter='#4EC9B0', FallbackValue='#B8D7A3'}">
                                 <TextBlock.Style>
                                     <Style TargetType="{x:Type TextBlock}">
@@ -193,6 +194,16 @@
                 HorizontalAlignment="Right"
                 DockPanel.Dock="Right"
                 Orientation="Horizontal">
+                <!--<Button
+                    Margin="5"
+                    Command="{Binding PreviewCommand}"
+                    Content="変更をプレビュー"
+                    IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />-->
+                <Button
+                    Margin="5"
+                    Command="{Binding AnalyzeImpactCommand}"
+                    Content="影響範囲を分析"
+                    IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
                 <Button
                     Margin="5"
                     Command="{Binding ApplyCommand}"
