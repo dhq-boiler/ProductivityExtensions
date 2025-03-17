@@ -88,10 +88,10 @@ namespace boilersExtensions.Commands
 
                 // ドキュメントを取得
                 var document = GetDocumentFromTextView(textView);
-                if (document == null)
-                {
-                    return;
-                }
+                //if (document == null)
+                //{
+                //    return;
+                //}
 
                 // 型解析と型階層ダイアログの表示を非同期で実行
                 Task.Run(async () =>
@@ -220,7 +220,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        ///     テキストビューからドキュメントを取得
+        /// テキストビューから元のRazorドキュメントを取得する
         /// </summary>
         private static Document GetDocumentFromTextView(IWpfTextView textView)
         {
@@ -234,17 +234,39 @@ namespace boilersExtensions.Commands
             var dte = (DTE)Package.GetGlobalService(typeof(DTE));
             var documentPath = dte.ActiveDocument.FullName;
 
-            // 対応するドキュメントを検索
+            // 実際のファイルパスをデバッグ出力
+            Debug.WriteLine($"Active document path: {documentPath}");
+
+            // まず、正確なパスマッチを試みる
             var documents = workspace.CurrentSolution.Projects.SelectMany(p => p.Documents);
-            foreach (var document in documents)
+            var exactMatch = documents.FirstOrDefault(d => string.Equals(d.FilePath, documentPath, StringComparison.OrdinalIgnoreCase));
+
+            if (exactMatch != null)
             {
-                if (document.FilePath == documentPath)
-                {
-                    return document;
-                }
+                Debug.WriteLine($"Found exact match: {exactMatch.FilePath}");
+                return exactMatch;
             }
 
+            Debug.WriteLine("Could not find matching document.");
             return null;
+        }
+
+        // オリジナルのパスを取得するための補助メソッド
+        private static string GetOriginalFilePath(string generatedPath)
+        {
+            if (string.IsNullOrEmpty(generatedPath))
+                return null;
+
+            // 生成されたパスから元のファイルパスを抽出
+            int razorIndex = generatedPath.IndexOf(".razor", StringComparison.OrdinalIgnoreCase);
+            if (razorIndex > 0)
+            {
+                // ".razor"の後に識別子が付いている場合、それを取り除く
+                string baseFilePath = generatedPath.Substring(0, razorIndex + 6); // +6 for ".razor"
+                return baseFilePath;
+            }
+
+            return generatedPath;
         }
 
         /// <summary>

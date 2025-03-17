@@ -571,7 +571,18 @@ namespace boilersExtensions.ViewModels
         /// <summary>
         ///     ダイアログが開かれた時の処理
         /// </summary>
-        public void OnDialogOpened(Window window) => Window = window;
+        public void OnDialogOpened(Window window)
+        {
+            Window = window;
+
+            // 元の型名がある場合は正規化する
+            if (!string.IsNullOrEmpty(OriginalTypeName.Value))
+            {
+                // 型名のみを抽出
+                string cleanTypeName = TypeHierarchyAnalyzer.ExtractTypeNameOnly(OriginalTypeName.Value);
+                OriginalTypeName.Value = cleanTypeName;
+            }
+        }
 
         public void OnDialogClosing(TypeHierarchyDialog typeHierarchyDialog)
         {
