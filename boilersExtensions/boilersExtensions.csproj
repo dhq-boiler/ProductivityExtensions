@@ -63,6 +63,7 @@
     <Compile Include="Utils\DynamicTypeResolver.cs" />
     <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
     <Compile Include="Utils\IssueGroupViewModel.cs" />
+    <Compile Include="Utils\RazorFileUtility.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
