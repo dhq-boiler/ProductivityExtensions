@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Packaging;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,6 +26,7 @@ using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using Document = Microsoft.CodeAnalysis.Document;
+using Solution = Microsoft.CodeAnalysis.Solution;
 using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
@@ -38,8 +37,9 @@ namespace boilersExtensions.ViewModels
     internal class TypeHierarchyDialogViewModel : BindableBase, IDisposable
     {
         private readonly CompositeDisposable _compositeDisposable = new CompositeDisposable();
-        private Document _document; 
         private IVsWindowFrame _diffWindowFrame;
+        private Document _document;
+        private string _extractedCSharpCode;
 
         // 完全な型スパン情報
         private TextSpan _fullTypeSpan;
@@ -47,10 +47,9 @@ namespace boilersExtensions.ViewModels
         // 置換対象の情報
         private ITypeSymbol _originalTypeSymbol;
         private int _position;
+        private string _razorFilePath;
         private ITextBuffer _textBuffer;
         private SnapshotSpan _typeSpan;
-        private string _razorFilePath;
-        private string _extractedCSharpCode;
 
         public TypeHierarchyDialogViewModel()
         {
@@ -105,7 +104,8 @@ namespace boilersExtensions.ViewModels
                 })
                 .AddTo(_compositeDisposable);
 
-            PreviewCommand = SelectedType.Select(st => st != null && st.FullName != _originalTypeSymbol.ToDisplayString())
+            PreviewCommand = SelectedType
+                .Select(st => st != null && st.FullName != _originalTypeSymbol.ToDisplayString())
                 .ToReactiveCommand();
 
             PreviewCommand.Subscribe(async () =>
@@ -121,7 +121,8 @@ namespace boilersExtensions.ViewModels
                 })
                 .AddTo(_compositeDisposable);
 
-            AnalyzeImpactCommand = SelectedType.Select(st => st != null && st.FullName != _originalTypeSymbol?.ToDisplayString())
+            AnalyzeImpactCommand = SelectedType
+                .Select(st => st != null && st.FullName != _originalTypeSymbol?.ToDisplayString())
                 .ToReactiveCommand();
 
             AnalyzeImpactCommand.Subscribe(async () =>
@@ -214,10 +215,10 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 初期化
+        ///     初期化
         /// </summary>
         public async Task InitializeAsync(ITypeSymbol typeSymbol, Document document, int position,
-            SnapshotSpan typeSpan, ITextBuffer textBuffer, Microsoft.CodeAnalysis.Text.TextSpan fullTypeSpan)
+            SnapshotSpan typeSpan, ITextBuffer textBuffer, TextSpan fullTypeSpan)
         {
             try
             {
@@ -229,25 +230,28 @@ namespace boilersExtensions.ViewModels
                 _fullTypeSpan = fullTypeSpan;
 
                 // 実際のコードの文字列を取得（これが元のコードでの型表記を正確に反映している）
-                string actualTypeText = typeSpan.GetText();
+                var actualTypeText = typeSpan.GetText();
 
                 // デバッグ情報
-                System.Diagnostics.Debug.WriteLine($"InitializeAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
-                System.Diagnostics.Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
-                System.Diagnostics.Debug.WriteLine($"Type with special types={typeSymbol.ToDisplayString(new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))}");
-                System.Diagnostics.Debug.WriteLine($"Type without special types={typeSymbol.ToDisplayString()}");
-                System.Diagnostics.Debug.WriteLine($"Type Span: '{typeSpan.GetText()}', Full Type Span: Start={fullTypeSpan.Start}, Length={fullTypeSpan.Length}");
+                Debug.WriteLine($"InitializeAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
+                Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
+                Debug.WriteLine(
+                    $"Type with special types={typeSymbol.ToDisplayString(new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))}");
+                Debug.WriteLine($"Type without special types={typeSymbol.ToDisplayString()}");
+                Debug.WriteLine(
+                    $"Type Span: '{typeSpan.GetText()}', Full Type Span: Start={fullTypeSpan.Start}, Length={fullTypeSpan.Length}");
 
                 // 元の型名を表示
-                OriginalTypeName.Value = string.IsNullOrEmpty(typeSymbol.ContainingNamespace.ToString()) && actualTypeText.Contains(typeSymbol.ContainingNamespace.ToString())
+                OriginalTypeName.Value = string.IsNullOrEmpty(typeSymbol.ContainingNamespace.ToString()) &&
+                                         actualTypeText.Contains(typeSymbol.ContainingNamespace.ToString())
                     ? actualTypeText
                     : $"{typeSymbol.ContainingNamespace}.{actualTypeText}";
 
                 // 実際のコードの表記に基づいてフォーマットを判定
-                bool usePrimitiveTypes = DeterminePrimitiveTypeUsage(actualTypeText);
+                var usePrimitiveTypes = DeterminePrimitiveTypeUsage(actualTypeText);
 
                 // デバッグ出力
-                System.Diagnostics.Debug.WriteLine($"Using primitive types: {usePrimitiveTypes}");
+                Debug.WriteLine($"Using primitive types: {usePrimitiveTypes}");
 
                 //通常のcsファイルの場合は関連型を有効にする
                 IsEnabledRelatedTypes.Value = true;
@@ -260,7 +264,7 @@ namespace boilersExtensions.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in Initialize: {ex.Message}");
+                Debug.WriteLine($"Error in Initialize: {ex.Message}");
             }
         }
 
@@ -281,11 +285,11 @@ namespace boilersExtensions.ViewModels
                 _extractedCSharpCode = csharpCode;
 
                 // 実際の型名を取得
-                string actualTypeText = typeSymbol.Name;
+                var actualTypeText = typeSymbol.Name;
 
                 // デバッグ情報
-                System.Diagnostics.Debug.WriteLine($"InitializeRazorAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
-                System.Diagnostics.Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
+                Debug.WriteLine($"InitializeRazorAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
+                Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
 
                 //razorスクリプトファイルの場合は関連型を無効にする
                 IsEnabledRelatedTypes.Value = false;
@@ -298,12 +302,12 @@ namespace boilersExtensions.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in InitializeRazorAsync: {ex.Message}");
+                Debug.WriteLine($"Error in InitializeRazorAsync: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 実際のコードの表記からプリミティブ型が使用されているかを判定
+        ///     実際のコードの表記からプリミティブ型が使用されているかを判定
         /// </summary>
         private bool DeterminePrimitiveTypeUsage(string actualTypeText)
         {
@@ -343,7 +347,7 @@ namespace boilersExtensions.ViewModels
             // 次に、.NET型（System.Int32 など）が含まれているかチェック
             foreach (var netType in primitiveTypes.Keys)
             {
-                string shortNetType = netType.Substring(netType.LastIndexOf('.') + 1); // "Int32" など
+                var shortNetType = netType.Substring(netType.LastIndexOf('.') + 1); // "Int32" など
                 if (actualTypeText.Contains($"<{shortNetType}>") ||
                     actualTypeText.Contains($"<{shortNetType},") ||
                     actualTypeText.Contains($", {shortNetType}>") ||
@@ -373,9 +377,9 @@ namespace boilersExtensions.ViewModels
                 ProcessingStatus.Value = "型の階層を分析中...";
 
                 // Razorファイルの場合
-                bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
-                                   (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                    _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
+                var isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                                  (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                   _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
                 if (isRazorFile && _document == null)
                 {
@@ -431,7 +435,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// Razor用の型候補を取得する補助メソッド
+        ///     Razor用の型候補を取得する補助メソッド
         /// </summary>
         private async Task<List<TypeHierarchyAnalyzer.TypeHierarchyInfo>> GetRazorTypeReplacementCandidatesAsync(
             ITypeSymbol originalType,
@@ -471,14 +475,16 @@ namespace boilersExtensions.ViewModels
                             var baseType = originalType.BaseType;
                             while (baseType != null && !baseType.ToDisplayString().Equals("object"))
                             {
-                                candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(baseType, showUseSpecialTypes));
+                                candidates.Add(
+                                    TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(baseType, showUseSpecialTypes));
                                 baseType = baseType.BaseType;
                             }
 
                             // インターフェースを追加
                             foreach (var iface in originalType.Interfaces)
                             {
-                                candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(iface, showUseSpecialTypes));
+                                candidates.Add(
+                                    TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(iface, showUseSpecialTypes));
                             }
                         }
 
@@ -497,19 +503,24 @@ namespace boilersExtensions.ViewModels
                         if (originalType.TypeKind == TypeKind.Interface)
                         {
                             // 元のインターフェース名からパターンを作成 (例: ICollection -> I*Collection*)
-                            string namePattern = originalType.Name;
+                            var namePattern = originalType.Name;
                             if (namePattern.StartsWith("I"))
                             {
                                 namePattern = namePattern.Substring(1); // "I" を削除
                             }
 
                             // アセンブリ内のすべての型をチェック
-                            foreach (var assembly in compilation.References.Select(r => compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+                            foreach (var assembly in compilation.References.Select(r =>
+                                         compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
                             {
-                                if (assembly == null) continue;
+                                if (assembly == null)
+                                {
+                                    continue;
+                                }
 
                                 // 名前空間を再帰的に探索
-                                TypeHierarchyAnalyzer.SearchForSimilarInterfaces(assembly.GlobalNamespace, namePattern, candidates, originalType, showUseSpecialTypes);
+                                TypeHierarchyAnalyzer.SearchForSimilarInterfaces(assembly.GlobalNamespace, namePattern,
+                                    candidates, originalType, showUseSpecialTypes);
                             }
                         }
 
@@ -526,7 +537,7 @@ namespace boilersExtensions.ViewModels
                                 { "", "ReadOnly" },
                                 { "Collection", "ReadOnlyCollection" },
                                 { "List", "ReadOnlyList" },
-                                { "Dictionary", "ReadOnlyDictionary" },
+                                { "Dictionary", "ReadOnlyDictionary" }
                                 // 他のパターンも追加できます
                             };
 
@@ -550,6 +561,7 @@ namespace boilersExtensions.ViewModels
                                         // 通常の置換
                                         targetName = "I" + baseName.Replace(pair.Key, pair.Value);
                                     }
+
                                     var matchingTypes = allTypes.Where(t =>
                                         t.Name == targetName &&
                                         t.TypeKind == TypeKind.Interface &&
@@ -557,7 +569,8 @@ namespace boilersExtensions.ViewModels
 
                                     foreach (var type in matchingTypes)
                                     {
-                                        candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(type, showUseSpecialTypes, originalType));
+                                        candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(type,
+                                            showUseSpecialTypes, originalType));
                                         Debug.WriteLine($"Added pattern-matched type: {type.ToDisplayString()}");
                                     }
                                 }
@@ -582,29 +595,29 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // Razorファイルかどうか確認
-            bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
-                               (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
+            var isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                              (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                               _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
             if (isRazorFile)
             {
                 // Razorファイル用の処理
                 // ファイルを直接読み書きする
-                string razorContent = File.ReadAllText(_razorFilePath);
+                var razorContent = File.ReadAllText(_razorFilePath);
 
                 // 新しい型名を取得
-                string newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
+                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
 
                 // 元の型名を探す
-                string originalTypeName = _originalTypeSymbol.Name;
-                int position = razorContent.IndexOf(originalTypeName);
+                var originalTypeName = _originalTypeSymbol.Name;
+                var position = razorContent.IndexOf(originalTypeName);
 
                 if (position >= 0)
                 {
                     // 型名を置換
-                    string newContent = razorContent.Substring(0, position) +
-                                        newTypeName +
-                                        razorContent.Substring(position + originalTypeName.Length);
+                    var newContent = razorContent.Substring(0, position) +
+                                     newTypeName +
+                                     razorContent.Substring(position + originalTypeName.Length);
 
                     // ファイルに書き戻す
                     File.WriteAllText(_razorFilePath, newContent);
@@ -657,25 +670,27 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 表示用に型名を簡略化
+        ///     表示用に型名を簡略化
         /// </summary>
         private string GetSimplifiedTypeName(string fullName, string originalTypeText)
         {
             try
             {
                 if (string.IsNullOrEmpty(fullName))
+                {
                     return string.Empty;
+                }
 
                 // ジェネリック型かどうか確認
                 if (fullName.Contains("<"))
                 {
-                    int genericStart = fullName.IndexOf('<');
-                    int originalGenericStart = originalTypeText.IndexOf('<');
+                    var genericStart = fullName.IndexOf('<');
+                    var originalGenericStart = originalTypeText.IndexOf('<');
 
                     // ジェネリック部分を抽出 (例: System.Collections.Generic.List<int> -> System.Collections.Generic.List と <int>)
-                    string baseTypeName = fullName.Substring(0, genericStart);
-                    string typeParams = fullName.Substring(genericStart); // <int> 部分
-                    string originalTypeParams = originalTypeText.Substring(originalGenericStart); // <int> 部分
+                    var baseTypeName = fullName.Substring(0, genericStart);
+                    var typeParams = fullName.Substring(genericStart); // <int> 部分
+                    var originalTypeParams = originalTypeText.Substring(originalGenericStart); // <int> 部分
 
                     // 型パラメーターの数が異なる場合は元の型名をそのまま返す
                     if (typeParams.Count(x => x == ',') != originalTypeParams.Count(x => x == ','))
@@ -688,7 +703,7 @@ namespace boilersExtensions.ViewModels
                     }
 
                     // 名前空間を含まない型名を取得
-                    int lastDot = baseTypeName.LastIndexOf('.');
+                    var lastDot = baseTypeName.LastIndexOf('.');
                     if (lastDot >= 0)
                     {
                         baseTypeName = baseTypeName.Substring(lastDot + 1);
@@ -700,17 +715,18 @@ namespace boilersExtensions.ViewModels
                 else
                 {
                     // 非ジェネリック型
-                    int lastDot = fullName.LastIndexOf('.');
+                    var lastDot = fullName.LastIndexOf('.');
                     if (lastDot >= 0)
                     {
                         return fullName.Substring(lastDot + 1);
                     }
+
                     return fullName;
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in GetSimplifiedTypeName: {ex.Message}");
+                Debug.WriteLine($"Error in GetSimplifiedTypeName: {ex.Message}");
                 return fullName; // エラー時は元の型名をそのまま返す
             }
         }
@@ -812,7 +828,7 @@ namespace boilersExtensions.ViewModels
                 // DiffViewerを使って差分を表示
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var diffViewer = new DiffViewer();
-                _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true, caption: "型変更のプレビュー", tooltip: "型変更を適用するか検討してください");
+                _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true, "型変更のプレビュー", "型変更を適用するか検討してください");
             }
             catch (Exception ex)
             {
@@ -840,7 +856,7 @@ namespace boilersExtensions.ViewModels
             if (!string.IsNullOrEmpty(OriginalTypeName.Value))
             {
                 // 型名のみを抽出
-                string cleanTypeName = TypeHierarchyAnalyzer.ExtractTypeNameOnly(OriginalTypeName.Value);
+                var cleanTypeName = TypeHierarchyAnalyzer.ExtractTypeNameOnly(OriginalTypeName.Value);
                 OriginalTypeName.Value = cleanTypeName;
             }
         }
@@ -866,7 +882,9 @@ namespace boilersExtensions.ViewModels
 
                 // 選択された型のシンボルを取得
                 if (_originalTypeSymbol == null || _document == null)
+                {
                     return;
+                }
 
                 // 変更対象の変数/パラメータを特定
                 // シンタックスツリーから変更対象のノードを探す
@@ -902,7 +920,7 @@ namespace boilersExtensions.ViewModels
                 else
                 {
                     // パラメータのシンボルを取得
-                    var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode) as IParameterSymbol;
+                    var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode);
                     if (parameterSymbol != null)
                     {
                         await ShowImpactForSymbol(parameterSymbol);
@@ -913,9 +931,9 @@ namespace boilersExtensions.ViewModels
                 // 特定の変数/パラメータが見つからない場合、
                 // 型全体に対する参照検索を行う（こちらは過剰検出につながるため避けるべき）
                 MessageBox.Show("特定のパラメータや変数が見つかりませんでした。型全体に対する参照を検索します。",
-                               "警告",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Warning);
+                    "警告",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
                 await ShowImpactForSymbol(_originalTypeSymbol);
             }
@@ -923,9 +941,9 @@ namespace boilersExtensions.ViewModels
             {
                 Debug.WriteLine($"Error in ShowImpactAnalysis: {ex.Message}");
                 MessageBox.Show($"影響範囲の分析中にエラーが発生しました: {ex.Message}",
-                               "エラー",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Error);
+                    "エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
             finally
             {
@@ -954,7 +972,7 @@ namespace boilersExtensions.ViewModels
                     var semanticModel = await location.Document.GetSemanticModelAsync();
                     var node = (await sourceTree.GetRootAsync()).FindNode(location.Location.SourceSpan);
                     var containingMethod = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-                    string methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
+                    var methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
 
                     var referenceInfo = new TypeReferenceInfo
                     {
@@ -968,8 +986,6 @@ namespace boilersExtensions.ViewModels
 
                     impactList.Add(referenceInfo);
                 }
-
-
             }
 
             // 潜在的な問題の分析を追加
@@ -1028,7 +1044,8 @@ namespace boilersExtensions.ViewModels
                     var referenceNode = node.FindNode(location.Location.SourceSpan);
 
                     // 互換性チェック
-                    var issues = CheckCompatibility(referenceNode, semanticModel, _originalTypeSymbol, SelectedType.Value);
+                    var issues = CheckCompatibility(referenceNode, semanticModel, _originalTypeSymbol,
+                        SelectedType.Value);
 
                     if (issues.Any())
                     {
@@ -1064,7 +1081,8 @@ namespace boilersExtensions.ViewModels
             return issues;
         }
 
-        private async Task<List<PotentialIssue>> AnalyzePotentialIssues(ISymbol symbol, ITypeSymbol originalType, TypeHierarchyAnalyzer.TypeHierarchyInfo newTypeInfo)
+        private async Task<List<PotentialIssue>> AnalyzePotentialIssues(ISymbol symbol, ITypeSymbol originalType,
+            TypeHierarchyAnalyzer.TypeHierarchyInfo newTypeInfo)
         {
             var issues = new List<PotentialIssue>();
 
@@ -1076,7 +1094,9 @@ namespace boilersExtensions.ViewModels
             var newTypeSymbol = GetTypeSymbolFromTypeInfo(newTypeInfo, compilation);
 
             if (newTypeSymbol == null)
+            {
                 return issues;
+            }
 
             // 元の型のメンバーを取得
             var originalMembers = GetTypeMembers(originalType);
@@ -1110,7 +1130,7 @@ namespace boilersExtensions.ViewModels
                 else
                 {
                     // 互換性のあるオーバーロードを検索
-                    bool foundCompatibleOverload = false;
+                    var foundCompatibleOverload = false;
                     foreach (var overload in correspondingMethods)
                     {
                         if (AreMethodSignaturesCompatible(method, overload))
@@ -1233,7 +1253,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 元のメソッドに最も近いオーバーロードを見つける
+        ///     元のメソッドに最も近いオーバーロードを見つける
         /// </summary>
         private IMethodSymbol FindBestMatchingOverload(IMethodSymbol originalMethod, List<IMethodSymbol> overloads)
         {
@@ -1242,22 +1262,27 @@ namespace boilersExtensions.ViewModels
                 SymbolEqualityComparer.Default.Equals(o.ReturnType, originalMethod.ReturnType)).ToList();
 
             if (sameReturnType.Count > 0)
+            {
                 overloads = sameReturnType;
+            }
 
             // パラメータ数が同じものを優先
             var sameParamCount = overloads.Where(o => o.Parameters.Length == originalMethod.Parameters.Length).ToList();
 
             if (sameParamCount.Count > 0)
+            {
                 return sameParamCount[0];
+            }
 
             // パラメータ数が最も近いものを選択
             return overloads.OrderBy(o => Math.Abs(o.Parameters.Length - originalMethod.Parameters.Length)).First();
         }
 
         /// <summary>
-        /// イベントのアクセシビリティ不一致に関する問題を作成
+        ///     イベントのアクセシビリティ不一致に関する問題を作成
         /// </summary>
-        private async Task<PotentialIssue> CreateEventAccessibilityIssue(IEventSymbol originalEvent, IEventSymbol newEvent, ReferenceLocation location)
+        private async Task<PotentialIssue> CreateEventAccessibilityIssue(IEventSymbol originalEvent,
+            IEventSymbol newEvent, ReferenceLocation location)
         {
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
@@ -1268,14 +1293,16 @@ namespace boilersExtensions.ViewModels
                 FileName = Path.GetFileName(filePath),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "イベントアクセシビリティの不一致",
-                Description = $"イベント '{originalEvent.Name}' のアクセシビリティが異なります: '{originalEvent.DeclaredAccessibility}' → '{newEvent.DeclaredAccessibility}'",
+                Description =
+                    $"イベント '{originalEvent.Name}' のアクセシビリティが異なります: '{originalEvent.DeclaredAccessibility}' → '{newEvent.DeclaredAccessibility}'",
                 SuggestedFix = "アクセシビリティの変更により、一部のコードで参照できなくなる可能性があります。コードの構造を見直すか、アクセサメソッドの実装を検討してください。",
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
 
         // イベントの互換性を検査するサンプルコード
-        public async Task<List<string>> CheckEventCompatibility(INamedTypeSymbol originalType, INamedTypeSymbol newType, Microsoft.CodeAnalysis.Solution solution)
+        public async Task<List<string>> CheckEventCompatibility(INamedTypeSymbol originalType, INamedTypeSymbol newType,
+            Solution solution)
         {
             var issues = new List<string>();
 
@@ -1335,7 +1362,9 @@ namespace boilersExtensions.ViewModels
         {
             // 同じ型は互換性あり
             if (SymbolEqualityComparer.Default.Equals(originalEvent.Type, newEvent.Type))
+            {
                 return true;
+            }
 
             // デリゲート型を取得
             if (originalEvent.Type is INamedTypeSymbol originalDelegateType &&
@@ -1346,25 +1375,33 @@ namespace boilersExtensions.ViewModels
                 var newInvokeMethod = newDelegateType.DelegateInvokeMethod;
 
                 if (originalInvokeMethod == null || newInvokeMethod == null)
+                {
                     return false;
+                }
 
                 // 戻り値の型をチェック
                 if (!SymbolEqualityComparer.Default.Equals(originalInvokeMethod.ReturnType, newInvokeMethod.ReturnType))
+                {
                     return false;
+                }
 
                 // パラメータの数が違う場合は互換性なし
                 if (originalInvokeMethod.Parameters.Length != newInvokeMethod.Parameters.Length)
+                {
                     return false;
+                }
 
                 // 各パラメータの型をチェック
-                for (int i = 0; i < originalInvokeMethod.Parameters.Length; i++)
+                for (var i = 0; i < originalInvokeMethod.Parameters.Length; i++)
                 {
                     var originalParam = originalInvokeMethod.Parameters[i];
                     var newParam = newInvokeMethod.Parameters[i];
 
                     // パラメータの型が互換性ない場合
                     if (!SymbolEqualityComparer.Default.Equals(originalParam.Type, newParam.Type))
+                    {
                         return false;
+                    }
                 }
 
                 // すべてのチェックをパスしたら互換性あり
@@ -1386,12 +1423,13 @@ namespace boilersExtensions.ViewModels
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "イベント欠落",
                 Description = $"イベント '{eventSymbol.Name}' は新しい型に存在しません。",
-                SuggestedFix = $"新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。",
+                SuggestedFix = "新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。",
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
 
-        private async Task<PotentialIssue> CreateEventTypeIssue(IEventSymbol originalEvent, IEventSymbol newEvent, ReferenceLocation location)
+        private async Task<PotentialIssue> CreateEventTypeIssue(IEventSymbol originalEvent, IEventSymbol newEvent,
+            ReferenceLocation location)
         {
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
@@ -1402,28 +1440,32 @@ namespace boilersExtensions.ViewModels
                 FileName = Path.GetFileName(filePath),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "イベント型の不一致",
-                Description = $"イベント '{originalEvent.Name}' のデリゲート型が異なります: '{originalEvent.Type}' → '{newEvent.Type}'",
+                Description =
+                    $"イベント '{originalEvent.Name}' のデリゲート型が異なります: '{originalEvent.Type}' → '{newEvent.Type}'",
                 SuggestedFix = "イベントハンドラーに適応するためのアダプターメソッドの実装を検討してください。",
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
 
-        private ITypeSymbol GetTypeSymbolFromTypeInfo(TypeHierarchyAnalyzer.TypeHierarchyInfo typeInfo, Compilation compilation)
+        private ITypeSymbol GetTypeSymbolFromTypeInfo(TypeHierarchyAnalyzer.TypeHierarchyInfo typeInfo,
+            Compilation compilation)
         {
             // 名前空間が指定されている場合はそれを使用
             if (!string.IsNullOrEmpty(typeInfo.RequiredNamespace))
             {
-                string fullName = $"{typeInfo.RequiredNamespace}.{typeInfo.DisplayName}";
+                var fullName = $"{typeInfo.RequiredNamespace}.{typeInfo.DisplayName}";
 
                 // ジェネリック型の場合は`1などのメタデータ表記に変換
-                string metadataName = ConvertToMetadataName(fullName);
+                var metadataName = ConvertToMetadataName(fullName);
                 var typeSymbol = compilation.GetTypeByMetadataName(metadataName);
                 if (typeSymbol != null)
+                {
                     return typeSymbol;
+                }
             }
 
             // フルネームをそのまま使用
-            string metadataFullName = ConvertToMetadataName(typeInfo.FullName);
+            var metadataFullName = ConvertToMetadataName(typeInfo.FullName);
             return compilation.GetTypeByMetadataName(metadataFullName);
         }
 
@@ -1433,16 +1475,16 @@ namespace boilersExtensions.ViewModels
             // 例: "List<T>" -> "List`1"
             if (typeName.Contains("<"))
             {
-                int startIdx = typeName.IndexOf('<');
-                int endIdx = typeName.LastIndexOf('>');
+                var startIdx = typeName.IndexOf('<');
+                var endIdx = typeName.LastIndexOf('>');
 
                 if (startIdx > 0 && endIdx > startIdx)
                 {
-                    string baseName = typeName.Substring(0, startIdx);
-                    string typeParams = typeName.Substring(startIdx + 1, endIdx - startIdx - 1);
+                    var baseName = typeName.Substring(0, startIdx);
+                    var typeParams = typeName.Substring(startIdx + 1, endIdx - startIdx - 1);
 
                     // カンマの数をカウントして型パラメータの数を計算
-                    int paramCount = typeParams.Count(c => c == ',') + 1;
+                    var paramCount = typeParams.Count(c => c == ',') + 1;
 
                     return $"{baseName}`{paramCount}";
                 }
@@ -1454,7 +1496,7 @@ namespace boilersExtensions.ViewModels
         private async Task<INamedTypeSymbol> GetTypeSymbolFromFullName(string fullTypeName, Compilation compilation)
         {
             // ジェネリック型かどうかを判断
-            bool isGenericType = fullTypeName.Contains("<");
+            var isGenericType = fullTypeName.Contains("<");
 
             if (!isGenericType)
             {
@@ -1463,34 +1505,38 @@ namespace boilersExtensions.ViewModels
             }
 
             // ジェネリック型の場合、型引数を抽出
-            int genericStart = fullTypeName.IndexOf('<');
-            int genericEnd = fullTypeName.LastIndexOf('>');
+            var genericStart = fullTypeName.IndexOf('<');
+            var genericEnd = fullTypeName.LastIndexOf('>');
 
             if (genericStart < 0 || genericEnd < 0 || genericEnd <= genericStart)
+            {
                 return null;
+            }
 
             // 基本型名（例：System.Collections.Generic.ICollection）
-            string baseTypeName = fullTypeName.Substring(0, genericStart);
+            var baseTypeName = fullTypeName.Substring(0, genericStart);
 
             // 型引数部分（例：<int>の中身）
-            string typeArgsString = fullTypeName.Substring(genericStart + 1, genericEnd - genericStart - 1);
+            var typeArgsString = fullTypeName.Substring(genericStart + 1, genericEnd - genericStart - 1);
 
             // 型引数を分割（複数の場合はカンマで区切られている）
-            string[] typeArgNames = typeArgsString.Split(',').Select(arg => arg.Trim()).ToArray();
-            
+            var typeArgNames = typeArgsString.Split(',').Select(arg => arg.Trim()).ToArray();
+
             // 正しいメタデータ名を取得
-            string metadataTypeName = baseTypeName;
+            var metadataTypeName = baseTypeName;
             if (isGenericType)
             {
                 // 型パラメータの数を数える
-                int typeParamCount = typeArgNames.Length;
+                var typeParamCount = typeArgNames.Length;
                 metadataTypeName = $"{baseTypeName}`{typeParamCount}";
             }
 
             // 型シンボルを取得
             var baseType = compilation.GetTypeByMetadataName(metadataTypeName);
             if (baseType == null)
+            {
                 return null;
+            }
 
             // 型引数のシンボルを取得
             var typeArgs = new List<ITypeSymbol>();
@@ -1524,7 +1570,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 if (argType == null)
+                {
                     return null;
+                }
 
                 typeArgs.Add(argType);
             }
@@ -1545,13 +1593,13 @@ namespace boilersExtensions.ViewModels
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "メソッド欠落",
                 Description = $"メソッド '{method.Name}' は新しい型に存在しません。",
-                SuggestedFix = $"新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。",
+                SuggestedFix = "新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。",
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
 
         /// <summary>
-        /// 型のすべてのメンバー（メソッド、プロパティなど）を取得
+        ///     型のすべてのメンバー（メソッド、プロパティなど）を取得
         /// </summary>
         private IEnumerable<ISymbol> GetTypeMembers(ITypeSymbol typeSymbol)
         {
@@ -1584,39 +1632,47 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 2つのメソッドのシグネチャが互換性があるかチェック
+        ///     2つのメソッドのシグネチャが互換性があるかチェック
         /// </summary>
         private bool AreMethodSignaturesCompatible(IMethodSymbol original, IMethodSymbol newMethod)
         {
             // パラメータ数が異なる場合は互換性なし
             if (original.Parameters.Length != newMethod.Parameters.Length)
+            {
                 return false;
+            }
 
             // 戻り値の型をチェック
             if (!IsTypeCompatible(original.ReturnType, newMethod.ReturnType))
+            {
                 return false;
+            }
 
             // 各パラメータの型をチェック
-            for (int i = 0; i < original.Parameters.Length; i++)
+            for (var i = 0; i < original.Parameters.Length; i++)
             {
                 var origParam = original.Parameters[i];
                 var newParam = newMethod.Parameters[i];
 
                 if (!IsTypeCompatible(origParam.Type, newParam.Type))
+                {
                     return false;
+                }
             }
 
             return true;
         }
 
         /// <summary>
-        /// 型の互換性チェック
+        ///     型の互換性チェック
         /// </summary>
         private bool IsTypeCompatible(ITypeSymbol originalType, ITypeSymbol newType)
         {
             // 同じ型は互換性あり
             if (originalType.Equals(newType, SymbolEqualityComparer.Default))
+            {
                 return true;
+            }
 
             // 数値型の場合、拡大変換は許容（int → longなど）
             if (IsNumericType(originalType) && IsNumericType(newType))
@@ -1631,7 +1687,10 @@ namespace boilersExtensions.ViewModels
                 while (baseType != null)
                 {
                     if (baseType.Equals(originalType, SymbolEqualityComparer.Default))
+                    {
                         return true;
+                    }
+
                     baseType = baseType.BaseType;
                 }
             }
@@ -1647,7 +1706,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 数値型かどうかをチェック
+        ///     数値型かどうかをチェック
         /// </summary>
         private bool IsNumericType(ITypeSymbol type)
         {
@@ -1671,7 +1730,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 数値型のランク（サイズ）を取得
+        ///     数値型のランク（サイズ）を取得
         /// </summary>
         private int GetNumericTypeRank(ITypeSymbol type)
         {
@@ -1701,15 +1760,16 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// メソッドシグネチャの不一致に関する問題を作成
+        ///     メソッドシグネチャの不一致に関する問題を作成
         /// </summary>
-        private async Task<PotentialIssue> CreateMethodSignatureIssue(IMethodSymbol original, IMethodSymbol newMethod, ReferenceLocation location)
+        private async Task<PotentialIssue> CreateMethodSignatureIssue(IMethodSymbol original, IMethodSymbol newMethod,
+            ReferenceLocation location)
         {
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
             // シグネチャの違いを特定
-            string incompatibilityDetails = "";
+            var incompatibilityDetails = "";
 
             // 戻り値の型が異なる場合
             if (!original.ReturnType.Equals(newMethod.ReturnType, SymbolEqualityComparer.Default))
@@ -1719,25 +1779,26 @@ namespace boilersExtensions.ViewModels
 
             // パラメータの違いを確認
             var minParamCount = Math.Min(original.Parameters.Length, newMethod.Parameters.Length);
-            for (int i = 0; i < minParamCount; i++)
+            for (var i = 0; i < minParamCount; i++)
             {
                 var origParam = original.Parameters[i];
                 var newParam = newMethod.Parameters[i];
 
                 if (!origParam.Type.Equals(newParam.Type, SymbolEqualityComparer.Default))
                 {
-                    incompatibilityDetails += $"パラメータ #{i + 1} ({origParam.Name}) の型が異なります: '{origParam.Type}' → '{newParam.Type}' ";
+                    incompatibilityDetails +=
+                        $"パラメータ #{i + 1} ({origParam.Name}) の型が異なります: '{origParam.Type}' → '{newParam.Type}' ";
                 }
             }
 
             // 元のメソッドにあって新しいメソッドにないパラメータ
-            for (int i = minParamCount; i < original.Parameters.Length; i++)
+            for (var i = minParamCount; i < original.Parameters.Length; i++)
             {
                 incompatibilityDetails += $"パラメータ #{i + 1} ({original.Parameters[i].Name}) が新しいメソッドにありません。 ";
             }
 
             // 新しいメソッドにあって元のメソッドにないパラメータ
-            for (int i = minParamCount; i < newMethod.Parameters.Length; i++)
+            for (var i = minParamCount; i < newMethod.Parameters.Length; i++)
             {
                 incompatibilityDetails += $"新しいメソッドには追加のパラメータ #{i + 1} ({newMethod.Parameters[i].Name}) があります。 ";
             }
@@ -1755,7 +1816,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 指定された行のコードスニペットを取得
+        ///     指定された行のコードスニペットを取得
         /// </summary>
         private async Task<string> GetCodeSnippet(Document document, int lineNumber, int contextLines = 1)
         {
@@ -1763,13 +1824,13 @@ namespace boilersExtensions.ViewModels
             var lines = sourceText.Lines;
 
             // 範囲内に収める
-            int startLine = Math.Max(0, lineNumber - contextLines + 1);
-            int endLine = Math.Min(lines.Count - 1, lineNumber + contextLines + 1);
+            var startLine = Math.Max(0, lineNumber - contextLines + 1);
+            var endLine = Math.Min(lines.Count - 1, lineNumber + contextLines + 1);
 
             var snippetBuilder = new StringBuilder();
 
             // 前後の行を含めてスニペットを構築
-            for (int i = startLine; i <= endLine; i++)
+            for (var i = startLine; i <= endLine; i++)
             {
                 var line = lines[i];
                 var lineText = sourceText.GetSubText(line.Span).ToString();
@@ -1788,7 +1849,8 @@ namespace boilersExtensions.ViewModels
             return snippetBuilder.ToString();
         }
 
-        private async Task<PotentialIssue> CreatePropertyMissingIssue(IPropertySymbol property, ReferenceLocation location)
+        private async Task<PotentialIssue> CreatePropertyMissingIssue(IPropertySymbol property,
+            ReferenceLocation location)
         {
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
@@ -1800,12 +1862,13 @@ namespace boilersExtensions.ViewModels
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "プロパティ欠落",
                 Description = $"プロパティ '{property.Name}' は新しい型に存在しません。",
-                SuggestedFix = $"新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。",
+                SuggestedFix = "新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。",
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
 
-        private async Task<PotentialIssue> CreatePropertyTypeIssue(IPropertySymbol original, IPropertySymbol newProperty, ReferenceLocation location)
+        private async Task<PotentialIssue> CreatePropertyTypeIssue(IPropertySymbol original,
+            IPropertySymbol newProperty, ReferenceLocation location)
         {
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;

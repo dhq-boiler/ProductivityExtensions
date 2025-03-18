@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Disposables;
 using Reactive.Bindings.Extensions;
+using Window = System.Windows.Window;
 
 namespace boilersExtensions.Utils
 {
     /// <summary>
-    /// 型置換の影響範囲分析結果を表示するためのViewModel
+    ///     型置換の影響範囲分析結果を表示するためのViewModel
     /// </summary>
     public class ImpactAnalysisViewModel : BindableBase, IDisposable
     {
@@ -27,10 +29,10 @@ namespace boilersExtensions.Utils
                 .AddTo(_compositeDisposable);
 
             CloseCommand.Subscribe(() =>
-            {
-                Window?.Close();
-            })
-            .AddTo(_compositeDisposable);
+                {
+                    Window?.Close();
+                })
+                .AddTo(_compositeDisposable);
 
             // 参照箇所に移動するコマンド
             NavigateToReferenceCommand = new ReactiveCommand<TypeReferenceInfo>()
@@ -88,10 +90,12 @@ namespace boilersExtensions.Utils
         public List<TypeReferenceInfo> References { get; set; } = new List<TypeReferenceInfo>();
 
         // 潜在的な問題のリスト
-        public ReactiveCollection<PotentialIssue> PotentialIssues { get; set; } = new ReactiveCollection<PotentialIssue>();
+        public ReactiveCollection<PotentialIssue> PotentialIssues { get; set; } =
+            new ReactiveCollection<PotentialIssue>();
 
         // グループ化された問題のリスト
-        public ReactiveCollection<IssueGroupViewModel> GroupedIssues { get; set; } = new ReactiveCollection<IssueGroupViewModel>();
+        public ReactiveCollection<IssueGroupViewModel> GroupedIssues { get; set; } =
+            new ReactiveCollection<IssueGroupViewModel>();
 
         public ReadOnlyReactivePropertySlim<bool> HasPotentialIssues => PotentialIssues
             .CollectionChangedAsObservable()
@@ -100,6 +104,17 @@ namespace boilersExtensions.Utils
 
         // ダイアログへの参照
         public Window Window { get; set; }
+
+        public void Dispose()
+        {
+            _compositeDisposable?.Dispose();
+            CloseCommand?.Dispose();
+            // その他のReactivePropertyの解放処理
+            foreach (var group in GroupedIssues)
+            {
+                group.IsExpanded?.Dispose();
+            }
+        }
 
         // 問題をグループ化するメソッド
         public void GroupIssues()
@@ -138,16 +153,18 @@ namespace boilersExtensions.Utils
                 try
                 {
                     // DTEサービスを取得
-                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                     if (dte == null)
+                    {
                         return;
+                    }
 
                     // ファイルを開く
                     var window = dte.ItemOperations.OpenFile(reference.FilePath);
                     if (window != null)
                     {
                         // TextDocumentを取得
-                        var textDoc = window.Document.Object("TextDocument") as EnvDTE.TextDocument;
+                        var textDoc = window.Document.Object("TextDocument") as TextDocument;
                         if (textDoc != null)
                         {
                             // 指定した行にカーソルを移動
@@ -171,7 +188,7 @@ namespace boilersExtensions.Utils
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+                    Debug.WriteLine($"Navigation error: {ex.Message}");
                     MessageBox.Show($"参照箇所への移動中にエラーが発生しました: {ex.Message}",
                         "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -189,16 +206,18 @@ namespace boilersExtensions.Utils
                 try
                 {
                     // DTEサービスを取得
-                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                     if (dte == null)
+                    {
                         return;
+                    }
 
                     // ファイルを開く
                     var window = dte.ItemOperations.OpenFile(issue.FilePath);
                     if (window != null)
                     {
                         // TextDocumentを取得
-                        var textDoc = window.Document.Object("TextDocument") as EnvDTE.TextDocument;
+                        var textDoc = window.Document.Object("TextDocument") as TextDocument;
                         if (textDoc != null)
                         {
                             // 指定した行にカーソルを移動
@@ -222,7 +241,7 @@ namespace boilersExtensions.Utils
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+                    Debug.WriteLine($"Navigation error: {ex.Message}");
                     MessageBox.Show($"問題箇所への移動中にエラーが発生しました: {ex.Message}",
                         "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -249,32 +268,21 @@ namespace boilersExtensions.Utils
                 try
                 {
                     // 現在のブックマーク状態を確認（ファイルと行番号を指定）
-                    bool isBookmarked = BookmarkManager.IsBookmarkSet(reference.FilePath, reference.LineNumber);
+                    var isBookmarked = BookmarkManager.IsBookmarkSet(reference.FilePath, reference.LineNumber);
                     reference.IsBookmarked.Value = isBookmarked;
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error initializing bookmark state: {ex.Message}");
+                    Debug.WriteLine($"Error initializing bookmark state: {ex.Message}");
                     // エラー時はデフォルトでfalse
                     reference.IsBookmarked.Value = false;
                 }
             }
         }
-
-        public void Dispose()
-        {
-            _compositeDisposable?.Dispose();
-            CloseCommand?.Dispose();
-            // その他のReactivePropertyの解放処理
-            foreach (var group in GroupedIssues)
-            {
-                group.IsExpanded?.Dispose();
-            }
-        }
     }
 
     /// <summary>
-    /// 型参照情報を格納するクラス
+    ///     型参照情報を格納するクラス
     /// </summary>
     public class TypeReferenceInfo
     {
@@ -286,11 +294,11 @@ namespace boilersExtensions.Utils
         public string ReferenceType { get; set; } // Method parameter, variable declaration, etc.
 
         // ブックマーク状態を保持するプロパティを追加
-        public ReactivePropertySlim<bool> IsBookmarked { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactivePropertySlim<bool> IsBookmarked { get; } = new ReactivePropertySlim<bool>();
     }
 
     /// <summary>
-    /// 型置換による潜在的な問題を表すクラス
+    ///     型置換による潜在的な問題を表すクラス
     /// </summary>
     public class PotentialIssue
     {

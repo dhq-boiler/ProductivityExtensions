@@ -129,48 +129,50 @@ namespace boilersExtensions.Commands
                             var documentPath = dte.ActiveDocument.FullName;
 
                             // Razorファイルの場合はRazor言語サービスを使用して直接処理
-                            bool isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                               documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
+                            var isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                              documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
 
                             // C#コードとRazorファイル間のマッピングを使用する方法
                             if (isRazorFile && codeToRazorMapping != null) // マッピング情報が利用可能と仮定
                             {
                                 // C#コード内での位置
-                                int csharpPosition = fullTypeSpan.Start;
+                                var csharpPosition = fullTypeSpan.Start;
 
                                 // C#コード内での位置からその行番号を特定する
-                                int csharpLine = 0;
+                                var csharpLine = 0;
                                 if (code != null)
                                 {
                                     // コード内での行番号を計算
                                     var lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-                                    int charCount = 0;
-                                    for (int i = 0; i < lines.Length; i++)
+                                    var charCount = 0;
+                                    for (var i = 0; i < lines.Length; i++)
                                     {
-                                        int lineLength = lines[i].Length + Environment.NewLine.Length;
+                                        var lineLength = lines[i].Length + Environment.NewLine.Length;
                                         if (charCount + lineLength > csharpPosition)
                                         {
                                             csharpLine = i;
                                             break;
                                         }
+
                                         charCount += lineLength;
                                     }
 
                                     // ファイルの内容を直接読み込む
-                                    string razorContent = File.ReadAllText(documentPath);
+                                    var razorContent = File.ReadAllText(documentPath);
 
                                     // マッピング情報を使用してRazorファイル内の対応する位置を取得
-                                    if (codeToRazorMapping.TryGetValue(csharpLine, out int razorPosition))
+                                    if (codeToRazorMapping.TryGetValue(csharpLine, out var razorPosition))
                                     {
                                         // 行内の相対的な位置を計算（必要に応じて）
-                                        int offsetInLine = csharpPosition - charCount;
+                                        var offsetInLine = csharpPosition - charCount;
 
                                         // 型名を取得
-                                        string typeName = typeSymbol.Name;
+                                        var typeName = typeSymbol.Name;
 
                                         // 位置周辺のテキストをチェックして正確な型名の位置を特定
                                         // razorPosition付近で型名を探す
-                                        int exactPosition = FindExactTypePosition(razorContent, razorPosition, typeName);
+                                        var exactPosition =
+                                            FindExactTypePosition(razorContent, razorPosition, typeName);
 
                                         if (exactPosition >= 0)
                                         {
@@ -217,12 +219,12 @@ namespace boilersExtensions.Commands
         private static int FindExactTypePosition(string content, int approximatePosition, string typeName)
         {
             // 検索範囲を制限（前後100文字程度）
-            int searchStart = Math.Max(0, approximatePosition - 100);
-            int searchEnd = Math.Min(content.Length, approximatePosition + 100);
-            string searchArea = content.Substring(searchStart, searchEnd - searchStart);
+            var searchStart = Math.Max(0, approximatePosition - 100);
+            var searchEnd = Math.Min(content.Length, approximatePosition + 100);
+            var searchArea = content.Substring(searchStart, searchEnd - searchStart);
 
             // 型名を検索
-            int relativePos = searchArea.IndexOf(typeName);
+            var relativePos = searchArea.IndexOf(typeName);
             if (relativePos >= 0)
             {
                 return searchStart + relativePos;
@@ -276,8 +278,8 @@ namespace boilersExtensions.Commands
                 var documentPath = dte.ActiveDocument.FullName;
 
                 // Razorファイルの場合はRazor言語サービスを使用して直接処理
-                bool isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                   documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
+                var isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                  documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
 
                 // ダイアログを作成
                 var window = new TypeHierarchyDialog();
@@ -294,7 +296,7 @@ namespace boilersExtensions.Commands
                     {
                         // Razorファイル専用の処理
                         // ここでは、解析されたC#コードとともに、元のファイルパスも渡す
-                        string razorFilePath = documentPath;
+                        var razorFilePath = documentPath;
                         await viewModel.InitializeRazorAsync(typeSymbol, document, position,
                             razorFilePath, code, fullTypeSpan);
                     }
@@ -332,7 +334,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// テキストビューから元のRazorドキュメントを取得する
+        ///     テキストビューから元のRazorドキュメントを取得する
         /// </summary>
         private static Document GetDocumentFromTextView(IWpfTextView textView)
         {
@@ -351,7 +353,8 @@ namespace boilersExtensions.Commands
 
             // まず、正確なパスマッチを試みる
             var documents = workspace.CurrentSolution.Projects.SelectMany(p => p.Documents);
-            var exactMatch = documents.FirstOrDefault(d => string.Equals(d.FilePath, documentPath, StringComparison.OrdinalIgnoreCase));
+            var exactMatch = documents.FirstOrDefault(d =>
+                string.Equals(d.FilePath, documentPath, StringComparison.OrdinalIgnoreCase));
 
             if (exactMatch != null)
             {
@@ -367,14 +370,16 @@ namespace boilersExtensions.Commands
         private static string GetOriginalFilePath(string generatedPath)
         {
             if (string.IsNullOrEmpty(generatedPath))
+            {
                 return null;
+            }
 
             // 生成されたパスから元のファイルパスを抽出
-            int razorIndex = generatedPath.IndexOf(".razor", StringComparison.OrdinalIgnoreCase);
+            var razorIndex = generatedPath.IndexOf(".razor", StringComparison.OrdinalIgnoreCase);
             if (razorIndex > 0)
             {
                 // ".razor"の後に識別子が付いている場合、それを取り除く
-                string baseFilePath = generatedPath.Substring(0, razorIndex + 6); // +6 for ".razor"
+                var baseFilePath = generatedPath.Substring(0, razorIndex + 6); // +6 for ".razor"
                 return baseFilePath;
             }
 

@@ -6,7 +6,7 @@ using boilersExtensions.Utils;
 namespace boilersExtensions.Views
 {
     /// <summary>
-    /// ImpactAnalysisDialog.xaml の相互作用ロジック
+    ///     ImpactAnalysisDialog.xaml の相互作用ロジック
     /// </summary>
     public partial class ImpactAnalysisDialog : Window
     {

@@ -11,7 +11,8 @@ namespace boilersExtensions.Utils
         public DiffViewer() => _differenceService =
             Package.GetGlobalService(typeof(SVsDifferenceService)) as IVsDifferenceService;
 
-        public IVsWindowFrame ShowDiff(string originalCode, string newCode, bool isReadOnly = true, string caption = "コード変更の推薦", string tooltip = "以下の変更を推薦します")
+        public IVsWindowFrame ShowDiff(string originalCode, string newCode, bool isReadOnly = true,
+            string caption = "コード変更の推薦", string tooltip = "以下の変更を推薦します")
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 

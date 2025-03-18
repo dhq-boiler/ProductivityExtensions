@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 
 namespace boilersExtensions.Utils
 {
     /// <summary>
-    /// 型シンボルを動的に解決するためのヘルパークラス
+    ///     型シンボルを動的に解決するためのヘルパークラス
     /// </summary>
     public static class DynamicTypeResolver
     {
@@ -16,7 +15,7 @@ namespace boilersExtensions.Utils
         private static readonly Dictionary<string, string> TypeNameToFullNameCache = new Dictionary<string, string>();
 
         /// <summary>
-        /// コンパイレーションから型名に最も近い型シンボルを検索
+        ///     コンパイレーションから型名に最も近い型シンボルを検索
         /// </summary>
         /// <param name="compilation">コンパイレーション</param>
         /// <param name="typeName">検索する型名</param>
@@ -67,8 +66,8 @@ namespace boilersExtensions.Utils
 
                 // 部分一致で検索
                 symbols = compilation.GetSymbolsWithName(
-                    name => name.EndsWith(typeName, StringComparison.OrdinalIgnoreCase),
-                    SymbolFilter.Type)
+                        name => name.EndsWith(typeName, StringComparison.OrdinalIgnoreCase),
+                        SymbolFilter.Type)
                     .OfType<INamedTypeSymbol>()
                     .ToList();
 
@@ -107,7 +106,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 複数の型シンボルから最適なものを選択
+        ///     複数の型シンボルから最適なものを選択
         /// </summary>
         private static INamedTypeSymbol SelectBestTypeMatch(List<INamedTypeSymbol> symbols, string typeName)
         {
@@ -134,7 +133,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 与えられた名前空間がUI関連かどうかをチェック
+        ///     与えられた名前空間がUI関連かどうかをチェック
         /// </summary>
         private static bool IsUIRelatedNamespace(string ns)
         {
@@ -149,7 +148,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 型名から可能性のある完全修飾名の候補を生成
+        ///     型名から可能性のある完全修飾名の候補を生成
         /// </summary>
         private static IEnumerable<string> GenerateNamespaceCandidates(string typeName)
         {
@@ -157,20 +156,15 @@ namespace boilersExtensions.Utils
             var commonNamespaces = new[]
             {
                 // UI・Webフレームワーク関連
-                $"Microsoft.AspNetCore.Components.{typeName}",
-                $"Microsoft.AspNetCore.Components.Web.{typeName}",
-                $"Microsoft.AspNetCore.Components.Forms.{typeName}",
-                $"Microsoft.AspNetCore.Mvc.{typeName}",
-                
+                $"Microsoft.AspNetCore.Components.{typeName}", $"Microsoft.AspNetCore.Components.Web.{typeName}",
+                $"Microsoft.AspNetCore.Components.Forms.{typeName}", $"Microsoft.AspNetCore.Mvc.{typeName}",
+
                 // よく使われるコンポーネントライブラリ（特定のライブラリをハードコードせず一般的なパターン）
-                $"Components.{typeName}",
-                $"{GetLibraryNameFromComponentName(typeName)}.Components.{typeName}",
+                $"Components.{typeName}", $"{GetLibraryNameFromComponentName(typeName)}.Components.{typeName}",
                 $"{GetLibraryNameFromComponentName(typeName)}.{typeName}",
-                
+
                 // .NET標準
-                $"System.{typeName}",
-                $"System.Collections.Generic.{typeName}",
-                $"System.Linq.{typeName}",
+                $"System.{typeName}", $"System.Collections.Generic.{typeName}", $"System.Linq.{typeName}",
                 $"System.ComponentModel.{typeName}"
             };
 
@@ -178,7 +172,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// コンポーネント名からライブラリ名を推測する
+        ///     コンポーネント名からライブラリ名を推測する
         /// </summary>
         private static string GetLibraryNameFromComponentName(string componentName)
         {
@@ -193,7 +187,7 @@ namespace boilersExtensions.Utils
             {
                 // ここで特定のライブラリ名をハードコードするのではなく、
                 // Razorファイル内の @using ディレクティブなどから動的に判断するといいでしょう
-                return "UI";  // 汎用的な名前を使用
+                return "UI"; // 汎用的な名前を使用
             }
 
             // 一般的なパターンから推測（例：ButtonBaseならButtonが含まれるライブラリ）
@@ -212,7 +206,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// Razorファイルの@usingディレクティブから動的に名前空間を検出
+        ///     Razorファイルの@usingディレクティブから動的に名前空間を検出
         /// </summary>
         public static List<string> GetNamespacesFromUsingDirectives(List<string> usingDirectives)
         {
