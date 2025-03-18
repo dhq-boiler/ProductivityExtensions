@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Packaging;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,6 +19,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
@@ -172,6 +176,9 @@ namespace boilersExtensions.ViewModels
         public ReactivePropertySlim<TypeHierarchyAnalyzer.TypeHierarchyInfo> SelectedType { get; }
             = new ReactivePropertySlim<TypeHierarchyAnalyzer.TypeHierarchyInfo>();
 
+        //有効・無効
+        public ReactivePropertySlim<bool> IsEnabledRelatedTypes { get; } = new ReactivePropertySlim<bool>(true);
+
         // 表示モード
         public ReactivePropertySlim<bool> ShowBaseTypes { get; } = new ReactivePropertySlim<bool>(true);
         public ReactivePropertySlim<bool> ShowDerivedTypes { get; } = new ReactivePropertySlim<bool>(true);
@@ -242,6 +249,9 @@ namespace boilersExtensions.ViewModels
                 // デバッグ出力
                 System.Diagnostics.Debug.WriteLine($"Using primitive types: {usePrimitiveTypes}");
 
+                //通常のcsファイルの場合は関連型を有効にする
+                IsEnabledRelatedTypes.Value = true;
+
                 // 型候補リストを再取得（プリミティブ型の使用有無を設定）
                 ShowUseSpecialTypes.Value = usePrimitiveTypes;
 
@@ -276,6 +286,9 @@ namespace boilersExtensions.ViewModels
                 // デバッグ情報
                 System.Diagnostics.Debug.WriteLine($"InitializeRazorAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
                 System.Diagnostics.Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
+
+                //razorスクリプトファイルの場合は関連型を無効にする
+                IsEnabledRelatedTypes.Value = false;
 
                 // 元の型名を表示
                 OriginalTypeName.Value = typeSymbol.ToDisplayString();
@@ -349,7 +362,7 @@ namespace boilersExtensions.ViewModels
         /// </summary>
         private async Task RefreshTypeCandidates()
         {
-            if (_originalTypeSymbol == null || _document == null)
+            if (_originalTypeSymbol == null)
             {
                 return;
             }
@@ -359,21 +372,52 @@ namespace boilersExtensions.ViewModels
                 IsProcessing.Value = true;
                 ProcessingStatus.Value = "型の階層を分析中...";
 
-                // 型の候補を取得
-                var candidates = await TypeHierarchyAnalyzer.GetTypeReplacementCandidatesAsync(
-                    _originalTypeSymbol,
-                    _document,
-                    ShowBaseTypes.Value,
-                    ShowDerivedTypes.Value,
-                    ShowRelatedTypes.Value,
-                    ShowUseSpecialTypes.Value);
+                // Razorファイルの場合
+                bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                                   (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                    _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
-                // 候補を設定
-                TypeCandidates.Value = candidates;
+                if (isRazorFile && _document == null)
+                {
+                    // Razorファイル用の型候補取得処理
+                    // コンパイレーションから直接型候補を取得する
+                    var candidates = await GetRazorTypeReplacementCandidatesAsync(
+                        _originalTypeSymbol,
+                        ShowBaseTypes.Value,
+                        ShowDerivedTypes.Value,
+                        ShowRelatedTypes.Value,
+                        ShowUseSpecialTypes.Value);
 
-                // 現在の型を選択状態にする
-                SelectedType.Value =
-                    candidates.FirstOrDefault(t => t.FullName == _originalTypeSymbol.ToDisplayString());
+                    // 候補を設定
+                    TypeCandidates.Value = candidates;
+
+                    // 現在の型を選択状態にする
+                    SelectedType.Value =
+                        candidates.FirstOrDefault(t => t.FullName == _originalTypeSymbol.ToDisplayString());
+                }
+                else if (_document != null)
+                {
+                    // 通常のC#ファイル用の既存処理
+                    var candidates = await TypeHierarchyAnalyzer.GetTypeReplacementCandidatesAsync(
+                        _originalTypeSymbol,
+                        _document,
+                        ShowBaseTypes.Value,
+                        ShowDerivedTypes.Value,
+                        ShowRelatedTypes.Value,
+                        ShowUseSpecialTypes.Value);
+
+                    // 候補を設定
+                    TypeCandidates.Value = candidates;
+
+                    // 現在の型を選択状態にする
+                    SelectedType.Value =
+                        candidates.FirstOrDefault(t => t.FullName == _originalTypeSymbol.ToDisplayString());
+                }
+                else
+                {
+                    // どちらの条件も満たさない場合（エラー状態）
+                    Debug.WriteLine("Error: Both _document and _razorFilePath are invalid");
+                }
             }
             catch (Exception ex)
             {
@@ -384,6 +428,150 @@ namespace boilersExtensions.ViewModels
                 IsProcessing.Value = false;
                 ProcessingStatus.Value = "準備完了";
             }
+        }
+
+        /// <summary>
+        /// Razor用の型候補を取得する補助メソッド
+        /// </summary>
+        private async Task<List<TypeHierarchyAnalyzer.TypeHierarchyInfo>> GetRazorTypeReplacementCandidatesAsync(
+            ITypeSymbol originalType,
+            bool includeBaseTypes,
+            bool includeDerivedTypes,
+            bool includeRelatedTypes,
+            bool showUseSpecialTypes)
+        {
+            var candidates = new List<TypeHierarchyAnalyzer.TypeHierarchyInfo>();
+
+            try
+            {
+                // Roslynワークスペースからコンパイレーションを取得
+                var componentModel = await Package.GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
+                var workspace = componentModel?.GetService<VisualStudioWorkspace>();
+
+                if (workspace != null)
+                {
+                    // ワークスペースからファイルに関連するプロジェクトを検索
+                    var project = workspace.CurrentSolution.Projects
+                        .FirstOrDefault(p => p.Documents.Any(d =>
+                            string.Equals(d.FilePath, _razorFilePath, StringComparison.OrdinalIgnoreCase) ||
+                            d.FilePath.Contains(Path.GetFileName(_razorFilePath))));
+
+                    if (project != null)
+                    {
+                        var compilation = await project.GetCompilationAsync();
+
+                        // 元の型のTypeHierarchyInfoを作成
+                        var typeInfo = TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(originalType, showUseSpecialTypes);
+                        candidates.Add(typeInfo);
+
+                        // ベース型とインターフェースを追加
+                        if (includeBaseTypes)
+                        {
+                            // ベースクラスを追加
+                            var baseType = originalType.BaseType;
+                            while (baseType != null && !baseType.ToDisplayString().Equals("object"))
+                            {
+                                candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(baseType, showUseSpecialTypes));
+                                baseType = baseType.BaseType;
+                            }
+
+                            // インターフェースを追加
+                            foreach (var iface in originalType.Interfaces)
+                            {
+                                candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(iface, showUseSpecialTypes));
+                            }
+                        }
+
+                        // 派生型や関連型の検索は既存の機能を使用
+                        // （完全な実装はTypeHierarchyAnalyzerを参照）
+                        // 派生型を追加（具象化）
+                        if (includeDerivedTypes)
+                        {
+                            foreach (var derived in typeInfo.DerivedClasses)
+                            {
+                                candidates.Add(derived);
+                            }
+                        }
+
+                        // アセンブリ内の類似インターフェースを検索（新機能）
+                        if (originalType.TypeKind == TypeKind.Interface)
+                        {
+                            // 元のインターフェース名からパターンを作成 (例: ICollection -> I*Collection*)
+                            string namePattern = originalType.Name;
+                            if (namePattern.StartsWith("I"))
+                            {
+                                namePattern = namePattern.Substring(1); // "I" を削除
+                            }
+
+                            // アセンブリ内のすべての型をチェック
+                            foreach (var assembly in compilation.References.Select(r => compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+                            {
+                                if (assembly == null) continue;
+
+                                // 名前空間を再帰的に探索
+                                TypeHierarchyAnalyzer.SearchForSimilarInterfaces(assembly.GlobalNamespace, namePattern, candidates, originalType, showUseSpecialTypes);
+                            }
+                        }
+
+                        // 名前の類似性に基づいて追加の関連型を検索
+                        var typeName = originalType.Name;
+                        if (originalType.TypeKind == TypeKind.Interface && typeName.StartsWith("I"))
+                        {
+                            // 名前のパターンを作成
+                            var baseName = typeName.Substring(1); // "I" を削除
+                            var patternPairs = new Dictionary<string, string>
+                            {
+                                { "Data", "ReadOnlyData" },
+                                { "Mutable", "Immutable" },
+                                { "", "ReadOnly" },
+                                { "Collection", "ReadOnlyCollection" },
+                                { "List", "ReadOnlyList" },
+                                { "Dictionary", "ReadOnlyDictionary" },
+                                // 他のパターンも追加できます
+                            };
+
+                            // コンパイルしているプロジェクト内のすべての型シンボルを取得
+                            var allTypes = new List<INamedTypeSymbol>();
+                            TypeHierarchyAnalyzer.CollectAllTypes(compilation.GlobalNamespace, allTypes);
+
+                            // パターンに基づいて候補を検索
+                            foreach (var pair in patternPairs)
+                            {
+                                if (baseName.Contains(pair.Key))
+                                {
+                                    string targetName;
+                                    if (string.IsNullOrEmpty(pair.Key))
+                                    {
+                                        // 空キーの場合は、頭に接頭辞を追加
+                                        targetName = "I" + pair.Value + baseName;
+                                    }
+                                    else
+                                    {
+                                        // 通常の置換
+                                        targetName = "I" + baseName.Replace(pair.Key, pair.Value);
+                                    }
+                                    var matchingTypes = allTypes.Where(t =>
+                                        t.Name == targetName &&
+                                        t.TypeKind == TypeKind.Interface &&
+                                        !candidates.Any(c => c.FullName == t.ToDisplayString()));
+
+                                    foreach (var type in matchingTypes)
+                                    {
+                                        candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(type, showUseSpecialTypes, originalType));
+                                        Debug.WriteLine($"Added pattern-matched type: {type.ToDisplayString()}");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetRazorTypeReplacementCandidatesAsync: {ex.Message}");
+            }
+
+            return candidates;
         }
 
         /// <summary>
