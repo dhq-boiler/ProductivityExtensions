@@ -1736,7 +1736,7 @@ namespace boilersExtensions.Utils
         /// <summary>
         /// 型シンボルから型階層情報を作成
         /// </summary>
-        private static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes, ITypeSymbol originalTypeSymbol = null)
+        internal static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes, ITypeSymbol originalTypeSymbol = null)
         {
             string displayName;
 
@@ -2082,7 +2082,7 @@ namespace boilersExtensions.Utils
         }
 
         // すべての型を収集するヘルパーメソッド
-        private static void CollectAllTypes(INamespaceSymbol ns, List<INamedTypeSymbol> types)
+        internal static void CollectAllTypes(INamespaceSymbol ns, List<INamedTypeSymbol> types)
         {
             foreach (var member in ns.GetMembers())
             {
@@ -2097,7 +2097,7 @@ namespace boilersExtensions.Utils
             }
         }
 
-        private static void SearchForSimilarInterfaces(INamespaceSymbol ns, string pattern, List<TypeHierarchyInfo> candidates,
+        internal static void SearchForSimilarInterfaces(INamespaceSymbol ns, string pattern, List<TypeHierarchyInfo> candidates,
             ITypeSymbol originalType, bool showUseSpecialTypes)
         {
             // 現在の名前空間内のすべてのメンバーを検索
