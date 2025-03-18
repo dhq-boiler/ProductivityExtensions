@@ -314,22 +314,129 @@ namespace boilersExtensions.Utils
         private void SetupRazorLineNumbers()
         {
             // マッピング情報がなければ何もしない
-            if (Mapping == null || string.IsNullOrEmpty(ExtractedCSharpCode))
+            if (Mapping == null || string.IsNullOrEmpty(ExtractedCSharpCode) || string.IsNullOrEmpty(RazorFilePath))
                 return;
+
+            // Razorファイルの内容を読み込む（行番号の計算に使用）
+            if (string.IsNullOrEmpty(_razorContent) && File.Exists(RazorFilePath))
+            {
+                try
+                {
+                    _razorContent = File.ReadAllText(RazorFilePath);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Razorファイルの読み込みエラー: {ex.Message}");
+                }
+            }
 
             foreach (var reference in References)
             {
-                // 生成コードの行番号からRazor行番号を計算
-                reference.RazorLineNumber = RazorMappingHelper.MapToRazorLine(
-                    Mapping, ExtractedCSharpCode, reference.LineNumber);
+                try
+                {
+                    // 1. 元のファイルパスを正確に解決
+                    reference.FilePath = ResolveAccurateFilePath(reference.FilePath);
+                    reference.FileName = Path.GetFileName(reference.FilePath);
+
+                    // 2. 生成コードの行番号からRazor行番号を計算（改善されたマッピングを使用）
+                    int razorLine = RazorMappingHelper.MapToRazorLine(
+                        Mapping, ExtractedCSharpCode, reference.LineNumber);
+
+                    // 3. ファイル内容を使用した代替方法を試みる
+                    if (razorLine <= 0 && !string.IsNullOrEmpty(_razorContent) && !string.IsNullOrEmpty(reference.Text))
+                    {
+                        razorLine = TryFindLineByContent(_razorContent, reference.Text.Trim());
+                    }
+
+                    // 4. 最低でも1を設定（0は表示しない）
+                    reference.RazorLineNumber = Math.Max(1, razorLine);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"参照の行番号設定エラー: {ex.Message}");
+                    reference.RazorLineNumber = 1; // エラー時のデフォルト値
+                }
             }
 
-            // 潜在的な問題にもRazor行番号を設定
+            // 潜在的な問題にも同様の処理を適用
             foreach (var issue in PotentialIssues)
             {
-                issue.RazorLineNumber = RazorMappingHelper.MapToRazorLine(
-                    Mapping, ExtractedCSharpCode, issue.LineNumber);
+                try
+                {
+                    issue.FilePath = ResolveAccurateFilePath(issue.FilePath);
+                    issue.FileName = Path.GetFileName(issue.FilePath);
+
+                    int razorLine = RazorMappingHelper.MapToRazorLine(
+                        Mapping, ExtractedCSharpCode, issue.LineNumber);
+
+                    if (razorLine <= 0 && !string.IsNullOrEmpty(_razorContent) && !string.IsNullOrEmpty(issue.CodeSnippet))
+                    {
+                        razorLine = TryFindLineByContent(_razorContent, issue.CodeSnippet.Trim());
+                    }
+
+                    issue.RazorLineNumber = Math.Max(1, razorLine);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"問題の行番号設定エラー: {ex.Message}");
+                    issue.RazorLineNumber = 1;
+                }
             }
+
+            Debug.WriteLine($"Razorファイルパス: {RazorFilePath}");
+            Debug.WriteLine($"Razorコンテンツ: {(_razorContent != null ? $"{_razorContent.Length} バイト" : "なし")}");
+            Debug.WriteLine($"マッピングエントリ数: {Mapping?.Count ?? 0}");
+            Debug.WriteLine($"参照数: {References.Count}");
+        }
+
+
+        // ファイルパスを正確に解決するヘルパーメソッド
+        private string ResolveAccurateFilePath(string originalPath)
+        {
+            if (string.IsNullOrEmpty(originalPath))
+                return string.Empty;
+
+            string resolvedPath = RazorFileUtility.GetOriginalFilePath(originalPath);
+
+            // パスが実際に存在するか確認
+            if (!File.Exists(resolvedPath) && !string.IsNullOrEmpty(RazorFilePath))
+            {
+                // RazorFilePathを基準にして相対パスを解決してみる
+                string directory = Path.GetDirectoryName(RazorFilePath);
+                string fileName = Path.GetFileName(resolvedPath);
+
+                string candidatePath = Path.Combine(directory, fileName);
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+
+            return resolvedPath;
+        }
+
+        // コンテンツに基づいて行番号を見つけるヘルパーメソッド
+        private int TryFindLineByContent(string fileContent, string lineContent)
+        {
+            if (string.IsNullOrEmpty(fileContent) || string.IsNullOrEmpty(lineContent))
+                return 0;
+
+            // 特徴的な内容を抽出（短すぎる場合は無視）
+            if (lineContent.Length < 10)
+                return 0;
+
+            string[] contentLines = fileContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
+
+            // 各行をチェック
+            for (int i = 0; i < contentLines.Length; i++)
+            {
+                if (contentLines[i].Contains(lineContent))
+                {
+                    return i + 1; // 1ベースの行番号
+                }
+            }
+
+            return 0;
         }
 
         // 参照のブックマーク状態を初期化するメソッド

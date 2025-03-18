@@ -1389,250 +1389,391 @@ namespace boilersExtensions.ViewModels
         {
             try
             {
-                // ComponentModelサービスを取得
-                var componentModel = await Package.GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
-                var workspace = componentModel?.GetService<VisualStudioWorkspace>();
-
-                if (workspace == null)
+                // マッピング情報のデバッグ出力
+                if (_mapping != null)
                 {
-                    MessageBox.Show("ワークスペースの取得に失敗しました。",
-                        "エラー",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                    return;
-                }
-
-                // Razorファイルを含むプロジェクトを特定
-                var razorProject = FindProjectForRazorFile(_razorFilePath, workspace);
-
-                if (razorProject == null)
-                {
-                    MessageBox.Show($"Razorファイル '{Path.GetFileName(_razorFilePath)}' を含むプロジェクトが見つかりませんでした。\n" +
-                                    "別の方法で分析を試みます。",
-                        "警告",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    // 代替方法として、すべてのプロジェクトを対象に型参照を検索
-                    await AnalyzeTypeReferencesInAllProjects(_originalTypeSymbol, workspace.CurrentSolution.Projects.ToList());
-                    return;
-                }
-
-                // プロジェクトのコンパイレーションを取得
-                var compilation = await razorProject.GetCompilationAsync();
-                if (compilation == null)
-                {
-                    MessageBox.Show("プロジェクトのコンパイレーションを取得できませんでした。",
-                        "エラー",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                    return;
-                }
-
-                // プロジェクト内のC#コードを含む生成ファイルを特定
-                // 生成されたコードを使って参照を検索するため
-                var generatedDocuments = workspace.CurrentSolution.Projects
-                    .SelectMany(p => p.Documents)
-                    .Where(d => d.FilePath != null && (
-                        d.FilePath.Contains(".razor.g.cs") ||
-                        d.FilePath.Contains(".cshtml.g.cs") ||
-                        (d.FilePath.Contains(".razor.") && d.FilePath.EndsWith(".cs")) ||
-                        (d.FilePath.Contains(".cshtml.") && d.FilePath.EndsWith(".cs"))
-                    )).ToList();
-
-                if (!generatedDocuments.Any())
-                {
-                    // 生成ファイルが見つからない場合、別の方法を試す
-                    var result = MessageBox.Show("Razorファイルの生成コードを見つけられませんでした。\n" +
-                        "型全体に対する参照検索を実行しますか？",
-                        "警告",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Warning);
-
-                    if (result == MessageBoxResult.Yes)
+                    Debug.WriteLine($"マッピング情報のエントリ数: {_mapping.Count}");
+                    foreach (var entry in _mapping.Take(10))
                     {
-                        // 型全体に対する参照検索
-                        await ShowImpactForSymbolInProject(_originalTypeSymbol, razorProject);
+                        Debug.WriteLine($"生成コード行 {entry.Key} -> Razor行 {entry.Value}");
                     }
-                    return;
                 }
 
-                // 影響分析のための参照リストとなる変数
+                // 型名を正確に取得
+                string originalTypeName = _originalTypeSymbol.Name;
+                string newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeName);
+
+                // 影響分析のための参照リストを準備
                 var impactList = new List<TypeReferenceInfo>();
                 var potentialIssues = new List<PotentialIssue>();
 
-                // 抽出したC#コードから特定位置の変数/パラメータを特定
-                if (_extractedCSharpCode != null && _fullTypeSpan.Start >= 0)
+                // 参照収集をより包括的に行う
+                await CollectAllTypeReferences(_originalTypeSymbol, impactList, potentialIssues);
+
+                // Razorファイルからの直接的な参照も検索
+                if (File.Exists(_razorFilePath))
                 {
-                    // C#コード内での位置から行番号を取得
-                    int lineNumber = GetLineNumberFromPosition(_extractedCSharpCode, _fullTypeSpan.Start);
-
-                    if (lineNumber > 0)
-                    {
-                        // 行内容を取得
-                        var lines = _extractedCSharpCode.Split('\n');
-                        if (lineNumber <= lines.Length)
-                        {
-                            string lineText = lines[lineNumber - 1].Trim();
-
-                            // パラメータまたは変数宣言のパターンを検索
-                            var paramMatch = System.Text.RegularExpressions.Regex.Match(
-                                lineText,
-                                $@"({_originalTypeSymbol.Name})\s+(\w+)");
-
-                            if (paramMatch.Success)
-                            {
-                                string paramName = paramMatch.Groups[2].Value;
-                                Debug.WriteLine($"Found parameter or variable: {paramName}");
-
-                                // 生成文書内でパラメータまたは変数の参照を検索
-                                foreach (var genDoc in generatedDocuments)
-                                {
-                                    var genText = await genDoc.GetTextAsync();
-                                    var genRoot = await genDoc.GetSyntaxRootAsync();
-                                    var genSemanticModel = await genDoc.GetSemanticModelAsync();
-
-                                    // 変数/パラメータ名の識別子を検索
-                                    var identifiers = genRoot.DescendantNodes()
-                                        .OfType<IdentifierNameSyntax>()
-                                        .Where(id => id.Identifier.Text == paramName)
-                                        .ToList();
-
-                                    foreach (var id in identifiers)
-                                    {
-                                        // 参照情報を作成
-                                        var linePosition = genText.Lines.GetLinePosition(id.Span.Start);
-                                        var refLine = linePosition.Line + 1;
-
-                                        var lineSpan = genText.Lines[linePosition.Line].Span;
-                                        var referenceText = genText.ToString(lineSpan);
-
-                                        impactList.Add(new TypeReferenceInfo
-                                        {
-                                            FilePath = RazorFileUtility.GetOriginalFilePath(genDoc.FilePath),
-                                            FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(genDoc.FilePath)),
-                                            LineNumber = refLine,
-                                            Column = linePosition.Character + 1,
-                                            Text = referenceText,
-                                            ReferenceType = $"パラメータ/変数の使用 (生成コード内)"
-                                        });
-                                    }
-
-                                    // 型互換性の問題を分析
-                                    try
-                                    {
-                                        // 選択された型のシンボルを取得
-                                        var newTypeSymbol = FindTypeSymbolInCompilation(SelectedType.Value.FullName, compilation);
-
-                                        if (newTypeSymbol != null)
-                                        {
-                                            // 元の型と新しい型の互換性をチェック
-                                            var compatibilityIssues = CheckTypeCompatibility(_originalTypeSymbol, newTypeSymbol);
-
-                                            foreach (var issue in compatibilityIssues)
-                                            {
-                                                // 互換性の問題がある場合、それに関連するコード参照を検索
-                                                foreach (var genDoc2 in generatedDocuments)
-                                                {
-                                                    var genText2 = await genDoc2.GetTextAsync();
-                                                    var genRoot2 = await genDoc2.GetSyntaxRootAsync();
-                                                    var genSemanticModel2 = await genDoc2.GetSemanticModelAsync();
-
-                                                    // 問題に関連する具体的なコード参照を検索
-                                                    var relatedNodes = FindNodesRelatedToCompatibilityIssue(genRoot2, genSemanticModel2, _originalTypeSymbol, issue);
-
-                                                    foreach (var node in relatedNodes)
-                                                    {
-                                                        var linePosition = genText2.Lines.GetLinePosition(node.Span.Start);
-                                                        var refLine = linePosition.Line + 1;
-
-                                                        var lineSpan = genText2.Lines[linePosition.Line].Span;
-                                                        var referenceText = genText2.ToString(lineSpan);
-
-                                                        // 潜在的な問題として追加
-                                                        potentialIssues.Add(new PotentialIssue
-                                                        {
-                                                            FilePath = RazorFileUtility.GetOriginalFilePath(genDoc2.FilePath),
-                                                            FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(genDoc2.FilePath)),
-                                                            LineNumber = _mapping is null ? refLine : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[refLine]),
-                                                            IssueType = issue.IssueType,
-                                                            Description = issue.Description,
-                                                            SuggestedFix = issue.SuggestedFix,
-                                                            CodeSnippet = referenceText.Trim()
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Debug.WriteLine($"新しい型のシンボルが見つかりませんでした: {SelectedType.Value.FullName}");
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Debug.WriteLine($"型互換性の分析中にエラーが発生しました: {ex.Message}");
-                                    }
-                                }
-
-                                if (impactList.Count > 0)
-                                {
-                                    // 影響範囲分析ダイアログを表示する前に、マッピング情報を検証
-                                    RazorMappingHelper.ValidateMapping(_mapping, _extractedCSharpCode);
-
-                                    // ダイアログ表示
-                                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                                    var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
-                                    rcPotentialIssues.AddRange(potentialIssues);
-
-                                    var dialog = new ImpactAnalysisDialog
-                                    {
-                                        DataContext = new ImpactAnalysisViewModel
-                                        {
-                                            OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
-                                            NewTypeName = SelectedType.Value.DisplayName,
-                                            ReferencesCount = impactList.Count,
-                                            References = impactList,
-                                            PotentialIssues = rcPotentialIssues,
-
-                                            // マッピング情報を明示的に渡す
-                                            Mapping = _mapping,
-                                            ExtractedCSharpCode = _extractedCSharpCode,
-                                            RazorFilePath = _razorFilePath
-                                        }
-                                    };
-
-                                    (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
-                                    dialog.Show();
-
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                    await CollectDirectRazorReferences(_razorFilePath, originalTypeName, impactList);
                 }
 
-                // パラメータ/変数が特定できなかった場合、型全体の参照を検索
-                var promptResult = MessageBox.Show(
-                    "特定のパラメータや変数が特定できませんでした。\n型全体に対する参照を検索しますか？",
-                    "分析オプション",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (promptResult == MessageBoxResult.Yes)
+                // 参照が見つかった場合、影響範囲分析ダイアログを表示
+                if (impactList.Count > 0)
                 {
-                    await ShowImpactForSymbolInProject(_originalTypeSymbol, razorProject);
+                    // マッピング情報を検証
+                    RazorMappingHelper.ValidateMapping(_mapping, _extractedCSharpCode);
+
+                    // ダイアログ表示
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
+                    rcPotentialIssues.AddRange(potentialIssues);
+
+                    var dialog = new ImpactAnalysisDialog
+                    {
+                        DataContext = new ImpactAnalysisViewModel
+                        {
+                            OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
+                            NewTypeName = SelectedType.Value.DisplayName,
+                            ReferencesCount = impactList.Count,
+                            References = impactList,
+                            PotentialIssues = rcPotentialIssues,
+
+                            // マッピング情報を明示的に渡す
+                            Mapping = _mapping,
+                            ExtractedCSharpCode = _extractedCSharpCode,
+                            RazorFilePath = _razorFilePath
+                        }
+                    };
+
+                    (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
+                    dialog.Show();
+                }
+                else
+                {
+                    MessageBox.Show($"型 '{originalTypeName}' の参照が見つかりませんでした。",
+                        "分析結果", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error analyzing Razor file impact: {ex.Message}");
+                Debug.WriteLine($"Razorファイル影響分析エラー: {ex.Message}");
                 MessageBox.Show($"Razorファイルの影響分析中にエラーが発生しました: {ex.Message}",
-                    "エラー",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+
+        // Razorファイルから直接参照を収集するヘルパーメソッド
+        private async Task CollectDirectRazorReferences(string razorFilePath, string typeName, List<TypeReferenceInfo> references)
+        {
+            try
+            {
+                // Razorファイルの内容を読み込む
+                string razorContent = File.ReadAllText(razorFilePath);
+                string[] lines = razorContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
+
+                // 1. 標準的なC#タグでの型参照
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    if (line.Contains($"@{typeName}") ||
+                        line.Contains($"<{typeName}") ||
+                        line.Contains($" {typeName}"))
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,  // 行番号は1ベース
+                            RazorLineNumber = i + 1,  // Razorファイルなので同じ
+                            Column = line.IndexOf(typeName) + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "Razorファイルでの直接参照"
+                        });
+                    }
+                }
+
+                // 2. コンポーネント属性でのバインド
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    // コンポーネント属性でのバインド (@bind, @bind-Value など)
+                    if (line.Contains("@bind") && line.Contains(typeName))
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,
+                            RazorLineNumber = i + 1,
+                            Column = line.IndexOf("@bind") + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "データバインド参照"
+                        });
+                    }
+                }
+
+                // 3. Injectディレクティブでの型参照
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    if (line.Contains("@inject") && line.Contains(typeName))
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,
+                            RazorLineNumber = i + 1,
+                            Column = line.IndexOf(typeName) + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "依存性注入参照"
+                        });
+                    }
+                }
+
+                // 4. @code ブロック内での型参照
+                bool inCodeBlock = false;
+                int codeBlockStartLine = 0;
+                int braceCount = 0;
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    // @code ブロックの開始を検出
+                    if (line.Contains("@code") && line.Contains("{"))
+                    {
+                        inCodeBlock = true;
+                        codeBlockStartLine = i;
+                        braceCount = CountOccurrences(line, '{') - CountOccurrences(line, '}');
+                        continue;
+                    }
+
+                    // @code ブロック内部
+                    if (inCodeBlock)
+                    {
+                        braceCount += CountOccurrences(line, '{') - CountOccurrences(line, '}');
+
+                        // ブロック終了
+                        if (braceCount <= 0)
+                        {
+                            inCodeBlock = false;
+                            continue;
+                        }
+
+                        // ブロック内でtypeNameを検索
+                        if (line.Contains(typeName))
+                        {
+                            references.Add(new TypeReferenceInfo
+                            {
+                                FilePath = razorFilePath,
+                                FileName = Path.GetFileName(razorFilePath),
+                                LineNumber = i + 1,
+                                RazorLineNumber = i + 1,
+                                Column = line.IndexOf(typeName) + 1,
+                                Text = line.Trim(),
+                                ReferenceType = "@code ブロック内での参照"
+                            });
+                        }
+                    }
+                }
+
+                // 5. @functions ブロック内での型参照 (レガシーRazor構文)
+                inCodeBlock = false;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    // @functions ブロックの開始を検出
+                    if (line.Contains("@functions") && line.Contains("{"))
+                    {
+                        inCodeBlock = true;
+                        braceCount = CountOccurrences(line, '{') - CountOccurrences(line, '}');
+                        continue;
+                    }
+
+                    // @functions ブロック内部
+                    if (inCodeBlock)
+                    {
+                        braceCount += CountOccurrences(line, '{') - CountOccurrences(line, '}');
+
+                        // ブロック終了
+                        if (braceCount <= 0)
+                        {
+                            inCodeBlock = false;
+                            continue;
+                        }
+
+                        // ブロック内でtypeNameを検索
+                        if (line.Contains(typeName))
+                        {
+                            references.Add(new TypeReferenceInfo
+                            {
+                                FilePath = razorFilePath,
+                                FileName = Path.GetFileName(razorFilePath),
+                                LineNumber = i + 1,
+                                RazorLineNumber = i + 1,
+                                Column = line.IndexOf(typeName) + 1,
+                                Text = line.Trim(),
+                                ReferenceType = "@functions ブロック内での参照"
+                            });
+                        }
+                    }
+                }
+
+                // 6. インラインC#式での参照 (@(expression))
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    int expressionStart = line.IndexOf("@(");
+                    while (expressionStart >= 0)
+                    {
+                        int expressionEnd = FindMatchingParenthesis(line, expressionStart + 1);
+                        if (expressionEnd > expressionStart)
+                        {
+                            string expression = line.Substring(expressionStart + 2, expressionEnd - expressionStart - 2);
+                            if (expression.Contains(typeName))
+                            {
+                                references.Add(new TypeReferenceInfo
+                                {
+                                    FilePath = razorFilePath,
+                                    FileName = Path.GetFileName(razorFilePath),
+                                    LineNumber = i + 1,
+                                    RazorLineNumber = i + 1,
+                                    Column = expressionStart + expression.IndexOf(typeName) + 3, // @( の後ろの位置
+                                    Text = line.Trim(),
+                                    ReferenceType = "インラインC#式での参照"
+                                });
+                            }
+
+                            expressionStart = line.IndexOf("@(", expressionEnd);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                // 7. コンポーネント参照でのタイプパラメータ
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    // <Component TItem="TypeName"> パターン
+                    var typeParamPattern = new System.Text.RegularExpressions.Regex($@"T\w+=\""{typeName}\""");
+                    var matches = typeParamPattern.Matches(line);
+
+                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,
+                            RazorLineNumber = i + 1,
+                            Column = match.Index + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "ジェネリック型パラメータ参照"
+                        });
+                    }
+                }
+
+                // 8. @inherits ディレクティブでの型参照
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    if (line.Contains("@inherits") && line.Contains(typeName))
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,
+                            RazorLineNumber = i + 1,
+                            Column = line.IndexOf(typeName) + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "継承参照"
+                        });
+                    }
+                }
+
+                // 9. @implements ディレクティブでの型参照
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    if (line.Contains("@implements") && line.Contains(typeName))
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,
+                            RazorLineNumber = i + 1,
+                            Column = line.IndexOf(typeName) + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "インターフェース実装参照"
+                        });
+                    }
+                }
+
+                // 10. @typeparam ディレクティブでの型制約
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    if (line.Contains("@typeparam") && line.Contains("where") && line.Contains(typeName))
+                    {
+                        references.Add(new TypeReferenceInfo
+                        {
+                            FilePath = razorFilePath,
+                            FileName = Path.GetFileName(razorFilePath),
+                            LineNumber = i + 1,
+                            RazorLineNumber = i + 1,
+                            Column = line.IndexOf(typeName) + 1,
+                            Text = line.Trim(),
+                            ReferenceType = "型パラメータ制約参照"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Razorファイルからの直接参照収集エラー: {ex.Message}");
+            }
+        }
+
+        private static int CountOccurrences(string text, char character)
+        {
+            return text.Count(c => c == character);
+        }
+
+        private static int FindMatchingParenthesis(string text, int openIndex)
+        {
+            int depth = 0;
+            for (int i = openIndex; i < text.Length; i++)
+            {
+                if (text[i] == '(')
+                {
+                    depth++;
+                }
+                else if (text[i] == ')')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1; // 対応する閉じ括弧がない
         }
 
         /// <summary>
@@ -2020,6 +2161,206 @@ namespace boilersExtensions.ViewModels
                     "エラー",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+            }
+        }
+
+        private async Task CollectAllTypeReferences(
+    ITypeSymbol typeSymbol,
+    List<TypeReferenceInfo> impactList,
+    List<PotentialIssue> potentialIssues)
+        {
+            try
+            {
+                // ComponentModel サービスを取得
+                var componentModel = await Package.GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
+                var workspace = componentModel?.GetService<VisualStudioWorkspace>();
+
+                if (workspace == null)
+                {
+                    Debug.WriteLine("ワークスペースの取得に失敗しました。");
+                    return;
+                }
+
+                // ワークスペースから現在のソリューションを取得
+                var solution = workspace.CurrentSolution;
+
+                // Razor ファイルを含むプロジェクトを特定
+                var razorProject = FindProjectForRazorFile(_razorFilePath, workspace);
+                if (razorProject == null)
+                {
+                    Debug.WriteLine("Razor ファイルを含むプロジェクトが見つかりませんでした。");
+                    return;
+                }
+
+                // プロジェクト内の C# コードを含む生成ファイルを特定
+                var generatedDocuments = razorProject.Documents
+                    .Where(d => d.FilePath != null && (
+                        d.FilePath.Contains(".razor.g.cs") ||
+                        d.FilePath.Contains(".cshtml.g.cs") ||
+                        (d.FilePath.Contains(".razor.") && d.FilePath.EndsWith(".cs")) ||
+                        (d.FilePath.Contains(".cshtml.") && d.FilePath.EndsWith(".cs"))
+                    )).ToList();
+
+                // 型名の参照を収集
+                foreach (var doc in generatedDocuments)
+                {
+                    try
+                    {
+                        var text = await doc.GetTextAsync();
+                        var root = await doc.GetSyntaxRootAsync();
+                        var semanticModel = await doc.GetSemanticModelAsync();
+
+                        if (root == null || semanticModel == null)
+                            continue;
+
+                        // 型参照（TypeSyntax）を検索
+                        var typeReferences = root.DescendantNodes()
+                            .OfType<TypeSyntax>()
+                            .Where(ts => {
+                                var symbolInfo = semanticModel.GetSymbolInfo(ts);
+                                return symbolInfo.Symbol != null &&
+                                       SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, typeSymbol);
+                            });
+
+                        foreach (var typeRef in typeReferences)
+                        {
+                            var linePosition = text.Lines.GetLinePosition(typeRef.Span.Start);
+                            var refLine = linePosition.Line + 1;
+
+                            var lineSpan = text.Lines[linePosition.Line].Span;
+                            var referenceText = text.ToString(lineSpan).Trim();
+
+                            var referenceInfo = new TypeReferenceInfo
+                            {
+                                FilePath = RazorFileUtility.GetOriginalFilePath(doc.FilePath),
+                                FileName = Path.GetFileName(RazorFileUtility.GetOriginalFilePath(doc.FilePath)),
+                                LineNumber = refLine,
+                                Column = linePosition.Character + 1,
+                                Text = referenceText,
+                                ReferenceType = "型の参照"
+                            };
+
+                            // 参照の種類を判断
+                            if (typeRef.Parent is ParameterSyntax)
+                            {
+                                referenceInfo.ReferenceType = "パラメータの型";
+                            }
+                            else if (typeRef.Parent is VariableDeclarationSyntax)
+                            {
+                                referenceInfo.ReferenceType = "変数の型";
+                            }
+                            else if (typeRef.Parent is PropertyDeclarationSyntax)
+                            {
+                                referenceInfo.ReferenceType = "プロパティの型";
+                            }
+                            else if (typeRef.Parent is MethodDeclarationSyntax)
+                            {
+                                referenceInfo.ReferenceType = "メソッドの戻り値型";
+                            }
+
+                            // 重複を避けるために追加
+                            if (!impactList.Any(r =>
+                                r.FilePath == referenceInfo.FilePath &&
+                                r.LineNumber == referenceInfo.LineNumber))
+                            {
+                                impactList.Add(referenceInfo);
+                            }
+                        }
+
+                        // メンバーアクセス（プロパティやメソッド呼び出し）の参照も検索
+                        var memberAccesses = root.DescendantNodes()
+                            .OfType<MemberAccessExpressionSyntax>()
+                            .Where(ma => {
+                                var expressionType = semanticModel.GetTypeInfo(ma.Expression).Type;
+                                return expressionType != null &&
+                                       SymbolEqualityComparer.Default.Equals(expressionType, typeSymbol);
+                            });
+
+                        foreach (var memberAccess in memberAccesses)
+                        {
+                            var linePosition = text.Lines.GetLinePosition(memberAccess.Span.Start);
+                            var refLine = linePosition.Line + 1;
+
+                            var lineSpan = text.Lines[linePosition.Line].Span;
+                            var referenceText = text.ToString(lineSpan).Trim();
+
+                            var referenceInfo = new TypeReferenceInfo
+                            {
+                                FilePath = RazorFileUtility.GetOriginalFilePath(doc.FilePath),
+                                FileName = Path.GetFileName(RazorFileUtility.GetOriginalFilePath(doc.FilePath)),
+                                LineNumber = refLine,
+                                Column = linePosition.Character + 1,
+                                Text = referenceText,
+                                ReferenceType = $"メンバー {memberAccess.Name.Identifier.Text} の使用"
+                            };
+
+                            // 重複を避けるために追加
+                            if (!impactList.Any(r =>
+                                r.FilePath == referenceInfo.FilePath &&
+                                r.LineNumber == referenceInfo.LineNumber))
+                            {
+                                impactList.Add(referenceInfo);
+                            }
+                        }
+
+                        // 選択された新しい型との互換性の問題を分析
+                        if (SelectedType.Value != null)
+                        {
+                            var compilation = await razorProject.GetCompilationAsync();
+                            var newTypeSymbol = FindTypeSymbolInCompilation(SelectedType.Value.FullName, compilation);
+
+                            if (newTypeSymbol != null)
+                            {
+                                // 型の互換性をチェック
+                                var compatibilityIssues = CheckTypeCompatibility(typeSymbol, newTypeSymbol);
+
+                                foreach (var issue in compatibilityIssues)
+                                {
+                                    // 問題に関連するコードを検索
+                                    var relatedNodes = FindNodesRelatedToCompatibilityIssue(
+                                        root, semanticModel, typeSymbol, issue);
+
+                                    foreach (var node in relatedNodes)
+                                    {
+                                        var linePosition = text.Lines.GetLinePosition(node.Span.Start);
+                                        var refLine = linePosition.Line + 1;
+
+                                        var lineSpan = text.Lines[linePosition.Line].Span;
+                                        var codeSnippet = text.ToString(lineSpan).Trim();
+
+                                        // 潜在的な問題として追加
+                                        potentialIssues.Add(new PotentialIssue
+                                        {
+                                            FilePath = RazorFileUtility.GetOriginalFilePath(doc.FilePath),
+                                            FileName = Path.GetFileName(RazorFileUtility.GetOriginalFilePath(doc.FilePath)),
+                                            LineNumber = refLine,
+                                            RazorLineNumber = _mapping != null ?
+                                                RazorMappingHelper.MapToRazorLine(_mapping, _extractedCSharpCode, refLine) : 0,
+                                            IssueType = issue.IssueType,
+                                            Description = issue.Description,
+                                            SuggestedFix = issue.SuggestedFix,
+                                            CodeSnippet = codeSnippet
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"ドキュメント {doc.FilePath} の解析中にエラーが発生しました: {ex.Message}");
+                    }
+                }
+
+                // 結果をソート
+                impactList.Sort((a, b) =>
+                    string.Compare(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase) != 0 ?
+                    string.Compare(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase) :
+                    a.LineNumber.CompareTo(b.LineNumber));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"参照収集中にエラーが発生しました: {ex.Message}");
             }
         }
 
