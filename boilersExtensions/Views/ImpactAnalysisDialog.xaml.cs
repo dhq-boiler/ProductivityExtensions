@@ -6,7 +6,7 @@ using boilersExtensions.Utils;
 namespace boilersExtensions.Views
 {
     /// <summary>
-    /// ImpactAnalysisDialog.xaml の相互作用ロジック
+    ///     ImpactAnalysisDialog.xaml の相互作用ロジック
     /// </summary>
     public partial class ImpactAnalysisDialog : Window
     {
@@ -47,6 +47,17 @@ namespace boilersExtensions.Views
 
                     // ブックマークトグルコマンドを実行
                     viewModel.ToggleBookmarkCommand.Execute(reference);
+                }
+            }
+        }
+
+        private void Issue_Navigate(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is PotentialIssue issue)
+            {
+                if (DataContext is ImpactAnalysisViewModel viewModel)
+                {
+                    viewModel.NavigateToIssueCommand.Execute(issue);
                 }
             }
         }

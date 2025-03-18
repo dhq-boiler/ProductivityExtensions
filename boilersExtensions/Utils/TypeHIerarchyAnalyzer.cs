@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,7 +8,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EnvDTE;
-using LibGit2Sharp;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.Shell;
 using VSLangProj;
 using Document = Microsoft.CodeAnalysis.Document;
 using Project = EnvDTE.Project;
+using Solution = Microsoft.CodeAnalysis.Solution;
 
 namespace boilersExtensions.Utils
 {
@@ -31,8 +32,9 @@ namespace boilersExtensions.Utils
         ///     カーソル位置の型シンボルとその親要素を取得
         /// </summary>
         public static async
-    Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, TextSpan fullTypeSpan, TextSpan? baseTypeSpan, string code, Dictionary<int, int> mapping)>
-    GetTypeSymbolAtPositionAsync(Document document, int position)
+            Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, TextSpan fullTypeSpan, TextSpan? baseTypeSpan, string
+                code, Dictionary<int, int> mapping, int adjustedAddedBytes)>
+            GetTypeSymbolAtPositionAsync(Document document, int position)
         {
             try
             {
@@ -49,15 +51,15 @@ namespace boilersExtensions.Utils
                 var documentPath = dte.ActiveDocument.FullName;
 
                 // Razorファイルの場合はRazor言語サービスを使用して直接処理
-                bool isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                   documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
+                var isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                  documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
 
                 if (isRazorFile)
                 {
                     Debug.WriteLine("Razorファイルが検出されました。");
 
                     // Razorファイルの内容を読み取る
-                    string razorContent = File.ReadAllText(documentPath);
+                    var razorContent = File.ReadAllText(documentPath);
 
                     // ディレクティブを抽出
                     var usingDirectives = ExtractUsingDirectives(razorContent);
@@ -76,15 +78,18 @@ namespace boilersExtensions.Utils
 
                     // デバッグ出力
                     Debug.WriteLine($"@usingディレクティブ: {string.Join(", ", usingDirectives)}");
-                    Debug.WriteLine($"@injectディレクティブ: {string.Join(", ", injectDirectives.Select(x => $"{x.type} {x.name}"))}");
+                    Debug.WriteLine(
+                        $"@injectディレクティブ: {string.Join(", ", injectDirectives.Select(x => $"{x.type} {x.name}"))}");
 
                     // C#コードブロックを探す簡易パーサーとポジションマッピングを取得
-                    var (csharpBlocks, mappedPosition, blockStartPosition) = ExtractCSharpBlocksWithMapping(razorContent, position);
+                    var (csharpBlocks, mappedPosition, blockStartPosition) =
+                        ExtractCSharpBlocksWithMapping(razorContent, position);
 
                     if (!string.IsNullOrEmpty(csharpBlocks) && mappedPosition >= 0)
                     {
                         // using/injectディレクティブを適用
-                        (string code, int adjustedPosition) = ApplyDirectivesToCSharpCodeWithPreciseMapping(csharpBlocks, usingDirectives, injectDirectives, mappedPosition);
+                        var (code, adjustedPosition) = ApplyDirectivesToCSharpCodeWithPreciseMapping(csharpBlocks,
+                            usingDirectives, injectDirectives, mappedPosition);
 
                         // プロジェクトの参照を動的に取得
                         var references = await GetActiveProjectReferencesAsync();
@@ -103,14 +108,14 @@ namespace boilersExtensions.Utils
                         position = adjustedPosition;
 
                         retCode = code;
-                        
+
                         // C#コードブロックを抽出した際のマッピング情報を計算
                         mapping = BuildCodeToRazorMapping(razorContent, code);
                     }
                     else
                     {
                         // コードブロックが見つからない場合は、一時的なコードを生成して解析
-                        string tempCode = CreateTemporaryCode(usingDirectives, razorContent);
+                        var tempCode = CreateTemporaryCode(usingDirectives, razorContent);
                         var syntaxTree = CSharpSyntaxTree.ParseText(tempCode);
                         var references = await GetActiveProjectReferencesAsync();
                         var compilation = CSharpCompilation.Create("RazorCompilation")
@@ -128,19 +133,19 @@ namespace boilersExtensions.Utils
                 {
                     if (document == null)
                     {
-                        return (null, null, default, null, null, null);
+                        return (null, null, default, null, null, null, 0);
                     }
 
                     semanticModel = await document.GetSemanticModelAsync();
                     if (semanticModel == null)
                     {
-                        return (null, null, default, null, null, null);
+                        return (null, null, default, null, null, null, 0);
                     }
 
                     syntaxRoot = await document.GetSyntaxRootAsync();
                     if (syntaxRoot == null)
                     {
-                        return (null, null, default, null, null, null);
+                        return (null, null, default, null, null, null, 0);
                     }
                 }
 
@@ -148,7 +153,7 @@ namespace boilersExtensions.Utils
                 var node = syntaxRoot.FindNode(new TextSpan(position, 0), getInnermostNodeForTie: true);
                 if (node == null)
                 {
-                    return (null, null, default, null, null, null);
+                    return (null, null, default, null, null, null, 0);
                 }
 
                 Debug.WriteLine($"Position {position}のノード: {node.GetType().Name} - {node}");
@@ -214,7 +219,7 @@ namespace boilersExtensions.Utils
                     if (typeSyntax == null)
                     {
                         var identifierName = (IdentifierNameSyntax)node;
-                        string typeName = identifierName.Identifier.Text;
+                        var typeName = identifierName.Identifier.Text;
 
                         // 動的に型を解決してみる
                         var resolvedType = DynamicTypeResolver.FindTypeSymbol(semanticModel.Compilation, typeName);
@@ -222,7 +227,7 @@ namespace boilersExtensions.Utils
                         {
                             Debug.WriteLine($"識別子から型を動的に解決しました: {typeName} -> {resolvedType.ToDisplayString()}");
                             var syntheticTypeSpan = new TextSpan(position, typeName.Length);
-                            return (resolvedType, node.Parent, syntheticTypeSpan, syntheticTypeSpan, null, null);
+                            return (resolvedType, node.Parent, syntheticTypeSpan, syntheticTypeSpan, null, null, 0);
                         }
                     }
                 }
@@ -239,8 +244,8 @@ namespace boilersExtensions.Utils
                     if (isRazorFile)
                     {
                         // ノードのテキストから型名を抽出
-                        string nodeText = node.ToString();
-                        string typeName = ExtractTypeNameOnly(nodeText);
+                        var nodeText = node.ToString();
+                        var typeName = ExtractTypeNameOnly(nodeText);
 
                         if (!string.IsNullOrEmpty(typeName))
                         {
@@ -250,12 +255,12 @@ namespace boilersExtensions.Utils
                             {
                                 Debug.WriteLine($"テキストから型を動的に解決しました: {typeName} -> {resolvedType.ToDisplayString()}");
                                 var syntheticTypeSpan = new TextSpan(position, typeName.Length);
-                                return (resolvedType, node, syntheticTypeSpan, syntheticTypeSpan, null, null);
+                                return (resolvedType, node, syntheticTypeSpan, syntheticTypeSpan, null, null, 0);
                             }
                         }
                     }
 
-                    return (null, null, default, null, null, null);
+                    return (null, null, default, null, null, null, 0);
                 }
 
                 // 型の完全なスパンを取得
@@ -303,9 +308,9 @@ namespace boilersExtensions.Utils
                 // 型シンボルがnullの場合は動的に解決を試みる
                 if (typeSymbol == null)
                 {
-                    string typeName = typeSyntax.ToString();
+                    var typeName = typeSyntax.ToString();
                     // ジェネリック型や名前空間修飾子を除去して単純な型名を取得
-                    string simpleTypeName = ExtractTypeNameFromText(typeName);
+                    var simpleTypeName = ExtractTypeNameFromText(typeName);
 
                     Debug.WriteLine($"型シンボルがnullです。動的に解決を試みます: {simpleTypeName}");
 
@@ -318,13 +323,13 @@ namespace boilersExtensions.Utils
                     }
                 }
 
-                return (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, retCode, mapping);
+                return (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, retCode, mapping, position);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"GetTypeSymbolAtPositionAsyncでエラーが発生しました: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
-                return (null, null, default, null, null, null);
+                return (null, null, default, null, null, null, 0);
             }
         }
 
@@ -334,198 +339,159 @@ namespace boilersExtensions.Utils
 
             // 生成されたコードの行を分割
             var generatedCodeLines = generatedCode.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            var razorLines = razorContent.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
 
-            // @{ ... } と @code { ... } のブロックを再度抽出
-            List<(int razorStart, int razorLength, int generatedCodeLineStart)> codeBlocks =
-                new List<(int, int, int)>();
+            // 1. より直感的な方法でコードブロックを抽出
+            var codeBlocks = ExtractCodeBlocksWithLineNumbers(razorContent, razorLines);
 
-            // @{ ... } のパターンを検出
-            int index = 0;
-            while (index < razorContent.Length && (index = razorContent.IndexOf("@{", index)) != -1)
-            {
-                int braceStart = index + 2;
-                int braceCount = 1;
-                int braceEnd = braceStart;
-
-                while (braceCount > 0 && braceEnd < razorContent.Length)
-                {
-                    if (razorContent[braceEnd] == '{') braceCount++;
-                    else if (razorContent[braceEnd] == '}') braceCount--;
-                    braceEnd++;
-                }
-
-                if (braceCount == 0)
-                {
-                    // 生成されたコード内でのブロックの開始行を見つける
-                    string blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
-                    int generatedLineStart = Array.FindIndex(generatedCodeLines,
-                        line => line.Contains(blockContent.Trim()));
-
-                    if (generatedLineStart != -1)
-                    {
-                        codeBlocks.Add((braceStart, braceEnd - braceStart - 1, generatedLineStart));
-                    }
-
-                    // インデックスを更新
-                    index = braceEnd;
-                }
-                else
-                {
-                    // 不完全なブロックの場合はループを抜ける
-                    break;
-                }
-            }
-
-            // @code { ... } のパターンを検出
-            index = 0;
-            while (index < razorContent.Length && (index = razorContent.IndexOf("@code", index)) != -1)
-            {
-                int codeEnd = index + 5;
-                int braceIndex = codeEnd;
-                while (braceIndex < razorContent.Length &&
-                       (char.IsWhiteSpace(razorContent[braceIndex]) ||
-                        razorContent[braceIndex] == '\r' ||
-                        razorContent[braceIndex] == '\n'))
-                {
-                    braceIndex++;
-                }
-
-                if (braceIndex < razorContent.Length && razorContent[braceIndex] == '{')
-                {
-                    int braceStart = braceIndex + 1;
-                    int braceCount = 1;
-                    int braceEnd = braceStart;
-
-                    while (braceCount > 0 && braceEnd < razorContent.Length)
-                    {
-                        if (razorContent[braceEnd] == '{') braceCount++;
-                        else if (razorContent[braceEnd] == '}') braceCount--;
-                        braceEnd++;
-                    }
-
-                    if (braceCount == 0)
-                    {
-                        // 生成されたコード内でのブロックの開始行を見つける
-                        //braceStart, braceEnd はバイト数で位置を表しているので、Substringに入れるのは違う
-                        string blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
-                        int generatedLineStart = -1;
-                        string[] blockLines = blockContent.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-                        if (blockLines.Length > 0)
-                        {
-                            // 最初の意味のある行（空白でない行）を検索
-                            string firstNonEmptyLine = blockLines
-                                .FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
-
-                            if (!string.IsNullOrEmpty(firstNonEmptyLine))
-                            {
-                                // その行が出現する最初の位置を探す
-                                generatedLineStart = Array.FindIndex(generatedCodeLines,
-                                    line => line.Contains(firstNonEmptyLine));
-
-                                // 行の内容が短すぎる場合（一般的すぎる場合）は、
-                                // 複数行のパターンマッチングを試みる
-                                if (generatedLineStart == -1 && firstNonEmptyLine.Length > 10)
-                                {
-                                    // 最初の数行を連結して探す
-                                    int linesToCheck = Math.Min(3, blockLines.Length);
-                                    var significantBlockContent = string.Join(" ",
-                                        blockLines.Take(linesToCheck)
-                                        .Where(l => !string.IsNullOrWhiteSpace(l))
-                                        .Select(l => l.Trim()));
-
-                                    for (int i = 0; i < generatedCodeLines.Length; i++)
-                                    {
-                                        // 連続する数行を連結して比較
-                                        if (i + linesToCheck <= generatedCodeLines.Length)
-                                        {
-                                            var generatedSegment = string.Join(" ",
-                                                generatedCodeLines.Skip(i).Take(linesToCheck)
-                                                .Select(l => l.Trim()));
-
-                                            if (generatedSegment.Contains(significantBlockContent))
-                                            {
-                                                generatedLineStart = i;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // 生成されたコード内で対応する行が見つからない場合は、
-                        // 近似的にブロックを配置（より良い方法がない場合のフォールバック）
-                        if (generatedLineStart == -1)
-                        {
-                            // 最も近いメソッドまたはクラス宣言の位置を探す
-                            generatedLineStart = Array.FindIndex(generatedCodeLines,
-                                line => line.Contains("protected override") ||
-                                        line.Contains("public class") ||
-                                        line.Contains("private void"));
-
-                            // それでも見つからない場合は、クラス内のデフォルト位置を使用
-                            if (generatedLineStart == -1)
-                            {
-                                generatedLineStart = Array.FindIndex(generatedCodeLines,
-                                    line => line.Contains("public class RazorComponent"));
-
-                                // クラス宣言の次の行から始める
-                                if (generatedLineStart >= 0)
-                                    generatedLineStart++;
-                            }
-                        }
-
-                        if (generatedLineStart != -1)
-                        {
-                            codeBlocks.Add((braceStart, braceEnd - braceStart - 1, generatedLineStart));
-                        }
-
-                        // インデックスを更新
-                        index = braceEnd;
-                    }
-                    else
-                    {
-                        // 不完全なブロックの場合はループを抜ける
-                        break;
-                    }
-                }
-                else
-                {
-                    // 次の @code を探すためにインデックスを進める
-                    index = codeEnd;
-                }
-            }
-
-            // マッピングを作成
+            // 2. 生成コードの行番号とRazorファイルの行番号のマッピングを作成
             foreach (var block in codeBlocks)
             {
-                // ブロック内の各行に対してマッピングを作成
-                string blockContent = razorContent.Substring(block.razorStart, block.razorLength);
-                string[] blockLines = blockContent.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+                int razorLineStart = block.RazorLineNumber;
+                int generatedLineStart = block.GeneratedLineStart;
+                int blockLineCount = block.LineCount;
 
-                for (int i = 0; i < blockLines.Length; i++)
+                // 各行に対してマッピングを作成
+                for (int i = 0; i < blockLineCount; i++)
                 {
-                    int generatedCodeLineIndex = block.generatedCodeLineStart + i;
-                    int razorContentLinePosition = block.razorStart +
-                        blockContent.IndexOf(blockLines[i].Trim(), StringComparison.Ordinal);
-
-                    if (generatedCodeLineIndex < generatedCodeLines.Length)
+                    if (generatedLineStart + i < generatedCodeLines.Length)
                     {
-                        mapping[generatedCodeLineIndex] = razorContentLinePosition;
+                        // 行番号同士でマッピング（文字位置ではなく）
+                        mapping[generatedLineStart + i] = razorLineStart + i;
                     }
                 }
             }
+
+            // 3. デバッグ情報を追加して検証しやすくする
+            Debug.WriteLine($"マッピング情報のエントリ数: {mapping.Count}");
+            foreach (var entry in mapping.Take(10))
+            {
+                Debug.WriteLine($"生成コード行 {entry.Key} -> Razor行 {entry.Value}");
+            }
+
+            Debug.WriteLine($"Razorコンテンツのサイズ: {razorContent?.Length ?? 0} バイト");
+            Debug.WriteLine($"生成コードのサイズ: {generatedCode?.Length ?? 0} バイト");
+            Debug.WriteLine($"抽出されたコードブロック数: {codeBlocks.Count}");
+            Debug.WriteLine($"最終マッピングエントリ数: {mapping.Count}");
 
             return mapping;
         }
 
+        // 補助メソッド: Razorファイルから行番号付きのコードブロックを抽出
+        private static List<CodeBlockInfo> ExtractCodeBlocksWithLineNumbers(string razorContent, string[] razorLines)
+        {
+            var codeBlocks = new List<CodeBlockInfo>();
+
+            // @{ ... } と @code { ... } ブロックを抽出するロジックを実装
+            // ただし文字位置ではなく行番号を使用
+
+            // @{ ... } パターンの検出
+            for (int lineNumber = 0; lineNumber < razorLines.Length; lineNumber++)
+            {
+                string line = razorLines[lineNumber];
+
+                if (line.Contains("@{"))
+                {
+                    // ブロックの開始行を見つけた
+                    int startLine = lineNumber;
+                    int braceCount = 1;
+                    int endLine = startLine;
+
+                    // 閉じ括弧を探す
+                    while (braceCount > 0 && endLine < razorLines.Length - 1)
+                    {
+                        endLine++;
+                        string currentLine = razorLines[endLine];
+
+                        braceCount += CountOccurrences(currentLine, '{');
+                        braceCount -= CountOccurrences(currentLine, '}');
+                    }
+
+                    if (braceCount == 0)
+                    {
+                        // 対応する生成コードの行を見つける処理
+                        codeBlocks.Add(new CodeBlockInfo
+                        {
+                            RazorLineNumber = startLine,
+                            GeneratedLineStart = FindGeneratedLineStart(razorLines, startLine, endLine),
+                            LineCount = endLine - startLine + 1
+                        });
+                    }
+                }
+
+                // @code { ... } パターンの検出も同様に実装
+            }
+
+            return codeBlocks;
+        }
+
+        // TypeHierarchyAnalyzer.cs に追加
+        private static int FindGeneratedLineStart(string[] razorLines, int startLine, int endLine)
+        {
+            // Razorブロックの内容を取得
+            StringBuilder blockContent = new StringBuilder();
+            for (int i = startLine; i <= endLine; i++)
+            {
+                blockContent.AppendLine(razorLines[i].Trim());
+            }
+
+            string contentSignature = blockContent.ToString().Trim();
+
+            // 特徴的な部分を抽出（先頭の数行または特徴的なパターン）
+            string signature;
+            if (contentSignature.Length > 100)
+            {
+                // 長いブロックの場合は先頭の特徴的な部分を使用
+                int signatureLength = Math.Min(contentSignature.Length, 100);
+                signature = contentSignature.Substring(0, signatureLength)
+                    .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault()?.Trim() ?? string.Empty;
+            }
+            else
+            {
+                signature = contentSignature;
+            }
+
+            // シグネチャが短すぎる場合はヒューリスティックな値を返す
+            if (signature.Length < 10)
+            {
+                return startLine; // 一般的には Razor の行番号に近い値になることが多い
+            }
+
+            // ブロックが空の場合
+            if (string.IsNullOrWhiteSpace(signature))
+            {
+                return 0;
+            }
+
+            // シグネチャに基づいて生成コードの行を推定
+            // 実際の実装では、生成コードのパターンやプレフィックスに基づいて推定します
+            // この例では単純に Razor ブロックの行番号をそのまま返していますが、
+            // 実際には生成コードを解析して対応関係を調べる必要があります
+            return startLine;
+        }
+
+        private static int CountOccurrences(string text, char character)
+        {
+            return text.Count(c => c == character);
+        }
+
+        private class CodeBlockInfo
+        {
+            public int RazorLineNumber { get; set; }    // Razorファイルでの行番号
+            public int GeneratedLineStart { get; set; } // 生成コードでの開始行
+            public int LineCount { get; set; }          // ブロックの行数
+        }
+
         /// <summary>
-        /// テキストから型名のみを抽出
+        ///     テキストから型名のみを抽出
         /// </summary>
         internal static string ExtractTypeNameOnly(string text)
         {
             if (string.IsNullOrEmpty(text))
+            {
                 return string.Empty;
+            }
 
             // 「private」「public」などの修飾子を削除
             string[] modifiers = { "private", "public", "protected", "internal", "static", "readonly", "const" };
@@ -539,7 +505,7 @@ namespace boilersExtensions.Utils
             }
 
             // 変数名や初期化子を削除
-            int spaceIndex = text.IndexOf(' ');
+            var spaceIndex = text.IndexOf(' ');
             if (spaceIndex > 0)
             {
                 text = text.Substring(0, spaceIndex);
@@ -556,7 +522,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// _Imports.razorファイルから@using宣言を抽出する
+        ///     _Imports.razorファイルから@using宣言を抽出する
         /// </summary>
         private static List<string> ExtractImportsFromImportsRazor(string documentPath)
         {
@@ -564,22 +530,22 @@ namespace boilersExtensions.Utils
             try
             {
                 // ドキュメントのパスから_Imports.razorを探す
-                string projectDir = Path.GetDirectoryName(documentPath);
+                var projectDir = Path.GetDirectoryName(documentPath);
 
                 // 現在のディレクトリから上位ディレクトリに向かって_Imports.razorを探す
                 while (!string.IsNullOrEmpty(projectDir))
                 {
-                    string importsPath = Path.Combine(projectDir, "_Imports.razor");
+                    var importsPath = Path.Combine(projectDir, "_Imports.razor");
                     if (File.Exists(importsPath))
                     {
-                        string content = File.ReadAllText(importsPath);
-                        var matches = System.Text.RegularExpressions.Regex.Matches(content, @"@using\s+([^\s;]+)");
+                        var content = File.ReadAllText(importsPath);
+                        var matches = Regex.Matches(content, @"@using\s+([^\s;]+)");
 
-                        foreach (System.Text.RegularExpressions.Match match in matches)
+                        foreach (Match match in matches)
                         {
                             if (match.Groups.Count > 1)
                             {
-                                string ns = match.Groups[1].Value;
+                                var ns = match.Groups[1].Value;
                                 if (!usingDirectives.Contains(ns))
                                 {
                                     usingDirectives.Add(ns);
@@ -592,11 +558,13 @@ namespace boilersExtensions.Utils
                     }
 
                     // 一つ上のディレクトリへ
-                    string parentDir = Path.GetDirectoryName(projectDir);
+                    var parentDir = Path.GetDirectoryName(projectDir);
 
                     // ルートに達したら終了
                     if (parentDir == projectDir)
+                    {
                         break;
+                    }
 
                     projectDir = parentDir;
                 }
@@ -605,19 +573,20 @@ namespace boilersExtensions.Utils
                 if (usingDirectives.Count == 0)
                 {
                     // プロジェクトルートを推測
-                    string solutionDir = GetSolutionDirectory(documentPath);
+                    var solutionDir = GetSolutionDirectory(documentPath);
                     if (!string.IsNullOrEmpty(solutionDir))
                     {
-                        foreach (var importsFile in Directory.GetFiles(solutionDir, "_Imports.razor", SearchOption.AllDirectories))
+                        foreach (var importsFile in Directory.GetFiles(solutionDir, "_Imports.razor",
+                                     SearchOption.AllDirectories))
                         {
-                            string content = File.ReadAllText(importsFile);
-                            var matches = System.Text.RegularExpressions.Regex.Matches(content, @"@using\s+([^\s;]+)");
+                            var content = File.ReadAllText(importsFile);
+                            var matches = Regex.Matches(content, @"@using\s+([^\s;]+)");
 
-                            foreach (System.Text.RegularExpressions.Match match in matches)
+                            foreach (Match match in matches)
                             {
                                 if (match.Groups.Count > 1)
                                 {
-                                    string ns = match.Groups[1].Value;
+                                    var ns = match.Groups[1].Value;
                                     if (!usingDirectives.Contains(ns))
                                     {
                                         usingDirectives.Add(ns);
@@ -640,13 +609,13 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// ドキュメントパスからソリューションディレクトリを推測
+        ///     ドキュメントパスからソリューションディレクトリを推測
         /// </summary>
         private static string GetSolutionDirectory(string documentPath)
         {
             try
             {
-                string dir = Path.GetDirectoryName(documentPath);
+                var dir = Path.GetDirectoryName(documentPath);
                 while (!string.IsNullOrEmpty(dir))
                 {
                     // .slnファイルがあるか確認
@@ -659,16 +628,18 @@ namespace boilersExtensions.Utils
                     if (Directory.GetFiles(dir, "*.csproj").Any())
                     {
                         // プロジェクトフォルダが見つかった場合はその親ディレクトリを返す
-                        string _parentDir = Path.GetDirectoryName(dir);
+                        var _parentDir = Path.GetDirectoryName(dir);
                         return string.IsNullOrEmpty(_parentDir) ? dir : _parentDir;
                     }
 
                     // 一つ上のディレクトリへ
-                    string parentDir = Path.GetDirectoryName(dir);
+                    var parentDir = Path.GetDirectoryName(dir);
 
                     // ルートに達したら終了
                     if (parentDir == dir)
+                    {
                         break;
+                    }
 
                     dir = parentDir;
                 }
@@ -685,22 +656,24 @@ namespace boilersExtensions.Utils
         private static string ExtractTypeNameFromText(string text)
         {
             if (string.IsNullOrEmpty(text))
+            {
                 return string.Empty;
-                
+            }
+
             // ジェネリック型パラメータを除去
-            int genericIdx = text.IndexOf('<');
+            var genericIdx = text.IndexOf('<');
             if (genericIdx > 0)
             {
                 text = text.Substring(0, genericIdx);
             }
-            
+
             // 名前空間修飾子がある場合は最後の部分だけを取得
-            int lastDot = text.LastIndexOf('.');
+            var lastDot = text.LastIndexOf('.');
             if (lastDot >= 0 && lastDot < text.Length - 1)
             {
                 return text.Substring(lastDot + 1);
             }
-            
+
             return text;
         }
 
@@ -708,7 +681,7 @@ namespace boilersExtensions.Utils
         private static string CreateTemporaryCode(List<string> usingDirectives, string razorContent)
         {
             var sb = new StringBuilder();
-            
+
             // 標準名前空間
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Collections.Generic;");
@@ -716,13 +689,13 @@ namespace boilersExtensions.Utils
             sb.AppendLine("using Microsoft.AspNetCore.Components;");
             sb.AppendLine("using Microsoft.AspNetCore.Components.Forms;");
             sb.AppendLine("using Microsoft.AspNetCore.Components.Web;");
-            
+
             // ユーザー定義の名前空間
             foreach (var directive in usingDirectives)
             {
                 sb.AppendLine($"using {directive};");
             }
-            
+
             // コンポーネントライブラリから関連する名前空間を推測して追加
             var componentNamespaces = DynamicTypeResolver.GetNamespacesFromUsingDirectives(usingDirectives);
             foreach (var ns in componentNamespaces)
@@ -732,15 +705,15 @@ namespace boilersExtensions.Utils
                     sb.AppendLine($"using {ns};");
                 }
             }
-            
+
             sb.AppendLine();
             sb.AppendLine("namespace RazorNamespace {");
             sb.AppendLine("  public class TempComponent : ComponentBase {");
-            
+
             // インジェクト型プロパティを追加
             sb.AppendLine("    [Inject] private NavigationManager NavigationManager { get; set; }");
             sb.AppendLine("    [Inject] private IJSRuntime JSRuntime { get; set; }");
-            
+
             // Razorコンテンツから型参照を抽出（例: @bind-SelectedItem="..."）
             var componentRefs = ExtractComponentReferences(razorContent);
             foreach (var compRef in componentRefs)
@@ -748,7 +721,7 @@ namespace boilersExtensions.Utils
                 sb.AppendLine($"    // 参照されたコンポーネント: {compRef}");
                 sb.AppendLine($"    private {compRef} {compRef.ToLower()}Instance;");
             }
-            
+
             // メソッドの定義
             sb.AppendLine("    protected override void OnInitialized() {");
             sb.AppendLine("      // Placeholder for position tracking");
@@ -756,7 +729,7 @@ namespace boilersExtensions.Utils
             sb.AppendLine("    }");
             sb.AppendLine("  }");
             sb.AppendLine("}");
-            
+
             return sb.ToString();
         }
 
@@ -764,27 +737,28 @@ namespace boilersExtensions.Utils
         private static List<string> ExtractComponentReferences(string razorContent)
         {
             var result = new List<string>();
-            
+
             try
             {
                 // よく使われるコンポーネント属性を検索
-                var patterns = new[] {
-                    @"@bind-(\w+)=",                 // @bind-Value, @bind-SelectedItem等
-                    @"<(\w+)[\s>]",                  // <Button>, <Select>等
-                    @"<(\w+)@",                      // <Table@ref>等
-                    @"[^.]\.(\w+)\s*\(",             // 型メソッド呼び出し
-                    @"typeof\((\w+(?:\.\w+)*)\)"     // typeof(SelectedItem)等
+                var patterns = new[]
+                {
+                    @"@bind-(\w+)=", // @bind-Value, @bind-SelectedItem等
+                    @"<(\w+)[\s>]", // <Button>, <Select>等
+                    @"<(\w+)@", // <Table@ref>等
+                    @"[^.]\.(\w+)\s*\(", // 型メソッド呼び出し
+                    @"typeof\((\w+(?:\.\w+)*)\)" // typeof(SelectedItem)等
                 };
-                
+
                 foreach (var pattern in patterns)
                 {
-                    var matches = System.Text.RegularExpressions.Regex.Matches(razorContent, pattern);
-                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    var matches = Regex.Matches(razorContent, pattern);
+                    foreach (Match match in matches)
                     {
                         if (match.Groups.Count > 1)
                         {
-                            string componentName = match.Groups[1].Value;
-                            
+                            var componentName = match.Groups[1].Value;
+
                             // HTMLタグと区別するための簡易チェック（先頭が大文字かどうか）
                             if (componentName.Length > 0 && char.IsUpper(componentName[0]))
                             {
@@ -801,7 +775,7 @@ namespace boilersExtensions.Utils
             {
                 Debug.WriteLine($"コンポーネント参照抽出エラー: {ex.Message}");
             }
-            
+
             return result;
         }
 
@@ -818,9 +792,9 @@ namespace boilersExtensions.Utils
 
                 // 基本的な.NET参照を追加
                 references.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
-                references.Add(MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location));
-                references.Add(MetadataReference.CreateFromFile(typeof(System.Collections.Generic.List<>).Assembly.Location));
-                references.Add(MetadataReference.CreateFromFile(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute).Assembly.Location));
+                references.Add(MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location));
+                references.Add(MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location));
+                references.Add(MetadataReference.CreateFromFile(typeof(DisplayAttribute).Assembly.Location));
 
                 // ASP.NET Core関連アセンブリの追加を試行
                 TryAddAssemblyReference(references, "Microsoft.AspNetCore.Components");
@@ -836,11 +810,11 @@ namespace boilersExtensions.Utils
                     Debug.WriteLine($"アクティブプロジェクト: {activeProject.Name}");
 
                     // VSS References コレクションを取得
-                    var vssReferences = activeProject.Object as VSLangProj.VSProject;
+                    var vssReferences = activeProject.Object as VSProject;
                     if (vssReferences != null)
                     {
                         // プロジェクト内の全参照を追加
-                        foreach (VSLangProj.Reference reference in vssReferences.References)
+                        foreach (Reference reference in vssReferences.References)
                         {
                             try
                             {
@@ -922,7 +896,7 @@ namespace boilersExtensions.Utils
             try
             {
                 // NuGetパッケージのあり得る名前を生成
-                string packageName = referenceName;
+                var packageName = referenceName;
 
                 // 一般的なパッケージ名変換を適用
                 if (referenceName.Contains("."))
@@ -936,21 +910,24 @@ namespace boilersExtensions.Utils
                 }
 
                 // NuGetパッケージ検索パス
-                string nugetDir = Path.Combine(
+                var nugetDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                     ".nuget", "packages");
 
                 if (Directory.Exists(nugetDir))
                 {
                     // パッケージ名でディレクトリ検索
-                    var possiblePackageDirs = Directory.GetDirectories(nugetDir, packageName, SearchOption.TopDirectoryOnly);
+                    var possiblePackageDirs =
+                        Directory.GetDirectories(nugetDir, packageName, SearchOption.TopDirectoryOnly);
 
                     // パターンマッチでも検索
                     if (possiblePackageDirs.Length == 0)
                     {
                         possiblePackageDirs = Directory.GetDirectories(nugetDir)
-                            .Where(d => Path.GetFileName(d).IndexOf(packageName, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                        packageName.IndexOf(Path.GetFileName(d), StringComparison.OrdinalIgnoreCase) >= 0)
+                            .Where(d => Path.GetFileName(d).IndexOf(packageName, StringComparison.OrdinalIgnoreCase) >=
+                                        0 ||
+                                        packageName.IndexOf(Path.GetFileName(d), StringComparison.OrdinalIgnoreCase) >=
+                                        0)
                             .ToArray();
                     }
 
@@ -963,7 +940,7 @@ namespace boilersExtensions.Utils
                             var latestVersion = versions.OrderByDescending(v => v).First();
 
                             // ライブラリフォルダを検索
-                            string libDir = Path.Combine(latestVersion, "lib");
+                            var libDir = Path.Combine(latestVersion, "lib");
                             if (Directory.Exists(libDir))
                             {
                                 // 最新のフレームワークバージョンを検索
@@ -982,7 +959,8 @@ namespace boilersExtensions.Utils
 
                                     // 名前の一部一致でも検索
                                     var matchingFiles = Directory.GetFiles(framework, "*.dll")
-                                        .Where(f => Path.GetFileNameWithoutExtension(f).IndexOf(referenceName, StringComparison.OrdinalIgnoreCase) >= 0)
+                                        .Where(f => Path.GetFileNameWithoutExtension(f).IndexOf(referenceName,
+                                            StringComparison.OrdinalIgnoreCase) >= 0)
                                         .ToArray();
 
                                     if (matchingFiles.Length > 0)
@@ -1008,32 +986,32 @@ namespace boilersExtensions.Utils
         {
             try
             {
-                string projectPath = project.FullName;
+                var projectPath = project.FullName;
                 if (File.Exists(projectPath))
                 {
-                    string projectContent = File.ReadAllText(projectPath);
+                    var projectContent = File.ReadAllText(projectPath);
 
                     // パッケージ参照を検索
-                    var packageRefRegex = new System.Text.RegularExpressions.Regex(
+                    var packageRefRegex = new Regex(
                         @"<PackageReference\s+Include=""([^""]+)""\s+Version=""([^""]+)""");
 
                     var matches = packageRefRegex.Matches(projectContent);
-                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    foreach (Match match in matches)
                     {
                         if (match.Groups.Count >= 3)
                         {
-                            string packageName = match.Groups[1].Value;
-                            string packageVersion = match.Groups[2].Value;
+                            var packageName = match.Groups[1].Value;
+                            var packageVersion = match.Groups[2].Value;
 
                             // NuGetキャッシュからDLLを検索
-                            string nugetDir = Path.Combine(
+                            var nugetDir = Path.Combine(
                                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                                 ".nuget", "packages", packageName, packageVersion);
 
                             if (Directory.Exists(nugetDir))
                             {
                                 // libフォルダを検索
-                                string libDir = Path.Combine(nugetDir, "lib");
+                                var libDir = Path.Combine(nugetDir, "lib");
                                 if (Directory.Exists(libDir))
                                 {
                                     // フレームワークバージョンを検索
@@ -1041,7 +1019,7 @@ namespace boilersExtensions.Utils
                                     if (frameworkDirs.Length > 0)
                                     {
                                         // 最新のフレームワークディレクトリを使用
-                                        string latestFrameworkDir = frameworkDirs
+                                        var latestFrameworkDir = frameworkDirs
                                             .OrderByDescending(d => d)
                                             .First();
 
@@ -1077,7 +1055,8 @@ namespace boilersExtensions.Utils
                 {
                     try
                     {
-                        outputPath = project.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath")?.Value?.ToString();
+                        outputPath = project.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath")
+                            ?.Value?.ToString();
                     }
                     catch
                     {
@@ -1091,8 +1070,8 @@ namespace boilersExtensions.Utils
                     outputPath = "bin\\Debug";
                 }
 
-                string projectDir = Path.GetDirectoryName(project.FullName);
-                string fullOutputPath = Path.Combine(projectDir, outputPath);
+                var projectDir = Path.GetDirectoryName(project.FullName);
+                var fullOutputPath = Path.Combine(projectDir, outputPath);
 
                 if (Directory.Exists(fullOutputPath))
                 {
@@ -1160,7 +1139,8 @@ namespace boilersExtensions.Utils
                         if (!string.IsNullOrEmpty(activeDocumentPath))
                         {
                             var project = workspace.CurrentSolution.Projects
-                                .FirstOrDefault(p => p.Documents.Any(d => string.Equals(d.FilePath, activeDocumentPath, StringComparison.OrdinalIgnoreCase)));
+                                .FirstOrDefault(p => p.Documents.Any(d =>
+                                    string.Equals(d.FilePath, activeDocumentPath, StringComparison.OrdinalIgnoreCase)));
 
                             if (project != null)
                             {
@@ -1209,7 +1189,7 @@ namespace boilersExtensions.Utils
                     try
                     {
                         // アセンブリ名がUI/Blazor関連かどうかをチェック
-                        string name = assembly.GetName().Name;
+                        var name = assembly.GetName().Name;
                         if (name.Contains("Blazor") ||
                             name.Contains("Component") ||
                             name.Contains("UI") ||
@@ -1217,7 +1197,7 @@ namespace boilersExtensions.Utils
                             name.Contains("Web"))
                         {
                             // アセンブリの場所を取得
-                            string location = assembly.Location;
+                            var location = assembly.Location;
                             if (!string.IsNullOrEmpty(location) && File.Exists(location))
                             {
                                 // すでに追加されていなければ追加
@@ -1232,7 +1212,6 @@ namespace boilersExtensions.Utils
                     catch
                     {
                         // 一部のアセンブリは取得できない場合がある
-                        continue;
                     }
                 }
             }
@@ -1250,13 +1229,13 @@ namespace boilersExtensions.Utils
             if (dte?.ActiveDocument != null)
             {
                 // 現在アクティブなドキュメントの完全パスを取得
-                string activeFilePath = dte.ActiveDocument.FullName;
+                var activeFilePath = dte.ActiveDocument.FullName;
 
                 // ソリューション内の全プロジェクトを検索
                 foreach (Project project in dte.Solution.Projects)
                 {
                     // プロジェクト内のすべての項目をチェック
-                    ProjectItems projectItems = project.ProjectItems;
+                    var projectItems = project.ProjectItems;
                     if (IsFileInProject(projectItems, activeFilePath))
                     {
                         return project;
@@ -1270,7 +1249,10 @@ namespace boilersExtensions.Utils
         // プロジェクトアイテム内でファイルを再帰的に検索するヘルパーメソッド
         private static bool IsFileInProject(ProjectItems items, string filePath)
         {
-            if (items == null) return false;
+            if (items == null)
+            {
+                return false;
+            }
 
             foreach (ProjectItem item in items)
             {
@@ -1279,7 +1261,7 @@ namespace boilersExtensions.Utils
                 {
                     try
                     {
-                        string itemPath = item.FileNames[0];
+                        var itemPath = item.FileNames[0];
                         if (string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
                         {
                             return true;
@@ -1311,7 +1293,7 @@ namespace boilersExtensions.Utils
             try
             {
                 // Get the DTE service
-                var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                 if (dte != null)
                 {
                     var configuration = dte.Solution.SolutionBuild.ActiveConfiguration.Name;
@@ -1365,10 +1347,10 @@ namespace boilersExtensions.Utils
 
         // 抽出したusing/injectディレクティブをC#コードに適用
         private static (string code, int adjustedPosition) ApplyDirectivesToCSharpCodeWithPreciseMapping(
-    string csharpCode,
-    List<string> usingDirectives,
-    List<(string type, string name)> injectDirectives,
-    int originalPosition)
+            string csharpCode,
+            List<string> usingDirectives,
+            List<(string type, string name)> injectDirectives,
+            int originalPosition)
         {
             var codeBuilder = new StringBuilder();
 
@@ -1442,7 +1424,7 @@ namespace boilersExtensions.Utils
 
             // ユーザーコードをクラス本体に直接配置
             // インデントの調整（ユーザーコードに既にインデントがある場合は調整）
-            string indentedCode = csharpCode;
+            var indentedCode = csharpCode;
             //if (!csharpCode.StartsWith("    ")) // すでに適切なインデントがあるかチェック
             //{
             //    indentedCode = csharpCode.Replace(Environment.NewLine, Environment.NewLine + "    ");
@@ -1454,12 +1436,12 @@ namespace boilersExtensions.Utils
             codeBuilder.AppendLine("}");
 
             // 前置コードの長さを計算
-            int preambleLength = codeBuilder.ToString().IndexOf(indentedCode);
+            var preambleLength = codeBuilder.ToString().IndexOf(indentedCode);
 
             // 調整されたポジション = 前置コードの長さ + オリジナルポジション
             // インデントを追加した場合のみ調整
-            int indentAdjustment = !csharpCode.StartsWith("    ") ? 4 : 0;
-            int adjustedPosition = preambleLength + originalPosition + indentAdjustment;
+            var indentAdjustment = !csharpCode.StartsWith("    ") ? 4 : 0;
+            var adjustedPosition = preambleLength + originalPosition + indentAdjustment;
 
             // デバッグ情報
             Debug.WriteLine($"生成されたコード（一部）: {codeBuilder.ToString().Substring(0, Math.Min(500, codeBuilder.Length))}");
@@ -1469,9 +1451,10 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// コード内で参照されている可能性のあるコンポーネント型を推測
+        ///     コード内で参照されている可能性のあるコンポーネント型を推測
         /// </summary>
-        private static List<(string type, string varName)> InferComponentTypes(string code, List<string> usingDirectives)
+        private static List<(string type, string varName)> InferComponentTypes(string code,
+            List<string> usingDirectives)
         {
             var result = new List<(string, string)>();
 
@@ -1481,25 +1464,24 @@ namespace boilersExtensions.Utils
                 var componentPatterns = new[]
                 {
                     @"\b(Select|Table|Grid|Tree|Button|Card|Modal|Dialog|Form|Input|Checkbox|Radio|Dropdown|Menu|Tab|Panel|Layout|ItemsControl|DatePicker|TimePicker|ColorPicker|Chart)\b",
-                    @"\b(\w+Component)\b",
-                    @"\b(\w+Control)\b"
+                    @"\b(\w+Component)\b", @"\b(\w+Control)\b"
                 };
 
                 // コンポーネント型の抽出
                 var foundTypes = new HashSet<string>();
                 foreach (var pattern in componentPatterns)
                 {
-                    var matches = System.Text.RegularExpressions.Regex.Matches(code, pattern);
-                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    var matches = Regex.Matches(code, pattern);
+                    foreach (Match match in matches)
                     {
                         if (match.Groups.Count > 1)
                         {
-                            string typeName = match.Groups[1].Value;
+                            var typeName = match.Groups[1].Value;
                             if (!foundTypes.Contains(typeName))
                             {
                                 foundTypes.Add(typeName);
                                 // 変数名は先頭を小文字にした型名
-                                string varName = char.ToLowerInvariant(typeName[0]) + typeName.Substring(1);
+                                var varName = char.ToLowerInvariant(typeName[0]) + typeName.Substring(1);
                                 result.Add((typeName, varName));
                             }
                         }
@@ -1518,7 +1500,7 @@ namespace boilersExtensions.Utils
                             if (!foundTypes.Contains(name))
                             {
                                 foundTypes.Add(name);
-                                string varName = char.ToLowerInvariant(name[0]) + name.Substring(1);
+                                var varName = char.ToLowerInvariant(name[0]) + name.Substring(1);
                                 result.Add((name, varName));
                             }
                         }
@@ -1537,37 +1519,44 @@ namespace boilersExtensions.Utils
         private static (string code, int mappedPosition, int blockStartPosition) ExtractCSharpBlocksWithMapping(
             string razorContent, int originalPosition)
         {
-            StringBuilder csharpCode = new StringBuilder();
-            int mappedPosition = -1;
-            int blockStartPosition = -1;
+            var csharpCode = new StringBuilder();
+            var mappedPosition = -1;
+            var blockStartPosition = -1;
 
             // コードブロックの位置をトラッキングするための変数
-            int currentOutputPosition = 0;
+            var currentOutputPosition = 0;
 
             // @{ ... } のパターンを検出
-            int index = 0;
+            var index = 0;
             while ((index = razorContent.IndexOf("@{", index)) >= 0)
             {
-                int braceStart = index + 2;
-                int braceCount = 1;
-                int braceEnd = braceStart;
+                var braceStart = index + 2;
+                var braceCount = 1;
+                var braceEnd = braceStart;
 
                 while (braceCount > 0 && braceEnd < razorContent.Length)
                 {
-                    if (razorContent[braceEnd] == '{') braceCount++;
-                    else if (razorContent[braceEnd] == '}') braceCount--;
+                    if (razorContent[braceEnd] == '{')
+                    {
+                        braceCount++;
+                    }
+                    else if (razorContent[braceEnd] == '}')
+                    {
+                        braceCount--;
+                    }
+
                     braceEnd++;
                 }
 
                 if (braceCount == 0)
                 {
-                    string blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
+                    var blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
 
                     // 元の位置がこのブロック内にあるかチェック
                     if (originalPosition > braceStart && originalPosition < braceEnd - 1)
                     {
                         // ブロック内での相対位置を計算
-                        int relativePosition = originalPosition - braceStart;
+                        var relativePosition = originalPosition - braceStart;
                         mappedPosition = currentOutputPosition + relativePosition;
                         blockStartPosition = braceStart;
                     }
@@ -1584,10 +1573,10 @@ namespace boilersExtensions.Utils
             while ((index = razorContent.IndexOf("@code", index)) >= 0)
             {
                 // @code の後の位置を特定
-                int codeEnd = index + 5;
+                var codeEnd = index + 5;
 
                 // @code の後にある空白や改行をスキップして { を探す
-                int braceIndex = codeEnd;
+                var braceIndex = codeEnd;
                 while (braceIndex < razorContent.Length &&
                        (char.IsWhiteSpace(razorContent[braceIndex]) ||
                         razorContent[braceIndex] == '\r' ||
@@ -1599,26 +1588,33 @@ namespace boilersExtensions.Utils
                 // 次の文字が { であるかチェック
                 if (braceIndex < razorContent.Length && razorContent[braceIndex] == '{')
                 {
-                    int braceStart = braceIndex + 1;
-                    int braceCount = 1;
-                    int braceEnd = braceStart;
+                    var braceStart = braceIndex + 1;
+                    var braceCount = 1;
+                    var braceEnd = braceStart;
 
                     while (braceCount > 0 && braceEnd < razorContent.Length)
                     {
-                        if (razorContent[braceEnd] == '{') braceCount++;
-                        else if (razorContent[braceEnd] == '}') braceCount--;
+                        if (razorContent[braceEnd] == '{')
+                        {
+                            braceCount++;
+                        }
+                        else if (razorContent[braceEnd] == '}')
+                        {
+                            braceCount--;
+                        }
+
                         braceEnd++;
                     }
 
                     if (braceCount == 0)
                     {
-                        string blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
+                        var blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
 
                         // 元の位置がこのブロック内にあるかチェック
                         if (originalPosition > braceStart && originalPosition < braceEnd - 1)
                         {
                             // ブロック内での相対位置を計算
-                            int relativePosition = originalPosition - braceStart;
+                            var relativePosition = originalPosition - braceStart;
                             mappedPosition = currentOutputPosition + relativePosition;
                             blockStartPosition = braceStart;
                         }
@@ -1690,7 +1686,7 @@ namespace boilersExtensions.Utils
         ///     派生型を検索
         /// </summary>
         private static async Task FindDerivedTypesAsync(ITypeSymbol baseType, TypeHierarchyInfo typeInfo,
-            Microsoft.CodeAnalysis.Solution solution, bool includeInternalTypes, bool showUseSpecialTypes = false)
+            Solution solution, bool includeInternalTypes, bool showUseSpecialTypes = false)
         {
             try
             {
@@ -1734,31 +1730,33 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 型シンボルから型階層情報を作成
+        ///     型シンボルから型階層情報を作成
         /// </summary>
-        internal static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes, ITypeSymbol originalTypeSymbol = null)
+        internal static TypeHierarchyInfo CreateTypeHierarchyInfo(ITypeSymbol typeSymbol, bool showUseSpecialTypes,
+            ITypeSymbol originalTypeSymbol = null)
         {
             string displayName;
 
             if (typeSymbol is INamedTypeSymbol namedType && namedType.IsGenericType)
             {
                 // 元の型がジェネリック型であるかを確認
-                INamedTypeSymbol originalNamedType = originalTypeSymbol as INamedTypeSymbol;
-                bool canReplaceTypeParams = originalNamedType != null &&
-                                         originalNamedType.IsGenericType &&
-                                         namedType.TypeParameters.Length == originalNamedType.TypeArguments.Length;
+                var originalNamedType = originalTypeSymbol as INamedTypeSymbol;
+                var canReplaceTypeParams = originalNamedType != null &&
+                                           originalNamedType.IsGenericType &&
+                                           namedType.TypeParameters.Length == originalNamedType.TypeArguments.Length;
 
                 if (canReplaceTypeParams)
                 {
                     try
                     {
                         // 基本型名（ジェネリックパラメータなし）を取得
-                        string baseName = namedType.Name;
+                        var baseName = namedType.Name;
 
                         // 型パラメータを元の型から取得
                         var typeArgs = string.Join(", ", originalNamedType.TypeArguments.Select(arg =>
                             showUseSpecialTypes
-                                ? arg.ToDisplayString(new SymbolDisplayFormat(miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
+                                ? arg.ToDisplayString(new SymbolDisplayFormat(
+                                    miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
                                 : arg.ToDisplayString()
                         ));
 
@@ -1798,7 +1796,7 @@ namespace boilersExtensions.Utils
             var typeInfo = new TypeHierarchyInfo
             {
                 DisplayName = displayName,
-                FullName = fullName,
+                FullName = typeSymbol.ToString(),
                 IsInterface = typeSymbol.TypeKind == TypeKind.Interface,
                 Accessibility = typeSymbol.DeclaredAccessibility.ToString(),
                 IsDefinedInSolution = !typeSymbol.Locations.All(loc => loc.IsInMetadata),
@@ -1825,7 +1823,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 型パラメータがプリミティブ型表記かどうかを判断
+        ///     型パラメータがプリミティブ型表記かどうかを判断
         /// </summary>
         private static bool DeterminePrimitiveTypeUsage(string actualTypeText)
         {
@@ -1879,7 +1877,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 型パラメータが文字列内に存在するかチェック
+        ///     型パラメータが文字列内に存在するかチェック
         /// </summary>
         private static bool IsTypeParamInString(string typeString, string paramType)
         {
@@ -1894,13 +1892,15 @@ namespace boilersExtensions.Utils
         ///     継承階層を含めた型置換候補を取得
         /// </summary>
         public static async Task<List<TypeHierarchyInfo>> GetTypeReplacementCandidatesAsync(
-    ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true, bool includeRelatedTypes = true, bool showUseSpecialTypes = false)
+            ITypeSymbol originalType, Document document, bool includeBaseTypes = true, bool includeDerivedTypes = true,
+            bool includeRelatedTypes = true, bool showUseSpecialTypes = false)
         {
             var candidates = new List<TypeHierarchyInfo>();
             var compilation = await document.Project.GetCompilationAsync();
 
             // 元の型の階層情報を取得
-            var typeHierarchy = await GetTypeHierarchyAsync(originalType, document, showUseSpecialTypes: showUseSpecialTypes);
+            var typeHierarchy =
+                await GetTypeHierarchyAsync(originalType, document, showUseSpecialTypes: showUseSpecialTypes);
             if (typeHierarchy == null)
             {
                 return candidates;
@@ -1940,19 +1940,24 @@ namespace boilersExtensions.Utils
             if (originalType.TypeKind == TypeKind.Interface)
             {
                 // 元のインターフェース名からパターンを作成 (例: ICollection -> I*Collection*)
-                string namePattern = originalType.Name;
+                var namePattern = originalType.Name;
                 if (namePattern.StartsWith("I"))
                 {
                     namePattern = namePattern.Substring(1); // "I" を削除
                 }
 
                 // アセンブリ内のすべての型をチェック
-                foreach (var assembly in compilation.References.Select(r => compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+                foreach (var assembly in compilation.References.Select(r =>
+                             compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
                 {
-                    if (assembly == null) continue;
+                    if (assembly == null)
+                    {
+                        continue;
+                    }
 
                     // 名前空間を再帰的に探索
-                    SearchForSimilarInterfaces(assembly.GlobalNamespace, namePattern, candidates, originalType, showUseSpecialTypes);
+                    SearchForSimilarInterfaces(assembly.GlobalNamespace, namePattern, candidates, originalType,
+                        showUseSpecialTypes);
                 }
             }
 
@@ -1969,7 +1974,7 @@ namespace boilersExtensions.Utils
                     { "", "ReadOnly" },
                     { "Collection", "ReadOnlyCollection" },
                     { "List", "ReadOnlyList" },
-                    { "Dictionary", "ReadOnlyDictionary" },
+                    { "Dictionary", "ReadOnlyDictionary" }
                     // 他のパターンも追加できます
                 };
 
@@ -1993,6 +1998,7 @@ namespace boilersExtensions.Utils
                             // 通常の置換
                             targetName = "I" + baseName.Replace(pair.Key, pair.Value);
                         }
+
                         var matchingTypes = allTypes.Where(t =>
                             t.Name == targetName &&
                             t.TypeKind == TypeKind.Interface &&
@@ -2024,19 +2030,22 @@ namespace boilersExtensions.Utils
             return candidates;
         }
 
-        private static async Task<List<ITypeSymbol>> FindRelatedTypesAsync(ITypeSymbol originalType, Document document, Compilation compilation)
+        private static async Task<List<ITypeSymbol>> FindRelatedTypesAsync(ITypeSymbol originalType, Document document,
+            Compilation compilation)
         {
             var relatedTypes = new List<ITypeSymbol>();
 
             // Find types with similar names
-            string typeName = originalType.Name;
-            string searchPattern = typeName;
+            var typeName = originalType.Name;
+            var searchPattern = typeName;
 
             // For interface types, try finding implementation classes
             if (originalType.TypeKind == TypeKind.Interface)
             {
                 // Look for implementation classes
-                var implementingTypes = await SymbolFinder.FindImplementationsAsync(originalType as INamedTypeSymbol, document.Project.Solution);
+                var implementingTypes =
+                    await SymbolFinder.FindImplementationsAsync(originalType as INamedTypeSymbol,
+                        document.Project.Solution);
                 foreach (var implementingType in implementingTypes)
                 {
                     if (implementingType is ITypeSymbol typeSymbol)
@@ -2053,7 +2062,8 @@ namespace boilersExtensions.Utils
             }
 
             // Search for types with similar names in all referenced assemblies
-            foreach (var assembly in compilation.References.Select(r => compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+            foreach (var assembly in compilation.References.Select(r =>
+                         compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
             {
                 if (assembly != null)
                 {
@@ -2064,7 +2074,8 @@ namespace boilersExtensions.Utils
             return relatedTypes;
         }
 
-        private static void SearchForSimilarTypes(INamespaceSymbol ns, string pattern, List<ITypeSymbol> relatedTypes, ITypeSymbol originalType)
+        private static void SearchForSimilarTypes(INamespaceSymbol ns, string pattern, List<ITypeSymbol> relatedTypes,
+            ITypeSymbol originalType)
         {
             foreach (var member in ns.GetMembers())
             {
@@ -2097,7 +2108,8 @@ namespace boilersExtensions.Utils
             }
         }
 
-        internal static void SearchForSimilarInterfaces(INamespaceSymbol ns, string pattern, List<TypeHierarchyInfo> candidates,
+        internal static void SearchForSimilarInterfaces(INamespaceSymbol ns, string pattern,
+            List<TypeHierarchyInfo> candidates,
             ITypeSymbol originalType, bool showUseSpecialTypes)
         {
             // 現在の名前空間内のすべてのメンバーを検索
@@ -2106,7 +2118,7 @@ namespace boilersExtensions.Utils
                 // インターフェースの場合
                 if (member is INamedTypeSymbol typeSymbol && typeSymbol.TypeKind == TypeKind.Interface)
                 {
-                    string name = typeSymbol.Name;
+                    var name = typeSymbol.Name;
 
                     // 元のインターフェースと同じでない、かつ名前が似ている場合
                     if (!SymbolEqualityComparer.Default.Equals(typeSymbol, originalType) &&

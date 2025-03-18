@@ -56,6 +56,7 @@
       <DependentUpon>LoadingSpinner.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converters\InverseBooleanConverter.cs" />
+    <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
@@ -63,6 +64,8 @@
     <Compile Include="Utils\DynamicTypeResolver.cs" />
     <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
     <Compile Include="Utils\IssueGroupViewModel.cs" />
+    <Compile Include="Utils\RazorFileUtility.cs" />
+    <Compile Include="Utils\RazorMappingHelper.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />

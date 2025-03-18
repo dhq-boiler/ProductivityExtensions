@@ -2,7 +2,6 @@
     x:Class="boilersExtensions.Views.ImpactAnalysisDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:boilersExtensions.Controls"
     xmlns:converters="clr-namespace:boilersExtensions.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -16,6 +15,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+        <converters:InverseBooleanToStringConverter x:Key="InverseBooleanToStringConverter" />
         <Style TargetType="Button">
             <Setter Property="Margin" Value="5" />
             <Setter Property="Padding" Value="8,2" />
@@ -116,16 +116,8 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn
-                            Width="200"
-                            Binding="{Binding FileName}"
-                            Header="ファイル">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="White" />
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+
+                        <!--  通常の行番号 - Razorファイルでは非表示  -->
                         <DataGridTextColumn
                             Width="50"
                             Binding="{Binding LineNumber}"
@@ -135,7 +127,50 @@
                                     <Setter Property="Foreground" Value="White" />
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.Visibility>
+                                <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                    <Binding.Converter>
+                                        <BooleanToVisibilityConverter />
+                                    </Binding.Converter>
+                                    <Binding.ConverterParameter>Inverse</Binding.ConverterParameter>
+                                </Binding>
+                            </DataGridTextColumn.Visibility>
                         </DataGridTextColumn>
+
+                        <!--  Razor行番号列 - ヘッダーテキストを動的に変更  -->
+                        <DataGridTextColumn Width="100" Binding="{Binding RazorLineNumber}">
+                            <DataGridTextColumn.Header>
+                                <TextBlock>
+                                    <TextBlock.Text>
+                                        <Binding
+                                            Converter="{StaticResource InverseBooleanToStringConverter}"
+                                            ConverterParameter="行,行 (Razor)"
+                                            FallbackValue="行"
+                                            Path="DataContext.IsRazorFile.Value"
+                                            RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </DataGridTextColumn.Header>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="White" />
+                                    <!--  Razorの行が0の場合は表示を調整  -->
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RazorLineNumber}" Value="0">
+                                            <Setter Property="Text" Value="-" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.Visibility>
+                                <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                    <Binding.Converter>
+                                        <BooleanToVisibilityConverter />
+                                    </Binding.Converter>
+                                </Binding>
+                            </DataGridTextColumn.Visibility>
+                        </DataGridTextColumn>
+
                         <DataGridTextColumn
                             Width="150"
                             Binding="{Binding ReferenceType}"
@@ -189,7 +224,31 @@
                                         Orientation="Horizontal">
                                         <TextBlock FontWeight="Bold" Text="{Binding FileName}" />
                                         <TextBlock Margin="5,0,0,0" Text=" (行: " />
-                                        <TextBlock Text="{Binding LineNumber}" />
+
+                                        <!--  Conditional display of line numbers  -->
+                                        <ContentControl>
+                                            <ContentControl.Style>
+                                                <Style TargetType="ContentControl">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.IsRazorFile.Value, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
+                                                            <Setter Property="Content">
+                                                                <Setter.Value>
+                                                                    <TextBlock Text="{Binding RazorLineNumber}" />
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding DataContext.IsRazorFile.Value, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False">
+                                                            <Setter Property="Content">
+                                                                <Setter.Value>
+                                                                    <TextBlock Text="{Binding LineNumber}" />
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ContentControl.Style>
+                                        </ContentControl>
+
                                         <TextBlock Text=")" />
                                     </StackPanel>
                                     <Border
@@ -197,10 +256,27 @@
                                         Margin="5,2"
                                         Padding="5"
                                         Background="#333333">
-                                        <TextBlock
-                                            FontFamily="Consolas"
-                                            Text="{Binding CodeSnippet}"
-                                            TextWrapping="Wrap" />
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock
+                                                Grid.Row="0"
+                                                FontFamily="Consolas"
+                                                Text="{Binding CodeSnippet}"
+                                                TextWrapping="Wrap" />
+                                            <Button
+                                                Grid.Row="1"
+                                                Margin="0,5,0,0"
+                                                Padding="5,2"
+                                                HorizontalAlignment="Right"
+                                                Background="#444444"
+                                                Click="Issue_Navigate"
+                                                Content="移動"
+                                                Foreground="White"
+                                                Tag="{Binding}" />
+                                        </Grid>
                                     </Border>
                                     <StackPanel Grid.Row="3" Margin="5,2">
                                         <TextBlock FontWeight="Bold" Text="提案:" />
@@ -348,6 +424,8 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
+
+                                                    <!--  通常の行番号 - Razorファイルでは非表示  -->
                                                     <DataGridTextColumn
                                                         Width="50"
                                                         Binding="{Binding LineNumber}"
@@ -359,7 +437,46 @@
                                                                 <Setter Property="HorizontalAlignment" Value="Center" />
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
+                                                        <DataGridTextColumn.Visibility>
+                                                            <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                                                <Binding.Converter>
+                                                                    <BooleanToVisibilityConverter />
+                                                                </Binding.Converter>
+                                                                <Binding.ConverterParameter>Collapsed</Binding.ConverterParameter>
+                                                                <Binding.FallbackValue>Visible</Binding.FallbackValue>
+                                                            </Binding>
+                                                        </DataGridTextColumn.Visibility>
                                                     </DataGridTextColumn>
+
+                                                    <!--  Razor行番号列 - ヘッダーテキストを動的に変更  -->
+                                                    <DataGridTextColumn Width="100" Binding="{Binding RazorLineNumber}">
+                                                        <DataGridTextColumn.Header>
+                                                            <TextBlock>
+                                                                <TextBlock.Text>
+                                                                    <Binding
+                                                                        Converter="{StaticResource InverseBooleanToStringConverter}"
+                                                                        ConverterParameter="行,行 (Razor)"
+                                                                        FallbackValue="行"
+                                                                        Path="DataContext.IsRazorFile.Value"
+                                                                        RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                                </TextBlock.Text>
+                                                            </TextBlock>
+                                                        </DataGridTextColumn.Header>
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="White" />
+                                                                <Setter Property="Margin" Value="5" />
+                                                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                                                <!--  Razorの行が0の場合は表示を調整  -->
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding RazorLineNumber}" Value="0">
+                                                                        <Setter Property="Text" Value="-" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+
                                                     <DataGridTemplateColumn Width="*" Header="コード">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>

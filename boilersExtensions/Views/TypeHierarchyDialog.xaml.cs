@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Windows;
-using boilersExtensions.Utils;
 using boilersExtensions.ViewModels;
 
 namespace boilersExtensions.Views
