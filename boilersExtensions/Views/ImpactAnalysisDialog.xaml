@@ -115,9 +115,9 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn
-                            Width="200"
-                            Binding="{Binding FileName}"
-                            Header="ファイル">
+                            Width="50"
+                            Binding="{Binding LineNumber}"
+                            Header="行">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White" />
@@ -125,12 +125,18 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         <DataGridTextColumn
-                            Width="50"
-                            Binding="{Binding LineNumber}"
-                            Header="行">
+                            Width="100"
+                            Binding="{Binding RazorLineNumber}"
+                            Header="行 (Razor)">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="White" />
+                                    <!--  Razorの行が0の場合は表示を調整  -->
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RazorLineNumber}" Value="0">
+                                            <Setter Property="Text" Value="-" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
@@ -158,8 +164,7 @@
                 </DataGrid>
             </TabItem>
 
-            <TabItem Header="潜在的な問題（従来表示）"
-                     Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TabItem Header="潜在的な問題（従来表示）" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ListView
                     Background="#222222"
                     Foreground="White"
@@ -216,14 +221,12 @@
             </TabItem>
 
             <!--  グループ化された潜在的な問題のタブ  -->
-            <TabItem Header="潜在的な問題（整理済み）"
-                     Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TabItem Header="潜在的な問題（整理済み）" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ScrollViewer Background="#222222">
                     <ItemsControl ItemsSource="{Binding GroupedIssues}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}"
-                                          Style="{StaticResource IssueExpanderStyle}">
+                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}" Style="{StaticResource IssueExpanderStyle}">
                                     <Expander.Header>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -353,6 +356,18 @@
                                                         Width="50"
                                                         Binding="{Binding LineNumber}"
                                                         Header="行">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="White" />
+                                                                <Setter Property="Margin" Value="5" />
+                                                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                    <DataGridTextColumn
+                                                        Width="100"
+                                                        Binding="{Binding RazorLineNumber}"
+                                                        Header="行 (Razor)">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Foreground" Value="White" />

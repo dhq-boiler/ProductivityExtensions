@@ -537,6 +537,42 @@ namespace boilersExtensions.Utils
                 }
             }
 
+            // 重複を検出して修正
+            var duplicatePositions = mapping.GroupBy(x => x.Value)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicatePositions.Any())
+            {
+                Debug.WriteLine($"重複するマッピング位置が {duplicatePositions.Count} 件見つかりました");
+
+                // 各重複に対して
+                foreach (var position in duplicatePositions)
+                {
+                    var lines = mapping.Where(kv => kv.Value == position)
+                        .Select(kv => kv.Key)
+                        .OrderBy(line => line)
+                        .ToList();
+
+                    Debug.WriteLine($"位置 {position} にマッピングされている行: {string.Join(", ", lines)}");
+
+                    // 重複を解決するために、連続する行には連続する位置を割り当てる
+                    for (int i = 1; i < lines.Count; i++)
+                    {
+                        mapping[lines[i]] = position + i;
+                        Debug.WriteLine($"修正: 行 {lines[i]} -> 位置 {position + i}");
+                    }
+                }
+            }
+
+            // デバッグ出力を追加
+            Debug.WriteLine($"マッピング情報のエントリ数: {mapping.Count}");
+            foreach (var entry in mapping.Take(10)) // 最初の10エントリだけ表示
+            {
+                Debug.WriteLine($"生成コード行 {entry.Key} -> Razor位置 {entry.Value}");
+            }
+
             return mapping;
         }
 

@@ -1241,13 +1241,16 @@ namespace boilersExtensions.ViewModels
         // 位置情報から行番号を取得するヘルパーメソッド (既に定義されていなければ追加)
         private int GetLineNumberFromPosition(string text, int position)
         {
-            if (string.IsNullOrEmpty(text) || position < 0 || position >= text.Length)
+            if (string.IsNullOrEmpty(text) || position < 0)
                 return -1;
 
+            // 安全のため、位置が文字列の長さを超えないように調整
+            position = Math.Min(position, text.Length - 1);
+
             int line = 1;
-            for (int i = 0; i < position && i < text.Length; i++)
+            for (int i = 0; i < position; i++)
             {
-                if (text[i] == '\n')
+                if (i < text.Length && text[i] == '\n')
                     line++;
             }
 
@@ -1574,7 +1577,10 @@ namespace boilersExtensions.ViewModels
 
                                 if (impactList.Count > 0)
                                 {
-                                    // 影響範囲ダイアログを表示
+                                    // 影響範囲分析ダイアログを表示する前に、マッピング情報を検証
+                                    RazorMappingHelper.ValidateMapping(_mapping, _extractedCSharpCode);
+
+                                    // ダイアログ表示
                                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                                     var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
@@ -1588,7 +1594,12 @@ namespace boilersExtensions.ViewModels
                                             NewTypeName = SelectedType.Value.DisplayName,
                                             ReferencesCount = impactList.Count,
                                             References = impactList,
-                                            PotentialIssues = rcPotentialIssues
+                                            PotentialIssues = rcPotentialIssues,
+
+                                            // マッピング情報を明示的に渡す
+                                            Mapping = _mapping,
+                                            ExtractedCSharpCode = _extractedCSharpCode,
+                                            RazorFilePath = _razorFilePath
                                         }
                                     };
 
@@ -2513,13 +2524,20 @@ namespace boilersExtensions.ViewModels
                     var containingMethod = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
                     var methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
 
+                    // 行のコードテキストを取得
+                    var lineText = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line);
+
+                    // Razorファイルの行番号をマッピング（コード内容も使用）
+                    int razorLine = await RazorMappingHelper.FindRazorLineByCode(_mapping, _extractedCSharpCode, line, lineText, location.Document);
+
                     var referenceInfo = new TypeReferenceInfo
                     {
                         FilePath = RazorFileUtility.GetOriginalFilePath(location.Document.FilePath),
                         FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(location.Document.FilePath)),
                         LineNumber = line,
+                        RazorLineNumber = razorLine,
                         Column = lineSpan.StartLinePosition.Character + 1,
-                        Text = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line),
+                        Text = lineText,
                         ReferenceType = $"{(symbol is IParameterSymbol ? "パラメータ" : "変数")}の使用 ({methodContext}内)"
                     };
 
@@ -2542,7 +2560,11 @@ namespace boilersExtensions.ViewModels
                     NewTypeName = SelectedType.Value.DisplayName,
                     ReferencesCount = impactList.Count,
                     References = impactList,
-                    PotentialIssues = rcPotentialIssues
+                    PotentialIssues = rcPotentialIssues,
+                    // マッピング情報を渡す
+                    RazorFilePath = _razorFilePath,
+                    Mapping = _mapping,
+                    ExtractedCSharpCode = _extractedCSharpCode
                 }
             };
 
@@ -2763,11 +2785,27 @@ namespace boilersExtensions.ViewModels
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "イベントアクセシビリティの不一致",
                 Description =
                     $"イベント '{originalEvent.Name}' のアクセシビリティが異なります: '{originalEvent.DeclaredAccessibility}' → '{newEvent.DeclaredAccessibility}'",
@@ -2892,11 +2930,27 @@ namespace boilersExtensions.ViewModels
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "イベント欠落",
                 Description = $"イベント '{eventSymbol.Name}' は新しい型に存在しません。",
                 SuggestedFix = "新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。",
@@ -2910,11 +2964,27 @@ namespace boilersExtensions.ViewModels
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "イベント型の不一致",
                 Description =
                     $"イベント '{originalEvent.Name}' のデリゲート型が異なります: '{originalEvent.Type}' → '{newEvent.Type}'",
@@ -3062,11 +3132,27 @@ namespace boilersExtensions.ViewModels
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "メソッド欠落",
                 Description = $"メソッド '{method.Name}' は新しい型に存在しません。",
                 SuggestedFix = "新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。",
@@ -3279,11 +3365,27 @@ namespace boilersExtensions.ViewModels
                 incompatibilityDetails += $"新しいメソッドには追加のパラメータ #{i + 1} ({newMethod.Parameters[i].Name}) があります。 ";
             }
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "メソッドシグネチャの不一致",
                 Description = $"メソッド '{original.Name}' のシグネチャが新しい型では異なります。{incompatibilityDetails}",
                 SuggestedFix = "メソッド呼び出しを修正するか、アダプターを実装して互換性を確保してください。",
@@ -3331,11 +3433,27 @@ namespace boilersExtensions.ViewModels
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "プロパティ欠落",
                 Description = $"プロパティ '{property.Name}' は新しい型に存在しません。",
                 SuggestedFix = "新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。",
@@ -3349,11 +3467,27 @@ namespace boilersExtensions.ViewModels
             var lineSpan = location.Location.GetLineSpan();
             var filePath = location.Document.FilePath;
 
+            // 生成コードの行番号
+            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+
+            // Razorファイルの行番号計算
+            int razorLine = generatedCodeLine;
+
+            if (_mapping != null && _extractedCSharpCode != null)
+            {
+                // マッピング情報があれば使用
+                if (_mapping.TryGetValue(generatedCodeLine, out var position))
+                {
+                    // マッピング位置からRazorファイルの行番号を計算
+                    razorLine = GetLineNumberFromPosition(_extractedCSharpCode, position);
+                }
+            }
+
             return new PotentialIssue
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
+                LineNumber = razorLine, // Razorファイルの行番号を使用
                 IssueType = "プロパティ型の不一致",
                 Description = $"プロパティ '{original.Name}' の型が異なります: '{original.Type}' → '{newProperty.Type}'",
                 SuggestedFix = "型変換または拡張メソッドを使用して互換性を確保することを検討してください。",

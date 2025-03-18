@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace boilersExtensions.Utils
     public class ImpactAnalysisViewModel : BindableBase, IDisposable
     {
         private readonly CompositeDisposable _compositeDisposable = new CompositeDisposable();
+        private string _razorContent;
 
         public ImpactAnalysisViewModel()
         {
@@ -104,6 +106,9 @@ namespace boilersExtensions.Utils
 
         // ダイアログへの参照
         public Window Window { get; set; }
+        public string RazorFilePath { get; set; }
+        public Dictionary<int, int> Mapping { get; set; }
+        public string ExtractedCSharpCode { get; set; }
 
         public void Dispose()
         {
@@ -140,6 +145,38 @@ namespace boilersExtensions.Utils
 
                 GroupedIssues.Add(issueGroup);
             }
+        }
+
+        // ImpactAnalysisViewModel内でのマッピングメソッド
+        private int GetRazorLineNumber(int generatedCodeLine)
+        {
+            if (Mapping == null || ExtractedCSharpCode == null || string.IsNullOrEmpty(RazorFilePath))
+                return 0;
+
+            // マッピングから行番号を取得
+            if (Mapping.TryGetValue(generatedCodeLine, out var position))
+            {
+                // 位置からRazorファイル内の行番号を計算
+                return GetLineNumberFromPosition(ExtractedCSharpCode, position);
+            }
+
+            return 0;
+        }
+
+        // GetLineNumberFromPosition メソッド（既存または新規）
+        private int GetLineNumberFromPosition(string text, int position)
+        {
+            if (string.IsNullOrEmpty(text) || position < 0 || position >= text.Length)
+                return 0;
+
+            int line = 1;
+            for (int i = 0; i < position; i++)
+            {
+                if (text[i] == '\n')
+                    line++;
+            }
+
+            return line;
         }
 
         // 参照箇所に移動するメソッド
@@ -248,16 +285,51 @@ namespace boilersExtensions.Utils
             });
         }
 
-        // ダイアログが開かれた時にブックマーク状態を初期化
+        // ImpactAnalysisViewModel 内のメソッド
+        private async Task SetupReferences(List<TypeReferenceInfo> references)
+        {
+            foreach (var reference in references)
+            {
+                // 生成コードの行番号からRazorファイルの行番号を計算
+                reference.RazorLineNumber = GetRazorLineNumber(reference.LineNumber);
+            }
+        }
+
+        // OnDialogOpened メソッドで呼び出す
         public async void OnDialogOpened(Window window)
         {
             Window = window;
+
+            // Razor行番号を設定
+            SetupRazorLineNumbers();
 
             // 各参照のブックマーク状態を初期化
             await InitializeBookmarkStatesAsync();
 
             // 問題をグループ化
             GroupIssues();
+        }
+
+        // Razor行番号を設定するメソッド
+        private void SetupRazorLineNumbers()
+        {
+            // マッピング情報がなければ何もしない
+            if (Mapping == null || string.IsNullOrEmpty(ExtractedCSharpCode))
+                return;
+
+            foreach (var reference in References)
+            {
+                // 生成コードの行番号からRazor行番号を計算
+                reference.RazorLineNumber = RazorMappingHelper.MapToRazorLine(
+                    Mapping, ExtractedCSharpCode, reference.LineNumber);
+            }
+
+            // 潜在的な問題にもRazor行番号を設定
+            foreach (var issue in PotentialIssues)
+            {
+                issue.RazorLineNumber = RazorMappingHelper.MapToRazorLine(
+                    Mapping, ExtractedCSharpCode, issue.LineNumber);
+            }
         }
 
         // 参照のブックマーク状態を初期化するメソッド
@@ -293,6 +365,9 @@ namespace boilersExtensions.Utils
         public string Text { get; set; }
         public string ReferenceType { get; set; } // Method parameter, variable declaration, etc.
 
+        // 新しく追加するプロパティ
+        public int RazorLineNumber { get; set; }
+
         // ブックマーク状態を保持するプロパティを追加
         public ReactivePropertySlim<bool> IsBookmarked { get; } = new ReactivePropertySlim<bool>();
     }
@@ -309,5 +384,6 @@ namespace boilersExtensions.Utils
         public string Description { get; set; }
         public string SuggestedFix { get; set; }
         public string CodeSnippet { get; set; }
+        public int RazorLineNumber { get; set; }
     }
 }
