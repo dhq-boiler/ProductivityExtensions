@@ -1279,62 +1279,80 @@ namespace boilersExtensions.ViewModels
                 IsProcessing.Value = true;
                 ProcessingStatus.Value = "影響範囲を分析中...";
 
-                // 選択された型のシンボルを取得
-                if (_originalTypeSymbol == null || _document == null)
+                // 選択された型のシンボルがない場合は中止
+                if (_originalTypeSymbol == null)
                 {
                     return;
                 }
 
-                // 変更対象の変数/パラメータを特定
-                // シンタックスツリーから変更対象のノードを探す
-                var syntaxRoot = await _document.GetSyntaxRootAsync();
-                var semanticModel = await _document.GetSemanticModelAsync();
+                // Razorファイルの場合
+                bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                                   (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                    _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
-                // カーソル位置のパラメータシンボルを特定
-                var nodeAtPosition = syntaxRoot.FindNode(new TextSpan(_position, 0), getInnermostNodeForTie: true);
-
-                // 変数/パラメータ宣言ノードを探す
-                var parameterNode = nodeAtPosition.AncestorsAndSelf()
-                    .OfType<ParameterSyntax>()
-                    .FirstOrDefault();
-
-                // パラメータが見つからない場合は変数宣言を探す
-                if (parameterNode == null)
+                if (isRazorFile && _document == null)
                 {
-                    var variableNode = nodeAtPosition.AncestorsAndSelf()
-                        .OfType<VariableDeclaratorSyntax>()
+                    // Razorファイル用の影響分析
+                    await AnalyzeRazorFileImpact();
+                }
+                else if (_document != null)
+                {
+                    // 通常のC#ファイル用の既存処理
+                    var syntaxRoot = await _document.GetSyntaxRootAsync();
+                    var semanticModel = await _document.GetSemanticModelAsync();
+
+                    // カーソル位置のパラメータシンボルを特定
+                    var nodeAtPosition = syntaxRoot.FindNode(new TextSpan(_position, 0), getInnermostNodeForTie: true);
+
+                    // 変数/パラメータ宣言ノードを探す
+                    var parameterNode = nodeAtPosition.AncestorsAndSelf()
+                        .OfType<ParameterSyntax>()
                         .FirstOrDefault();
 
-                    if (variableNode != null)
+                    // パラメータが見つからない場合は変数宣言を探す
+                    if (parameterNode == null)
                     {
-                        // 変数のシンボルを取得
-                        var variableSymbol = semanticModel.GetDeclaredSymbol(variableNode) as ILocalSymbol;
-                        if (variableSymbol != null)
+                        var variableNode = nodeAtPosition.AncestorsAndSelf()
+                            .OfType<VariableDeclaratorSyntax>()
+                            .FirstOrDefault();
+
+                        if (variableNode != null)
                         {
-                            await ShowImpactForSymbol(variableSymbol);
+                            // 変数のシンボルを取得
+                            var variableSymbol = semanticModel.GetDeclaredSymbol(variableNode) as ILocalSymbol;
+                            if (variableSymbol != null)
+                            {
+                                await ShowImpactForSymbol(variableSymbol);
+                                return;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // パラメータのシンボルを取得
+                        var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode) as IParameterSymbol;
+                        if (parameterSymbol != null)
+                        {
+                            await ShowImpactForSymbol(parameterSymbol);
                             return;
                         }
                     }
+
+                    // 特定の変数/パラメータが見つからない場合
+                    MessageBox.Show("特定のパラメータや変数が見つかりませんでした。型全体に対する参照を検索します。",
+                        "警告",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    await ShowImpactForSymbol(_originalTypeSymbol);
                 }
                 else
                 {
-                    // パラメータのシンボルを取得
-                    var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode);
-                    if (parameterSymbol != null)
-                    {
-                        await ShowImpactForSymbol(parameterSymbol);
-                        return;
-                    }
+                    MessageBox.Show("ドキュメントの取得に失敗しました。分析を続行できません。",
+                        "エラー",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
-
-                // 特定の変数/パラメータが見つからない場合、
-                // 型全体に対する参照検索を行う（こちらは過剰検出につながるため避けるべき）
-                MessageBox.Show("特定のパラメータや変数が見つかりませんでした。型全体に対する参照を検索します。",
-                    "警告",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                await ShowImpactForSymbol(_originalTypeSymbol);
             }
             catch (Exception ex)
             {
@@ -1348,6 +1366,1080 @@ namespace boilersExtensions.ViewModels
             {
                 IsProcessing.Value = false;
                 ProcessingStatus.Value = "準備完了";
+            }
+        }
+
+        /// <summary>
+        /// Razorファイルの影響分析を行います
+        /// </summary>
+        private async Task AnalyzeRazorFileImpact()
+        {
+            try
+            {
+                // ComponentModelサービスを取得
+                var componentModel = await Package.GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
+                var workspace = componentModel?.GetService<VisualStudioWorkspace>();
+
+                if (workspace == null)
+                {
+                    MessageBox.Show("ワークスペースの取得に失敗しました。",
+                        "エラー",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
+                // Razorファイルを含むプロジェクトを特定
+                var razorProject = FindProjectForRazorFile(_razorFilePath, workspace);
+
+                if (razorProject == null)
+                {
+                    MessageBox.Show($"Razorファイル '{Path.GetFileName(_razorFilePath)}' を含むプロジェクトが見つかりませんでした。\n" +
+                                    "別の方法で分析を試みます。",
+                        "警告",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    // 代替方法として、すべてのプロジェクトを対象に型参照を検索
+                    await AnalyzeTypeReferencesInAllProjects(_originalTypeSymbol, workspace.CurrentSolution.Projects.ToList());
+                    return;
+                }
+
+                // プロジェクトのコンパイレーションを取得
+                var compilation = await razorProject.GetCompilationAsync();
+                if (compilation == null)
+                {
+                    MessageBox.Show("プロジェクトのコンパイレーションを取得できませんでした。",
+                        "エラー",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
+                // プロジェクト内のC#コードを含む生成ファイルを特定
+                // 生成されたコードを使って参照を検索するため
+                var generatedDocuments = workspace.CurrentSolution.Projects
+                    .SelectMany(p => p.Documents)
+                    .Where(d => d.FilePath != null && (
+                        d.FilePath.Contains(".razor.g.cs") ||
+                        d.FilePath.Contains(".cshtml.g.cs") ||
+                        (d.FilePath.Contains(".razor.") && d.FilePath.EndsWith(".cs")) ||
+                        (d.FilePath.Contains(".cshtml.") && d.FilePath.EndsWith(".cs"))
+                    )).ToList();
+
+                if (!generatedDocuments.Any())
+                {
+                    // 生成ファイルが見つからない場合、別の方法を試す
+                    var result = MessageBox.Show("Razorファイルの生成コードを見つけられませんでした。\n" +
+                        "型全体に対する参照検索を実行しますか？",
+                        "警告",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        // 型全体に対する参照検索
+                        await ShowImpactForSymbolInProject(_originalTypeSymbol, razorProject);
+                    }
+                    return;
+                }
+
+                // 影響分析のための参照リストとなる変数
+                var impactList = new List<TypeReferenceInfo>();
+                var potentialIssues = new List<PotentialIssue>();
+
+                // 抽出したC#コードから特定位置の変数/パラメータを特定
+                if (_extractedCSharpCode != null && _fullTypeSpan.Start >= 0)
+                {
+                    // C#コード内での位置から行番号を取得
+                    int lineNumber = GetLineNumberFromPosition(_extractedCSharpCode, _fullTypeSpan.Start);
+
+                    if (lineNumber > 0)
+                    {
+                        // 行内容を取得
+                        var lines = _extractedCSharpCode.Split('\n');
+                        if (lineNumber <= lines.Length)
+                        {
+                            string lineText = lines[lineNumber - 1].Trim();
+
+                            // パラメータまたは変数宣言のパターンを検索
+                            var paramMatch = System.Text.RegularExpressions.Regex.Match(
+                                lineText,
+                                $@"({_originalTypeSymbol.Name})\s+(\w+)");
+
+                            if (paramMatch.Success)
+                            {
+                                string paramName = paramMatch.Groups[2].Value;
+                                Debug.WriteLine($"Found parameter or variable: {paramName}");
+
+                                // 生成文書内でパラメータまたは変数の参照を検索
+                                foreach (var genDoc in generatedDocuments)
+                                {
+                                    var genText = await genDoc.GetTextAsync();
+                                    var genRoot = await genDoc.GetSyntaxRootAsync();
+                                    var genSemanticModel = await genDoc.GetSemanticModelAsync();
+
+                                    // 変数/パラメータ名の識別子を検索
+                                    var identifiers = genRoot.DescendantNodes()
+                                        .OfType<IdentifierNameSyntax>()
+                                        .Where(id => id.Identifier.Text == paramName)
+                                        .ToList();
+
+                                    foreach (var id in identifiers)
+                                    {
+                                        // 参照情報を作成
+                                        var linePosition = genText.Lines.GetLinePosition(id.Span.Start);
+                                        var refLine = linePosition.Line + 1;
+
+                                        var lineSpan = genText.Lines[linePosition.Line].Span;
+                                        var referenceText = genText.ToString(lineSpan);
+
+                                        impactList.Add(new TypeReferenceInfo
+                                        {
+                                            FilePath = genDoc.FilePath,
+                                            FileName = Path.GetFileName(genDoc.FilePath),
+                                            LineNumber = refLine,
+                                            Column = linePosition.Character + 1,
+                                            Text = referenceText,
+                                            ReferenceType = $"パラメータ/変数の使用 (生成コード内)"
+                                        });
+                                    }
+
+                                    // 型互換性の問題を分析
+                                    try
+                                    {
+                                        // 選択された型のシンボルを取得
+                                        var newTypeSymbol = FindTypeSymbolInCompilation(SelectedType.Value.FullName, compilation);
+
+                                        if (newTypeSymbol != null)
+                                        {
+                                            // 元の型と新しい型の互換性をチェック
+                                            var compatibilityIssues = CheckTypeCompatibility(_originalTypeSymbol, newTypeSymbol);
+
+                                            foreach (var issue in compatibilityIssues)
+                                            {
+                                                // 互換性の問題がある場合、それに関連するコード参照を検索
+                                                foreach (var genDoc2 in generatedDocuments)
+                                                {
+                                                    var genText2 = await genDoc2.GetTextAsync();
+                                                    var genRoot2 = await genDoc2.GetSyntaxRootAsync();
+                                                    var genSemanticModel2 = await genDoc2.GetSemanticModelAsync();
+
+                                                    // 問題に関連する具体的なコード参照を検索
+                                                    var relatedNodes = FindNodesRelatedToCompatibilityIssue(genRoot2, genSemanticModel2, _originalTypeSymbol, issue);
+
+                                                    foreach (var node in relatedNodes)
+                                                    {
+                                                        var linePosition = genText2.Lines.GetLinePosition(node.Span.Start);
+                                                        var refLine = linePosition.Line + 1;
+
+                                                        var lineSpan = genText2.Lines[linePosition.Line].Span;
+                                                        var referenceText = genText2.ToString(lineSpan);
+
+                                                        // 潜在的な問題として追加
+                                                        potentialIssues.Add(new PotentialIssue
+                                                        {
+                                                            FilePath = genDoc2.FilePath,
+                                                            FileName = Path.GetFileName(genDoc2.FilePath),
+                                                            LineNumber = refLine,
+                                                            IssueType = issue.IssueType,
+                                                            Description = issue.Description,
+                                                            SuggestedFix = issue.SuggestedFix,
+                                                            CodeSnippet = referenceText.Trim()
+                                                        });
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Debug.WriteLine($"新しい型のシンボルが見つかりませんでした: {SelectedType.Value.FullName}");
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Debug.WriteLine($"型互換性の分析中にエラーが発生しました: {ex.Message}");
+                                    }
+                                }
+
+                                if (impactList.Count > 0)
+                                {
+                                    // 影響範囲ダイアログを表示
+                                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                                    var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
+                                    rcPotentialIssues.AddRange(potentialIssues);
+
+                                    var dialog = new ImpactAnalysisDialog
+                                    {
+                                        DataContext = new ImpactAnalysisViewModel
+                                        {
+                                            OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
+                                            NewTypeName = SelectedType.Value.DisplayName,
+                                            ReferencesCount = impactList.Count,
+                                            References = impactList,
+                                            PotentialIssues = rcPotentialIssues
+                                        }
+                                    };
+
+                                    (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
+                                    dialog.Show();
+
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // パラメータ/変数が特定できなかった場合、型全体の参照を検索
+                var promptResult = MessageBox.Show(
+                    "特定のパラメータや変数が特定できませんでした。\n型全体に対する参照を検索しますか？",
+                    "分析オプション",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (promptResult == MessageBoxResult.Yes)
+                {
+                    await ShowImpactForSymbolInProject(_originalTypeSymbol, razorProject);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error analyzing Razor file impact: {ex.Message}");
+                MessageBox.Show($"Razorファイルの影響分析中にエラーが発生しました: {ex.Message}",
+                    "エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Razorファイルが属するプロジェクトを特定するための改良メソッド
+        /// </summary>
+        private Microsoft.CodeAnalysis.Project FindProjectForRazorFile(string razorFilePath, VisualStudioWorkspace workspace)
+        {
+            try
+            {
+                // 1. 完全なパスマッチで検索
+                var exactMatchProject = workspace.CurrentSolution.Projects
+                    .FirstOrDefault(p => p.Documents.Any(d =>
+                        string.Equals(d.FilePath, razorFilePath, StringComparison.OrdinalIgnoreCase)));
+
+                if (exactMatchProject != null)
+                    return exactMatchProject;
+
+                // 2. ファイル名でマッチを試行
+                string fileName = Path.GetFileName(razorFilePath);
+                var fileNameMatchProject = workspace.CurrentSolution.Projects
+                    .FirstOrDefault(p => p.Documents.Any(d =>
+                        d.FilePath != null &&
+                        string.Equals(Path.GetFileName(d.FilePath), fileName, StringComparison.OrdinalIgnoreCase)));
+
+                if (fileNameMatchProject != null)
+                    return fileNameMatchProject;
+
+                // 3. DTEを使用してプロジェクト情報を取得
+                var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+                if (dte != null && dte.Solution != null)
+                {
+                    // アクティブなプロジェクトを取得
+                    Array activeSolutionProjects = dte.ActiveSolutionProjects as Array;
+                    if (activeSolutionProjects != null && activeSolutionProjects.Length > 0)
+                    {
+                        var activeProject = activeSolutionProjects.GetValue(0) as Microsoft.CodeAnalysis.Project;
+                        if (activeProject != null)
+                        {
+                            string projectName = activeProject.Name;
+
+                            // ワークスペースから同じ名前のプロジェクトを探す
+                            var activeRoslynProject = workspace.CurrentSolution.Projects
+                                .FirstOrDefault(p => string.Equals(p.Name, projectName, StringComparison.OrdinalIgnoreCase));
+
+                            if (activeRoslynProject != null)
+                                return activeRoslynProject;
+                        }
+                    }
+
+                    // すべてのプロジェクトをチェック
+                    foreach (EnvDTE.Project dteProject in dte.Solution.Projects)
+                    {
+                        try
+                        {
+                            // プロジェクト内のアイテムを再帰的にチェック
+                            if (IsFileInDTEProject(dteProject, razorFilePath))
+                            {
+                                // 該当するプロジェクトが見つかったらワークスペースから対応するプロジェクトを探す
+                                var matchingRoslynProject = workspace.CurrentSolution.Projects
+                                    .FirstOrDefault(p => string.Equals(p.Name, dteProject.Name, StringComparison.OrdinalIgnoreCase));
+
+                                if (matchingRoslynProject != null)
+                                    return matchingRoslynProject;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"プロジェクトチェック中のエラー: {ex.Message}");
+                        }
+                    }
+                }
+
+                // 4. ファイルパスから最も可能性の高いプロジェクトを推測
+                string razorDir = Path.GetDirectoryName(razorFilePath);
+
+                // ディレクトリ名と一致するプロジェクトを検索
+                string directoryName = new DirectoryInfo(razorDir).Name;
+                var dirNameMatchProject = workspace.CurrentSolution.Projects
+                    .FirstOrDefault(p => p.Name.Contains(directoryName) || directoryName.Contains(p.Name));
+
+                if (dirNameMatchProject != null)
+                    return dirNameMatchProject;
+
+                // 5. 最後の手段: すべてのBlazorプロジェクトから選択
+                var blazorProjects = workspace.CurrentSolution.Projects
+                    .Where(p => p.Documents.Any(d =>
+                        d.FilePath != null &&
+                        (d.FilePath.EndsWith(".razor") || d.FilePath.EndsWith(".cshtml"))))
+                    .ToList();
+
+                // Blazorプロジェクトが1つだけなら、それを返す
+                if (blazorProjects.Count == 1)
+                    return blazorProjects[0];
+
+                // 複数ある場合は名前でソートして最初のものを返す
+                if (blazorProjects.Count > 1)
+                    return blazorProjects.OrderBy(p => p.Name).First();
+
+                // プロジェクトが見つからなかった場合はnullを返す
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"プロジェクト検索中のエラー: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// DTEプロジェクト内でファイルを再帰的に検索する
+        /// </summary>
+        private bool IsFileInDTEProject(EnvDTE.Project project, string filePath)
+        {
+            try
+            {
+                if (project.ProjectItems == null)
+                    return false;
+
+                foreach (ProjectItem item in project.ProjectItems)
+                {
+                    // このアイテムが検索中のファイルかチェック
+                    if (item.FileCount > 0)
+                    {
+                        try
+                        {
+                            string itemPath = item.FileNames[0];
+                            if (string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+
+                    // サブフォルダ内も再帰的に検索
+                    if (item.ProjectItems != null && item.ProjectItems.Count > 0)
+                    {
+                        if (IsFileInProjectItems(item.ProjectItems, filePath))
+                        {
+                            return true;
+                        }
+                    }
+
+                    // プロジェクト内プロジェクトの場合
+                    if (item.SubProject != null)
+                    {
+                        if (IsFileInDTEProject(item.SubProject, filePath))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"プロジェクト内ファイル検索エラー: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// ProjectItems内でファイルを再帰的に検索する
+        /// </summary>
+        private bool IsFileInProjectItems(ProjectItems items, string filePath)
+        {
+            foreach (ProjectItem item in items)
+            {
+                // このアイテムが検索中のファイルかチェック
+                if (item.FileCount > 0)
+                {
+                    try
+                    {
+                        string itemPath = item.FileNames[0];
+                        if (string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                // サブフォルダ内も再帰的に検索
+                if (item.ProjectItems != null && item.ProjectItems.Count > 0)
+                {
+                    if (IsFileInProjectItems(item.ProjectItems, filePath))
+                    {
+                        return true;
+                    }
+                }
+
+                // プロジェクト内プロジェクトの場合
+                if (item.SubProject != null)
+                {
+                    if (IsFileInDTEProject(item.SubProject, filePath))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// すべてのプロジェクトを対象に型参照を検索
+        /// </summary>
+        private async Task AnalyzeTypeReferencesInAllProjects(ITypeSymbol typeSymbol, List<Microsoft.CodeAnalysis.Project> projects)
+        {
+            try
+            {
+                var impactList = new List<TypeReferenceInfo>();
+                var potentialIssues = new List<PotentialIssue>();
+
+                foreach (var project in projects)
+                {
+                    // Razorファイルに関連するコードファイルを検索
+                    var generatedDocs = project.Documents
+                        .Where(d => d.FilePath != null && (
+                            d.FilePath.Contains(".razor.g.cs") ||
+                            d.FilePath.Contains(".cshtml.g.cs") ||
+                            (d.FilePath.Contains(".razor.") && d.FilePath.EndsWith(".cs")) ||
+                            (d.FilePath.Contains(".cshtml.") && d.FilePath.EndsWith(".cs"))
+                        )).ToList();
+
+                    // 通常のコードファイルも検索対象に含める
+                    var csharpDocs = project.Documents
+                        .Where(d => d.FilePath != null && d.FilePath.EndsWith(".cs") &&
+                               !generatedDocs.Any(gd => gd.FilePath == d.FilePath))
+                        .ToList();
+
+                    var allDocs = generatedDocs.Concat(csharpDocs).ToList();
+
+                    foreach (var doc in allDocs)
+                    {
+                        try
+                        {
+                            var text = await doc.GetTextAsync();
+                            var root = await doc.GetSyntaxRootAsync();
+                            var semanticModel = await doc.GetSemanticModelAsync();
+
+                            if (root == null || semanticModel == null)
+                                continue;
+
+                            // 型名の文字列検索（簡易的なアプローチ）
+                            var typeNameNodes = root.DescendantNodes()
+                                .OfType<IdentifierNameSyntax>()
+                                .Where(n => n.Identifier.Text == typeSymbol.Name)
+                                .ToList();
+
+                            foreach (var node in typeNameNodes)
+                            {
+                                var linePosition = text.Lines.GetLinePosition(node.Span.Start);
+                                var refLine = linePosition.Line + 1;
+
+                                var lineSpan = text.Lines[linePosition.Line].Span;
+                                var referenceText = text.ToString(lineSpan).Trim();
+
+                                impactList.Add(new TypeReferenceInfo
+                                {
+                                    FilePath = doc.FilePath,
+                                    FileName = Path.GetFileName(doc.FilePath),
+                                    LineNumber = refLine,
+                                    Column = linePosition.Character + 1,
+                                    Text = referenceText,
+                                    ReferenceType = "型名の出現"
+                                });
+                            }
+
+                            // より厳密な型参照の検索
+                            var typeNodes = root.DescendantNodes()
+                                .OfType<TypeSyntax>()
+                                .ToList();
+
+                            foreach (var typeNode in typeNodes)
+                            {
+                                var typeInfo = semanticModel.GetTypeInfo(typeNode);
+
+                                if (typeInfo.Type != null &&
+                                    (typeInfo.Type.Name == typeSymbol.Name ||
+                                     typeInfo.Type.ToDisplayString() == typeSymbol.ToDisplayString()))
+                                {
+                                    var linePosition = text.Lines.GetLinePosition(typeNode.Span.Start);
+                                    var refLine = linePosition.Line + 1;
+
+                                    var lineSpan = text.Lines[linePosition.Line].Span;
+                                    var referenceText = text.ToString(lineSpan).Trim();
+
+                                    string referenceType = "型の参照";
+
+                                    // 参照種別の詳細を取得
+                                    var parent = typeNode.Parent;
+                                    if (parent is ParameterSyntax)
+                                    {
+                                        referenceType = "パラメータの型";
+                                    }
+                                    else if (parent is VariableDeclarationSyntax)
+                                    {
+                                        referenceType = "変数の型";
+                                    }
+                                    else if (parent is PropertyDeclarationSyntax)
+                                    {
+                                        referenceType = "プロパティの型";
+                                    }
+                                    else if (parent is MethodDeclarationSyntax)
+                                    {
+                                        referenceType = "メソッドの戻り値型";
+                                    }
+
+                                    impactList.Add(new TypeReferenceInfo
+                                    {
+                                        FilePath = doc.FilePath,
+                                        FileName = Path.GetFileName(doc.FilePath),
+                                        LineNumber = refLine,
+                                        Column = linePosition.Character + 1,
+                                        Text = referenceText,
+                                        ReferenceType = referenceType
+                                    });
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"ドキュメント分析エラー ({doc.FilePath}): {ex.Message}");
+                        }
+                    }
+                }
+
+                // 重複を削除
+                impactList = impactList
+                    .GroupBy(i => new { i.FilePath, i.LineNumber, i.Text })
+                    .Select(g => g.First())
+                    .ToList();
+
+                // ソート：生成コードではないファイル優先、そして行番号順
+                impactList = impactList
+                    .OrderBy(r => r.FilePath.Contains(".g.cs")) // 生成コードではないファイルを優先
+                    .ThenBy(r => r.FileName)
+                    .ThenBy(r => r.LineNumber)
+                    .ToList();
+
+                // 影響範囲ダイアログを表示
+                if (impactList.Count > 0)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
+                    rcPotentialIssues.AddRange(potentialIssues);
+
+                    var dialog = new ImpactAnalysisDialog
+                    {
+                        DataContext = new ImpactAnalysisViewModel
+                        {
+                            OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
+                            NewTypeName = SelectedType.Value.DisplayName,
+                            ReferencesCount = impactList.Count,
+                            References = impactList,
+                            PotentialIssues = rcPotentialIssues
+                        }
+                    };
+
+                    (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
+                    dialog.Show();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        $"型 '{typeSymbol.Name}' の参照が見つかりませんでした。",
+                        "分析結果",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"全プロジェクト分析エラー: {ex.Message}");
+                MessageBox.Show($"プロジェクト分析中にエラーが発生しました: {ex.Message}",
+                    "エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// コンパイレーションから型シンボルを検索します
+        /// </summary>
+        private INamedTypeSymbol FindTypeSymbolInCompilation(string fullTypeName, Compilation compilation)
+        {
+            // ジェネリック型の場合は型引数を取り除く
+            string nonGenericName = fullTypeName;
+            if (fullTypeName.Contains("<"))
+            {
+                nonGenericName = fullTypeName.Substring(0, fullTypeName.IndexOf("<"));
+            }
+
+            // メタデータ名でシンボルを検索
+            var symbol = compilation.GetTypeByMetadataName(nonGenericName);
+            if (symbol != null)
+            {
+                return symbol;
+            }
+
+            // 名前で検索（名前空間を考慮）
+            var candidateSymbols = compilation.GetSymbolsWithName(
+                name => name.EndsWith(Path.GetFileName(nonGenericName)),
+                SymbolFilter.Type
+            ).OfType<INamedTypeSymbol>();
+
+            // 最適な候補を返す（完全一致優先）
+            foreach (var candidate in candidateSymbols)
+            {
+                if (candidate.ToDisplayString() == fullTypeName)
+                    return candidate;
+            }
+
+            // 完全一致がなければ、部分一致の最初の候補を返す
+            return candidateSymbols.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 2つの型の互換性をチェックし、潜在的な問題を返します
+        /// </summary>
+        private List<CompatibilityIssue> CheckTypeCompatibility(ITypeSymbol originalType, ITypeSymbol newType)
+        {
+            var issues = new List<CompatibilityIssue>();
+
+            // 基本的な型の互換性をチェック
+            if (originalType.TypeKind != newType.TypeKind)
+            {
+                issues.Add(new CompatibilityIssue
+                {
+                    IssueType = "型の種類の不一致",
+                    Description = $"元の型 '{originalType.Name}' は {originalType.TypeKind} ですが、新しい型 '{newType.Name}' は {newType.TypeKind} です。",
+                    SuggestedFix = "型の種類が一致するように設計を見直してください。"
+                });
+            }
+
+            // クラスの場合は継承関係をチェック
+            if (originalType.TypeKind == TypeKind.Class && newType.TypeKind == TypeKind.Class)
+            {
+                bool isCompatible = false;
+                var baseType = newType;
+
+                while (baseType != null)
+                {
+                    if (SymbolEqualityComparer.Default.Equals(baseType, originalType))
+                    {
+                        isCompatible = true;
+                        break;
+                    }
+                    baseType = baseType.BaseType;
+                }
+
+                if (!isCompatible && !SymbolEqualityComparer.Default.Equals(originalType, newType))
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "継承関係の不一致",
+                        Description = $"新しい型 '{newType.Name}' は元の型 '{originalType.Name}' を継承していません。",
+                        SuggestedFix = "元の型と継承関係がある型を使用するか、アダプターパターンを検討してください。"
+                    });
+                }
+            }
+
+            // インターフェースの実装をチェック
+            if (originalType.TypeKind == TypeKind.Interface)
+            {
+                bool implementsInterface = newType.AllInterfaces.Any(i =>
+                    SymbolEqualityComparer.Default.Equals(i, originalType));
+
+                if (!implementsInterface && !SymbolEqualityComparer.Default.Equals(originalType, newType))
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "インターフェース実装の不一致",
+                        Description = $"新しい型 '{newType.Name}' はインターフェース '{originalType.Name}' を実装していません。",
+                        SuggestedFix = "インターフェースを実装する型を選択するか、アダプターパターンを検討してください。"
+                    });
+                }
+            }
+
+            // メンバーの比較（メソッド、プロパティなど）
+            var originalMembers = GetTypeMembers(originalType);
+            var newMembers = GetTypeMembers(newType);
+
+            // メソッドの互換性チェック
+            var originalMethods = originalMembers.OfType<IMethodSymbol>()
+                .Where(m => !m.IsImplicitlyDeclared && m.MethodKind != MethodKind.Constructor)
+                .ToList();
+
+            foreach (var originalMethod in originalMethods)
+            {
+                // オーバーロードを含めて一致するメソッドを検索
+                var matchingMethods = newMembers.OfType<IMethodSymbol>()
+                    .Where(m => m.Name == originalMethod.Name && m.MethodKind != MethodKind.Constructor)
+                    .ToList();
+
+                if (matchingMethods.Count == 0)
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "メソッド欠落",
+                        Description = $"元の型の '{originalMethod.Name}' メソッドが新しい型にありません。",
+                        SuggestedFix = $"新しい型に '{originalMethod.Name}' メソッドを実装するか、拡張メソッドを検討してください。",
+                        Member = originalMethod.Name
+                    });
+                }
+                else
+                {
+                    // シグネチャの互換性をチェック
+                    bool hasCompatibleOverload = matchingMethods.Any(m => AreMethodSignaturesCompatible(originalMethod, m));
+
+                    if (!hasCompatibleOverload)
+                    {
+                        var paramList = string.Join(", ", originalMethod.Parameters.Select(p => $"{p.Type.Name} {p.Name}"));
+                        issues.Add(new CompatibilityIssue
+                        {
+                            IssueType = "メソッドシグネチャの不一致",
+                            Description = $"メソッド '{originalMethod.Name}({paramList})' のシグネチャが一致するものが新しい型にありません。",
+                            SuggestedFix = "メソッドのシグネチャを一致させるか、アダプターを実装してください。",
+                            Member = originalMethod.Name
+                        });
+                    }
+                }
+            }
+
+            // プロパティの互換性チェック
+            var originalProperties = originalMembers.OfType<IPropertySymbol>()
+                .Where(p => !p.IsImplicitlyDeclared)
+                .ToList();
+
+            foreach (var originalProperty in originalProperties)
+            {
+                var matchingProperty = newMembers.OfType<IPropertySymbol>()
+                    .FirstOrDefault(p => p.Name == originalProperty.Name);
+
+                if (matchingProperty == null)
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "プロパティ欠落",
+                        Description = $"元の型の '{originalProperty.Name}' プロパティが新しい型にありません。",
+                        SuggestedFix = $"新しい型に '{originalProperty.Name}' プロパティを実装するか、拡張メソッドを検討してください。",
+                        Member = originalProperty.Name
+                    });
+                }
+                else if (!SymbolEqualityComparer.Default.Equals(originalProperty.Type, matchingProperty.Type))
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "プロパティ型の不一致",
+                        Description = $"プロパティ '{originalProperty.Name}' の型が元の型では '{originalProperty.Type.Name}' ですが、新しい型では '{matchingProperty.Type.Name}' です。",
+                        SuggestedFix = "型変換ロジックを追加するか、代替のプロパティを検討してください。",
+                        Member = originalProperty.Name
+                    });
+                }
+            }
+
+            // イベントの互換性チェック
+            var originalEvents = originalMembers.OfType<IEventSymbol>()
+                .Where(e => !e.IsImplicitlyDeclared)
+                .ToList();
+
+            foreach (var originalEvent in originalEvents)
+            {
+                var matchingEvent = newMembers.OfType<IEventSymbol>()
+                    .FirstOrDefault(e => e.Name == originalEvent.Name);
+
+                if (matchingEvent == null)
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "イベント欠落",
+                        Description = $"元の型の '{originalEvent.Name}' イベントが新しい型にありません。",
+                        SuggestedFix = $"新しい型に '{originalEvent.Name}' イベントを実装するか、独自のイベント処理を実装してください。",
+                        Member = originalEvent.Name
+                    });
+                }
+                else if (!SymbolEqualityComparer.Default.Equals(originalEvent.Type, matchingEvent.Type))
+                {
+                    issues.Add(new CompatibilityIssue
+                    {
+                        IssueType = "イベント型の不一致",
+                        Description = $"イベント '{originalEvent.Name}' の型が元の型では '{originalEvent.Type.Name}' ですが、新しい型では '{matchingEvent.Type.Name}' です。",
+                        SuggestedFix = "アダプターまたはラッパーを実装して、イベントハンドラーの互換性を確保してください。",
+                        Member = originalEvent.Name
+                    });
+                }
+            }
+
+            return issues;
+        }
+
+        /// <summary>
+        /// 互換性の問題に関連するノードを検索
+        /// </summary>
+        private List<SyntaxNode> FindNodesRelatedToCompatibilityIssue(
+            SyntaxNode root,
+            SemanticModel semanticModel,
+            ITypeSymbol originalType,
+            CompatibilityIssue issue)
+        {
+            var result = new List<SyntaxNode>();
+
+            // メンバーの参照が指定されている場合
+            if (!string.IsNullOrEmpty(issue.Member))
+            {
+                // メソッド呼び出しを検索
+                var methodCalls = root.DescendantNodes()
+                    .OfType<InvocationExpressionSyntax>()
+                    .Where(i => {
+                        if (i.Expression is MemberAccessExpressionSyntax memberAccess)
+                        {
+                            // 型.メソッド() の形式の呼び出し
+                            if (memberAccess.Name.Identifier.Text == issue.Member)
+                            {
+                                var expressionType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                                return expressionType != null &&
+                                       SymbolEqualityComparer.Default.Equals(expressionType, originalType);
+                            }
+                        }
+                        else if (i.Expression is IdentifierNameSyntax identifier &&
+                                 identifier.Identifier.Text == issue.Member)
+                        {
+                            // 単独のメソッド呼び出し（例：this内やusing staticなど）
+                            var symbol = semanticModel.GetSymbolInfo(identifier).Symbol;
+                            if (symbol is IMethodSymbol methodSymbol)
+                            {
+                                return methodSymbol.ContainingType != null &&
+                                       SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, originalType);
+                            }
+                        }
+                        return false;
+                    })
+                    .ToList();
+
+                result.AddRange(methodCalls);
+
+                // プロパティアクセスを検索
+                var propertyAccesses = root.DescendantNodes()
+                    .OfType<MemberAccessExpressionSyntax>()
+                    .Where(m => {
+                        if (m.Name.Identifier.Text == issue.Member)
+                        {
+                            var expressionType = semanticModel.GetTypeInfo(m.Expression).Type;
+                            return expressionType != null &&
+                                   SymbolEqualityComparer.Default.Equals(expressionType, originalType);
+                        }
+                        return false;
+                    })
+                    .ToList();
+
+                result.AddRange(propertyAccesses);
+
+                // イベント参照を検索
+                var eventReferences = root.DescendantNodes()
+                    .OfType<AssignmentExpressionSyntax>()
+                    .Where(a => {
+                        if (a.Left is MemberAccessExpressionSyntax memberAccess &&
+                            memberAccess.Name.Identifier.Text == issue.Member)
+                        {
+                            var expressionType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                            return expressionType != null &&
+                                   SymbolEqualityComparer.Default.Equals(expressionType, originalType);
+                        }
+                        return false;
+                    })
+                    .ToList();
+
+                result.AddRange(eventReferences);
+            }
+            else
+            {
+                // 特定のメンバーが指定されていない場合、型の参照全般を検索
+                var typeReferences = root.DescendantNodes()
+                    .OfType<TypeSyntax>()
+                    .Where(t => {
+                        var symbolInfo = semanticModel.GetSymbolInfo(t);
+                        return symbolInfo.Symbol != null &&
+                               SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, originalType);
+                    })
+                    .ToList();
+
+                result.AddRange(typeReferences);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 互換性の問題を表すクラス
+        /// </summary>
+        private class CompatibilityIssue
+        {
+            public string IssueType { get; set; }
+            public string Description { get; set; }
+            public string SuggestedFix { get; set; }
+            public string Member { get; set; } // 問題のあるメンバー名（オプション）
+        }
+
+        /// <summary>
+        /// 型シンボルに対する影響分析（プロジェクト指定版）
+        /// </summary>
+        private async Task ShowImpactForSymbolInProject(ISymbol symbol, Microsoft.CodeAnalysis.Project project)
+        {
+            try
+            {
+                // 参照の一覧を構築
+                var impactList = new List<TypeReferenceInfo>();
+
+                // Razorファイルの場合は生成コードも検索
+                var generatedDocs = project.Solution.Projects
+                    .SelectMany(p => p.Documents)
+                    .Where(d => d.FilePath != null && (
+                        d.FilePath.Contains(".razor.g.cs") ||
+                        d.FilePath.Contains(".cshtml.g.cs") ||
+                        (d.FilePath.Contains(".razor.") && d.FilePath.EndsWith(".cs")) ||
+                        (d.FilePath.Contains(".cshtml.") && d.FilePath.EndsWith(".cs"))
+                    )).ToList();
+
+                // 通常のコードファイルも検索対象に含める
+                var csharpDocs = project.Documents
+                    .Where(d => d.FilePath != null && d.FilePath.EndsWith(".cs") &&
+                           !generatedDocs.Any(gd => gd.FilePath == d.FilePath))
+                    .ToList();
+
+                var allDocs = generatedDocs.Concat(csharpDocs).ToList();
+
+                foreach (var doc in allDocs)
+                {
+                    var text = await doc.GetTextAsync();
+                    var root = await doc.GetSyntaxRootAsync();
+                    var semanticModel = await doc.GetSemanticModelAsync();
+
+                    // 型名の出現を検索
+                    var typeNodes = root.DescendantNodes()
+                        .OfType<TypeSyntax>()
+                        .Where(t => {
+                            var symbolInfo = semanticModel.GetSymbolInfo(t);
+                            return symbolInfo.Symbol != null &&
+                                   SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, symbol);
+                        })
+                        .ToList();
+
+                    foreach (var typeNode in typeNodes)
+                    {
+                        var linePosition = text.Lines.GetLinePosition(typeNode.Span.Start);
+                        var refLine = linePosition.Line + 1;
+
+                        var lineSpan = text.Lines[linePosition.Line].Span;
+                        var referenceText = text.ToString(lineSpan).Trim();
+
+                        string referenceType = "型の参照";
+
+                        // 参照種別の詳細を取得
+                        var parent = typeNode.Parent;
+                        if (parent is ParameterSyntax)
+                        {
+                            referenceType = "パラメータの型";
+                        }
+                        else if (parent is VariableDeclarationSyntax)
+                        {
+                            referenceType = "変数の型";
+                        }
+                        else if (parent is PropertyDeclarationSyntax)
+                        {
+                            referenceType = "プロパティの型";
+                        }
+                        else if (parent is MethodDeclarationSyntax)
+                        {
+                            referenceType = "メソッドの戻り値型";
+                        }
+
+                        impactList.Add(new TypeReferenceInfo
+                        {
+                            FilePath = doc.FilePath,
+                            FileName = Path.GetFileName(doc.FilePath),
+                            LineNumber = refLine,
+                            Column = linePosition.Character + 1,
+                            Text = referenceText,
+                            ReferenceType = referenceType
+                        });
+                    }
+                }
+
+                // 潜在的な問題の分析
+                var potentialIssues = await AnalyzePotentialIssues(symbol, _originalTypeSymbol, SelectedType.Value);
+                var rcPotentialIssues = new ReactiveCollection<PotentialIssue>();
+                rcPotentialIssues.AddRange(potentialIssues);
+
+                // ソート：生成コードではないファイル優先、そして行番号順
+                impactList = impactList
+                    .OrderBy(r => r.FilePath.Contains(".g.cs")) // 生成コードではないファイルを優先
+                    .ThenBy(r => r.FileName)
+                    .ThenBy(r => r.LineNumber)
+                    .ToList();
+
+                // 影響範囲ダイアログを表示
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var dialog = new ImpactAnalysisDialog
+                {
+                    DataContext = new ImpactAnalysisViewModel
+                    {
+                        OriginalTypeName = _originalTypeSymbol.ToDisplayString(),
+                        NewTypeName = SelectedType.Value.DisplayName,
+                        ReferencesCount = impactList.Count,
+                        References = impactList,
+                        PotentialIssues = rcPotentialIssues
+                    }
+                };
+
+                (dialog.DataContext as ImpactAnalysisViewModel).OnDialogOpened(dialog);
+                dialog.Show();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in ShowImpactForSymbolInProject: {ex.Message}");
+                MessageBox.Show($"影響範囲の分析中にエラーが発生しました: {ex.Message}",
+                    "エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
