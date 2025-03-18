@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Design;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using boilersExtensions.Utils;
@@ -99,7 +100,7 @@ namespace boilersExtensions.Commands
                     try
                     {
                         // カーソル位置の型シンボルを取得
-                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan) =
+                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, code, codeToRazorMapping) =
                             await TypeHierarchyAnalyzer.GetTypeSymbolAtPositionAsync(
                                 document, selectedSpan.Value.Start.Position);
 
@@ -111,7 +112,7 @@ namespace boilersExtensions.Commands
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                         // 置換用の適切なスパンを決定
-                        SnapshotSpan replacementSpan;
+                        SnapshotSpan replacementSpan = default;
 
                         // 基本型名のスパンがあればそれを使用
                         if (baseTypeSpan.HasValue)
@@ -123,10 +124,71 @@ namespace boilersExtensions.Commands
                             // スパン情報をデバッグ出力
                             //System.Diagnostics.Debug.WriteLine($"Using base type span: Start={start}, Length={length}, Text={document.GetSyntaxRootAsync().Result.ToString().Substring(start, length)}");
 
-                            // SnapshotSpanに変換
-                            replacementSpan = new SnapshotSpan(
-                                textView.TextSnapshot,
-                                new Span(start, length));
+                            // アクティブなドキュメントのパスを取得
+                            var dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                            var documentPath = dte.ActiveDocument.FullName;
+
+                            // Razorファイルの場合はRazor言語サービスを使用して直接処理
+                            bool isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                               documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
+
+                            // C#コードとRazorファイル間のマッピングを使用する方法
+                            if (isRazorFile && codeToRazorMapping != null) // マッピング情報が利用可能と仮定
+                            {
+                                // C#コード内での位置
+                                int csharpPosition = fullTypeSpan.Start;
+
+                                // C#コード内での位置からその行番号を特定する
+                                int csharpLine = 0;
+                                if (code != null)
+                                {
+                                    // コード内での行番号を計算
+                                    var lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+                                    int charCount = 0;
+                                    for (int i = 0; i < lines.Length; i++)
+                                    {
+                                        int lineLength = lines[i].Length + Environment.NewLine.Length;
+                                        if (charCount + lineLength > csharpPosition)
+                                        {
+                                            csharpLine = i;
+                                            break;
+                                        }
+                                        charCount += lineLength;
+                                    }
+
+                                    // ファイルの内容を直接読み込む
+                                    string razorContent = File.ReadAllText(documentPath);
+
+                                    // マッピング情報を使用してRazorファイル内の対応する位置を取得
+                                    if (codeToRazorMapping.TryGetValue(csharpLine, out int razorPosition))
+                                    {
+                                        // 行内の相対的な位置を計算（必要に応じて）
+                                        int offsetInLine = csharpPosition - charCount;
+
+                                        // 型名を取得
+                                        string typeName = typeSymbol.Name;
+
+                                        // 位置周辺のテキストをチェックして正確な型名の位置を特定
+                                        // razorPosition付近で型名を探す
+                                        int exactPosition = FindExactTypePosition(razorContent, razorPosition, typeName);
+
+                                        if (exactPosition >= 0)
+                                        {
+                                            // テキストビューのSpanではなく、実際のファイル内容に基づいて置換対象を決定
+                                            replacementSpan = new SnapshotSpan(
+                                                textView.TextSnapshot,
+                                                new Span(exactPosition, typeName.Length));
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // 通常のC#ファイル用の既存の処理
+                                replacementSpan = new SnapshotSpan(
+                                    textView.TextSnapshot,
+                                    new Span(start, length));
+                            }
                         }
                         else
                         {
@@ -137,7 +199,7 @@ namespace boilersExtensions.Commands
 
                         // ダイアログを表示（完全な型スパン情報も追加）
                         ShowTypeHierarchyDialog(typeSymbol, document, selectedSpan.Value.Start.Position,
-                            replacementSpan, textView.TextBuffer, fullTypeSpan);
+                            replacementSpan, textView.TextBuffer, fullTypeSpan, code);
                     }
                     catch (Exception ex)
                     {
@@ -149,6 +211,36 @@ namespace boilersExtensions.Commands
             {
                 Debug.WriteLine($"Error in Execute: {ex.Message}");
             }
+        }
+
+        // 型名の正確な位置を特定するヘルパーメソッド
+        private static int FindExactTypePosition(string content, int approximatePosition, string typeName)
+        {
+            // 検索範囲を制限（前後100文字程度）
+            int searchStart = Math.Max(0, approximatePosition - 100);
+            int searchEnd = Math.Min(content.Length, approximatePosition + 100);
+            string searchArea = content.Substring(searchStart, searchEnd - searchStart);
+
+            // 型名を検索
+            int relativePos = searchArea.IndexOf(typeName);
+            if (relativePos >= 0)
+            {
+                return searchStart + relativePos;
+            }
+
+            // 見つからない場合はより広い範囲で検索
+            searchStart = Math.Max(0, approximatePosition - 500);
+            searchEnd = Math.Min(content.Length, approximatePosition + 500);
+            searchArea = content.Substring(searchStart, searchEnd - searchStart);
+
+            relativePos = searchArea.IndexOf(typeName);
+            if (relativePos >= 0)
+            {
+                return searchStart + relativePos;
+            }
+
+            // それでも見つからない場合は元の位置を返す
+            return approximatePosition;
         }
 
         /// <summary>
@@ -173,12 +265,20 @@ namespace boilersExtensions.Commands
         /// </summary>
         private static void ShowTypeHierarchyDialog(
             ITypeSymbol typeSymbol, Document document, int position, SnapshotSpan selectedSpan, ITextBuffer textBuffer,
-            TextSpan fullTypeSpan)
+            TextSpan fullTypeSpan, string code)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
+                // アクティブなドキュメントのパスを取得
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                var documentPath = dte.ActiveDocument.FullName;
+
+                // Razorファイルの場合はRazor言語サービスを使用して直接処理
+                bool isRazorFile = documentPath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                   documentPath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
+
                 // ダイアログを作成
                 var window = new TypeHierarchyDialog();
                 var viewModel = new TypeHierarchyDialogViewModel { Package = package };
@@ -190,8 +290,20 @@ namespace boilersExtensions.Commands
                 // 非同期で型階層を初期化
                 Task.Run(async () =>
                 {
-                    await viewModel.InitializeAsync(typeSymbol, document, position, selectedSpan, textBuffer,
-                        fullTypeSpan);
+                    if (isRazorFile)
+                    {
+                        // Razorファイル専用の処理
+                        // ここでは、解析されたC#コードとともに、元のファイルパスも渡す
+                        string razorFilePath = documentPath;
+                        await viewModel.InitializeRazorAsync(typeSymbol, document, position,
+                            razorFilePath, code, fullTypeSpan);
+                    }
+                    else
+                    {
+                        // 通常のC#ファイル用の既存処理
+                        await viewModel.InitializeAsync(typeSymbol, document, position, selectedSpan, textBuffer,
+                            fullTypeSpan);
+                    }
                 });
 
                 // ダイアログを表示

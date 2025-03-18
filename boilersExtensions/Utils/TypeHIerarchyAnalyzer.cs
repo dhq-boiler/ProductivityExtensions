@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EnvDTE;
+using LibGit2Sharp;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,13 +31,16 @@ namespace boilersExtensions.Utils
         ///     カーソル位置の型シンボルとその親要素を取得
         /// </summary>
         public static async
-    Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, TextSpan fullTypeSpan, TextSpan? baseTypeSpan)>
+    Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, TextSpan fullTypeSpan, TextSpan? baseTypeSpan, string code, Dictionary<int, int> mapping)>
     GetTypeSymbolAtPositionAsync(Document document, int position)
         {
             try
             {
+                string retCode = null;
                 SemanticModel semanticModel = null;
                 SyntaxNode syntaxRoot = null;
+                // Razorファイルの場合、マッピング情報も計算して返す
+                Dictionary<int, int> mapping = null;
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -97,6 +101,11 @@ namespace boilersExtensions.Utils
 
                         // 元のpositionではなく、マッピングされたpositionを使用
                         position = adjustedPosition;
+
+                        retCode = code;
+                        
+                        // C#コードブロックを抽出した際のマッピング情報を計算
+                        mapping = BuildCodeToRazorMapping(razorContent, code);
                     }
                     else
                     {
@@ -119,19 +128,19 @@ namespace boilersExtensions.Utils
                 {
                     if (document == null)
                     {
-                        return (null, null, default, null);
+                        return (null, null, default, null, null, null);
                     }
 
                     semanticModel = await document.GetSemanticModelAsync();
                     if (semanticModel == null)
                     {
-                        return (null, null, default, null);
+                        return (null, null, default, null, null, null);
                     }
 
                     syntaxRoot = await document.GetSyntaxRootAsync();
                     if (syntaxRoot == null)
                     {
-                        return (null, null, default, null);
+                        return (null, null, default, null, null, null);
                     }
                 }
 
@@ -139,7 +148,7 @@ namespace boilersExtensions.Utils
                 var node = syntaxRoot.FindNode(new TextSpan(position, 0), getInnermostNodeForTie: true);
                 if (node == null)
                 {
-                    return (null, null, default, null);
+                    return (null, null, default, null, null, null);
                 }
 
                 Debug.WriteLine($"Position {position}のノード: {node.GetType().Name} - {node}");
@@ -213,7 +222,7 @@ namespace boilersExtensions.Utils
                         {
                             Debug.WriteLine($"識別子から型を動的に解決しました: {typeName} -> {resolvedType.ToDisplayString()}");
                             var syntheticTypeSpan = new TextSpan(position, typeName.Length);
-                            return (resolvedType, node.Parent, syntheticTypeSpan, syntheticTypeSpan);
+                            return (resolvedType, node.Parent, syntheticTypeSpan, syntheticTypeSpan, null, null);
                         }
                     }
                 }
@@ -241,12 +250,12 @@ namespace boilersExtensions.Utils
                             {
                                 Debug.WriteLine($"テキストから型を動的に解決しました: {typeName} -> {resolvedType.ToDisplayString()}");
                                 var syntheticTypeSpan = new TextSpan(position, typeName.Length);
-                                return (resolvedType, node, syntheticTypeSpan, syntheticTypeSpan);
+                                return (resolvedType, node, syntheticTypeSpan, syntheticTypeSpan, null, null);
                             }
                         }
                     }
 
-                    return (null, null, default, null);
+                    return (null, null, default, null, null, null);
                 }
 
                 // 型の完全なスパンを取得
@@ -309,14 +318,205 @@ namespace boilersExtensions.Utils
                     }
                 }
 
-                return (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan);
+                return (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, retCode, mapping);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"GetTypeSymbolAtPositionAsyncでエラーが発生しました: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
-                return (null, null, default, null);
+                return (null, null, default, null, null, null);
             }
+        }
+
+        private static Dictionary<int, int> BuildCodeToRazorMapping(string razorContent, string generatedCode)
+        {
+            var mapping = new Dictionary<int, int>();
+
+            // 生成されたコードの行を分割
+            var generatedCodeLines = generatedCode.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+            // @{ ... } と @code { ... } のブロックを再度抽出
+            List<(int razorStart, int razorLength, int generatedCodeLineStart)> codeBlocks =
+                new List<(int, int, int)>();
+
+            // @{ ... } のパターンを検出
+            int index = 0;
+            while (index < razorContent.Length && (index = razorContent.IndexOf("@{", index)) != -1)
+            {
+                int braceStart = index + 2;
+                int braceCount = 1;
+                int braceEnd = braceStart;
+
+                while (braceCount > 0 && braceEnd < razorContent.Length)
+                {
+                    if (razorContent[braceEnd] == '{') braceCount++;
+                    else if (razorContent[braceEnd] == '}') braceCount--;
+                    braceEnd++;
+                }
+
+                if (braceCount == 0)
+                {
+                    // 生成されたコード内でのブロックの開始行を見つける
+                    string blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
+                    int generatedLineStart = Array.FindIndex(generatedCodeLines,
+                        line => line.Contains(blockContent.Trim()));
+
+                    if (generatedLineStart != -1)
+                    {
+                        codeBlocks.Add((braceStart, braceEnd - braceStart - 1, generatedLineStart));
+                    }
+
+                    // インデックスを更新
+                    index = braceEnd;
+                }
+                else
+                {
+                    // 不完全なブロックの場合はループを抜ける
+                    break;
+                }
+            }
+
+            // @code { ... } のパターンを検出
+            index = 0;
+            while (index < razorContent.Length && (index = razorContent.IndexOf("@code", index)) != -1)
+            {
+                int codeEnd = index + 5;
+                int braceIndex = codeEnd;
+                while (braceIndex < razorContent.Length &&
+                       (char.IsWhiteSpace(razorContent[braceIndex]) ||
+                        razorContent[braceIndex] == '\r' ||
+                        razorContent[braceIndex] == '\n'))
+                {
+                    braceIndex++;
+                }
+
+                if (braceIndex < razorContent.Length && razorContent[braceIndex] == '{')
+                {
+                    int braceStart = braceIndex + 1;
+                    int braceCount = 1;
+                    int braceEnd = braceStart;
+
+                    while (braceCount > 0 && braceEnd < razorContent.Length)
+                    {
+                        if (razorContent[braceEnd] == '{') braceCount++;
+                        else if (razorContent[braceEnd] == '}') braceCount--;
+                        braceEnd++;
+                    }
+
+                    if (braceCount == 0)
+                    {
+                        // 生成されたコード内でのブロックの開始行を見つける
+                        //braceStart, braceEnd はバイト数で位置を表しているので、Substringに入れるのは違う
+                        string blockContent = razorContent.Substring(braceStart, braceEnd - braceStart - 1);
+                        int generatedLineStart = -1;
+                        string[] blockLines = blockContent.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+                        if (blockLines.Length > 0)
+                        {
+                            // 最初の意味のある行（空白でない行）を検索
+                            string firstNonEmptyLine = blockLines
+                                .FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
+
+                            if (!string.IsNullOrEmpty(firstNonEmptyLine))
+                            {
+                                // その行が出現する最初の位置を探す
+                                generatedLineStart = Array.FindIndex(generatedCodeLines,
+                                    line => line.Contains(firstNonEmptyLine));
+
+                                // 行の内容が短すぎる場合（一般的すぎる場合）は、
+                                // 複数行のパターンマッチングを試みる
+                                if (generatedLineStart == -1 && firstNonEmptyLine.Length > 10)
+                                {
+                                    // 最初の数行を連結して探す
+                                    int linesToCheck = Math.Min(3, blockLines.Length);
+                                    var significantBlockContent = string.Join(" ",
+                                        blockLines.Take(linesToCheck)
+                                        .Where(l => !string.IsNullOrWhiteSpace(l))
+                                        .Select(l => l.Trim()));
+
+                                    for (int i = 0; i < generatedCodeLines.Length; i++)
+                                    {
+                                        // 連続する数行を連結して比較
+                                        if (i + linesToCheck <= generatedCodeLines.Length)
+                                        {
+                                            var generatedSegment = string.Join(" ",
+                                                generatedCodeLines.Skip(i).Take(linesToCheck)
+                                                .Select(l => l.Trim()));
+
+                                            if (generatedSegment.Contains(significantBlockContent))
+                                            {
+                                                generatedLineStart = i;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 生成されたコード内で対応する行が見つからない場合は、
+                        // 近似的にブロックを配置（より良い方法がない場合のフォールバック）
+                        if (generatedLineStart == -1)
+                        {
+                            // 最も近いメソッドまたはクラス宣言の位置を探す
+                            generatedLineStart = Array.FindIndex(generatedCodeLines,
+                                line => line.Contains("protected override") ||
+                                        line.Contains("public class") ||
+                                        line.Contains("private void"));
+
+                            // それでも見つからない場合は、クラス内のデフォルト位置を使用
+                            if (generatedLineStart == -1)
+                            {
+                                generatedLineStart = Array.FindIndex(generatedCodeLines,
+                                    line => line.Contains("public class RazorComponent"));
+
+                                // クラス宣言の次の行から始める
+                                if (generatedLineStart >= 0)
+                                    generatedLineStart++;
+                            }
+                        }
+
+                        if (generatedLineStart != -1)
+                        {
+                            codeBlocks.Add((braceStart, braceEnd - braceStart - 1, generatedLineStart));
+                        }
+
+                        // インデックスを更新
+                        index = braceEnd;
+                    }
+                    else
+                    {
+                        // 不完全なブロックの場合はループを抜ける
+                        break;
+                    }
+                }
+                else
+                {
+                    // 次の @code を探すためにインデックスを進める
+                    index = codeEnd;
+                }
+            }
+
+            // マッピングを作成
+            foreach (var block in codeBlocks)
+            {
+                // ブロック内の各行に対してマッピングを作成
+                string blockContent = razorContent.Substring(block.razorStart, block.razorLength);
+                string[] blockLines = blockContent.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                for (int i = 0; i < blockLines.Length; i++)
+                {
+                    int generatedCodeLineIndex = block.generatedCodeLineStart + i;
+                    int razorContentLinePosition = block.razorStart +
+                        blockContent.IndexOf(blockLines[i].Trim(), StringComparison.Ordinal);
+
+                    if (generatedCodeLineIndex < generatedCodeLines.Length)
+                    {
+                        mapping[generatedCodeLineIndex] = razorContentLinePosition;
+                    }
+                }
+            }
+
+            return mapping;
         }
 
         /// <summary>

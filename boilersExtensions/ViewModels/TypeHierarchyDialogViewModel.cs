@@ -45,6 +45,8 @@ namespace boilersExtensions.ViewModels
         private int _position;
         private ITextBuffer _textBuffer;
         private SnapshotSpan _typeSpan;
+        private string _razorFilePath;
+        private string _extractedCSharpCode;
 
         public TypeHierarchyDialogViewModel()
         {
@@ -252,6 +254,41 @@ namespace boilersExtensions.ViewModels
             }
         }
 
+        public async Task InitializeRazorAsync(ITypeSymbol typeSymbol, Document document, int position,
+            string razorFilePath, string csharpCode, TextSpan fullTypeSpan)
+        {
+            try
+            {
+                _originalTypeSymbol = typeSymbol;
+                _document = document;
+                _position = position;
+                _fullTypeSpan = fullTypeSpan;
+
+                // Razorファイルのパスを保存
+                _razorFilePath = razorFilePath;
+
+                // C#コードを保存
+                _extractedCSharpCode = csharpCode;
+
+                // 実際の型名を取得
+                string actualTypeText = typeSymbol.Name;
+
+                // デバッグ情報
+                System.Diagnostics.Debug.WriteLine($"InitializeRazorAsync: Original Type Symbol={typeSymbol.ToDisplayString()}");
+                System.Diagnostics.Debug.WriteLine($"Actual Type Text='{actualTypeText}'");
+
+                // 元の型名を表示
+                OriginalTypeName.Value = typeSymbol.ToDisplayString();
+
+                // 型候補リストを取得
+                await RefreshTypeCandidates();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in InitializeRazorAsync: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// 実際のコードの表記からプリミティブ型が使用されているかを判定
         /// </summary>
@@ -356,42 +393,78 @@ namespace boilersExtensions.ViewModels
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            // Diffウィンドウが開いていれば閉じる
-            if (_diffWindowFrame != null)
+            // Razorファイルかどうか確認
+            bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                               (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
+
+            if (isRazorFile)
             {
-                _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
-                _diffWindowFrame = null;
+                // Razorファイル用の処理
+                // ファイルを直接読み書きする
+                string razorContent = File.ReadAllText(_razorFilePath);
+
+                // 新しい型名を取得
+                string newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
+
+                // 元の型名を探す
+                string originalTypeName = _originalTypeSymbol.Name;
+                int position = razorContent.IndexOf(originalTypeName);
+
+                if (position >= 0)
+                {
+                    // 型名を置換
+                    string newContent = razorContent.Substring(0, position) +
+                                        newTypeName +
+                                        razorContent.Substring(position + originalTypeName.Length);
+
+                    // ファイルに書き戻す
+                    File.WriteAllText(_razorFilePath, newContent);
+                }
+                else
+                {
+                    MessageBox.Show("型を置換する位置を特定できませんでした。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
-
-            // 選択された型が現在の型と同じなら何もしない
-            if (SelectedType.Value.FullName == _originalTypeSymbol.ToDisplayString())
+            else
             {
-                return;
-            }
+                // Diffウィンドウが開いていれば閉じる
+                if (_diffWindowFrame != null)
+                {
+                    _diffWindowFrame.CloseFrame((uint)__FRAMECLOSE.FRAMECLOSE_NoSave);
+                    _diffWindowFrame = null;
+                }
 
-            // DTEのUndoContextを開始
-            var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
-            dte.UndoContext.Open("Type Replacement");
+                // 選択された型が現在の型と同じなら何もしない
+                if (SelectedType.Value.FullName == _originalTypeSymbol.ToDisplayString())
+                {
+                    return;
+                }
 
-            try
-            {
-                // 元の型名のスパンを取得
-                var originalTypeSpan = _typeSpan;
+                // DTEのUndoContextを開始
+                var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+                dte.UndoContext.Open("Type Replacement");
 
-                // 型名を置換
-                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeSpan.GetText());
-                Debug.WriteLine($"Replacing type: '{originalTypeSpan.GetText()}' with '{newTypeName}'");
+                try
+                {
+                    // 元の型名のスパンを取得
+                    var originalTypeSpan = _typeSpan;
 
-                // テキストを置換
-                _textBuffer.Replace(originalTypeSpan.Span, newTypeName);
+                    // 型名を置換
+                    var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeSpan.GetText());
+                    Debug.WriteLine($"Replacing type: '{originalTypeSpan.GetText()}' with '{newTypeName}'");
 
-                // 必要に応じてusing文を追加
-                await AddRequiredUsingDirectiveAsync();
-            }
-            finally
-            {
-                // UndoContextを閉じる
-                dte.UndoContext.Close();
+                    // テキストを置換
+                    _textBuffer.Replace(originalTypeSpan.Span, newTypeName);
+
+                    // 必要に応じてusing文を追加
+                    await AddRequiredUsingDirectiveAsync();
+                }
+                finally
+                {
+                    // UndoContextを閉じる
+                    dte.UndoContext.Close();
+                }
             }
         }
 
