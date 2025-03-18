@@ -83,5 +83,13 @@ namespace boilersExtensions.Utils
         ///     問題をまとめて追加
         /// </summary>
         public void AddIssues(IEnumerable<PotentialIssue> issues) => _allIssues.AddRange(issues);
+
+        public void NavigateToIssue(PotentialIssue issue, ImpactAnalysisViewModel viewModel)
+        {
+            if (viewModel != null)
+            {
+                viewModel.NavigateToIssueCommand.Execute(issue);
+            }
+        }
     }
 }

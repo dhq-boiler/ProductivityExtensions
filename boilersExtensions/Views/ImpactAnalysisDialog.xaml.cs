@@ -50,5 +50,16 @@ namespace boilersExtensions.Views
                 }
             }
         }
+
+        private void Issue_Navigate(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is PotentialIssue issue)
+            {
+                if (DataContext is ImpactAnalysisViewModel viewModel)
+                {
+                    viewModel.NavigateToIssueCommand.Execute(issue);
+                }
+            }
+        }
     }
 }

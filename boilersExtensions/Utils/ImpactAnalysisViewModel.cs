@@ -75,6 +75,14 @@ namespace boilersExtensions.Utils
                     }
                 })
                 .AddTo(_compositeDisposable);
+
+            // Track whether we're analyzing a Razor file
+            IsRazorFile.Value = !string.IsNullOrEmpty(RazorFilePath) &&
+                                (RazorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                 RazorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
+
+            // Add disposal
+            IsRazorFile.AddTo(_compositeDisposable);
         }
 
         // コマンド
@@ -82,6 +90,8 @@ namespace boilersExtensions.Utils
         public ReactiveCommand<TypeReferenceInfo> NavigateToReferenceCommand { get; }
         public ReactiveCommand<PotentialIssue> NavigateToIssueCommand { get; }
         public ReactiveCommand<TypeReferenceInfo> ToggleBookmarkCommand { get; }
+
+        public ReactivePropertySlim<bool> IsRazorFile { get; } = new ReactivePropertySlim<bool>(false);
 
         // 影響分析の基本情報
         public string OriginalTypeName { get; set; }
@@ -196,6 +206,9 @@ namespace boilersExtensions.Utils
                         return;
                     }
 
+                    // Verify if this is a Razor file
+                    bool isRazorFile = IsRazorFile.Value;
+
                     // ファイルを開く
                     var window = dte.ItemOperations.OpenFile(reference.FilePath);
                     if (window != null)
@@ -204,13 +217,17 @@ namespace boilersExtensions.Utils
                         var textDoc = window.Document.Object("TextDocument") as TextDocument;
                         if (textDoc != null)
                         {
-                            // 指定した行にカーソルを移動
+                            // 指定した行にカーソルを移動 (ファイル種類に応じて行番号を選択)
+                            int targetLine = isRazorFile && reference.RazorLineNumber > 0
+                                ? reference.RazorLineNumber
+                                : reference.LineNumber;
+
                             var point = textDoc.StartPoint.CreateEditPoint();
-                            point.MoveToLineAndOffset(reference.LineNumber, reference.Column);
+                            point.MoveToLineAndOffset(targetLine, reference.Column);
 
                             // 選択状態にする
                             var line = textDoc.StartPoint.CreateEditPoint();
-                            line.MoveToLineAndOffset(reference.LineNumber, 1);
+                            line.MoveToLineAndOffset(targetLine, 1);
                             var lineEnd = line.CreateEditPoint();
                             lineEnd.EndOfLine();
 
@@ -249,6 +266,9 @@ namespace boilersExtensions.Utils
                         return;
                     }
 
+                    // Verify if this is a Razor file
+                    bool isRazorFile = IsRazorFile.Value;
+
                     // ファイルを開く
                     var window = dte.ItemOperations.OpenFile(issue.FilePath);
                     if (window != null)
@@ -257,13 +277,17 @@ namespace boilersExtensions.Utils
                         var textDoc = window.Document.Object("TextDocument") as TextDocument;
                         if (textDoc != null)
                         {
-                            // 指定した行にカーソルを移動
+                            // 指定した行にカーソルを移動 (ファイル種類に応じて行番号を選択)
+                            int targetLine = isRazorFile && issue.RazorLineNumber > 0
+                                ? issue.RazorLineNumber
+                                : issue.LineNumber;
+
                             var point = textDoc.StartPoint.CreateEditPoint();
-                            point.MoveToLineAndOffset(issue.LineNumber, 1);
+                            point.MoveToLineAndOffset(targetLine, 1);
 
                             // 選択状態にする
                             var line = textDoc.StartPoint.CreateEditPoint();
-                            line.MoveToLineAndOffset(issue.LineNumber, 1);
+                            line.MoveToLineAndOffset(targetLine, 1);
                             var lineEnd = line.CreateEditPoint();
                             lineEnd.EndOfLine();
 
@@ -299,6 +323,11 @@ namespace boilersExtensions.Utils
         public async void OnDialogOpened(Window window)
         {
             Window = window;
+
+            // Set the IsRazorFile property
+            IsRazorFile.Value = !string.IsNullOrEmpty(RazorFilePath) &&
+                                (RazorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                 RazorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
             // Razor行番号を設定
             SetupRazorLineNumbers();
