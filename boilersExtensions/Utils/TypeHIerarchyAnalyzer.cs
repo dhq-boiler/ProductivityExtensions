@@ -33,7 +33,7 @@ namespace boilersExtensions.Utils
         /// </summary>
         public static async
             Task<(ITypeSymbol typeSymbol, SyntaxNode parentNode, TextSpan fullTypeSpan, TextSpan? baseTypeSpan, string
-                code, Dictionary<int, int> mapping)>
+                code, Dictionary<int, int> mapping, int adjustedAddedBytes)>
             GetTypeSymbolAtPositionAsync(Document document, int position)
         {
             try
@@ -133,19 +133,19 @@ namespace boilersExtensions.Utils
                 {
                     if (document == null)
                     {
-                        return (null, null, default, null, null, null);
+                        return (null, null, default, null, null, null, 0);
                     }
 
                     semanticModel = await document.GetSemanticModelAsync();
                     if (semanticModel == null)
                     {
-                        return (null, null, default, null, null, null);
+                        return (null, null, default, null, null, null, 0);
                     }
 
                     syntaxRoot = await document.GetSyntaxRootAsync();
                     if (syntaxRoot == null)
                     {
-                        return (null, null, default, null, null, null);
+                        return (null, null, default, null, null, null, 0);
                     }
                 }
 
@@ -153,7 +153,7 @@ namespace boilersExtensions.Utils
                 var node = syntaxRoot.FindNode(new TextSpan(position, 0), getInnermostNodeForTie: true);
                 if (node == null)
                 {
-                    return (null, null, default, null, null, null);
+                    return (null, null, default, null, null, null, 0);
                 }
 
                 Debug.WriteLine($"Position {position}のノード: {node.GetType().Name} - {node}");
@@ -227,7 +227,7 @@ namespace boilersExtensions.Utils
                         {
                             Debug.WriteLine($"識別子から型を動的に解決しました: {typeName} -> {resolvedType.ToDisplayString()}");
                             var syntheticTypeSpan = new TextSpan(position, typeName.Length);
-                            return (resolvedType, node.Parent, syntheticTypeSpan, syntheticTypeSpan, null, null);
+                            return (resolvedType, node.Parent, syntheticTypeSpan, syntheticTypeSpan, null, null, 0);
                         }
                     }
                 }
@@ -255,12 +255,12 @@ namespace boilersExtensions.Utils
                             {
                                 Debug.WriteLine($"テキストから型を動的に解決しました: {typeName} -> {resolvedType.ToDisplayString()}");
                                 var syntheticTypeSpan = new TextSpan(position, typeName.Length);
-                                return (resolvedType, node, syntheticTypeSpan, syntheticTypeSpan, null, null);
+                                return (resolvedType, node, syntheticTypeSpan, syntheticTypeSpan, null, null, 0);
                             }
                         }
                     }
 
-                    return (null, null, default, null, null, null);
+                    return (null, null, default, null, null, null, 0);
                 }
 
                 // 型の完全なスパンを取得
@@ -323,13 +323,13 @@ namespace boilersExtensions.Utils
                     }
                 }
 
-                return (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, retCode, mapping);
+                return (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, retCode, mapping, position);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"GetTypeSymbolAtPositionAsyncでエラーが発生しました: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
-                return (null, null, default, null, null, null);
+                return (null, null, default, null, null, null, 0);
             }
         }
 

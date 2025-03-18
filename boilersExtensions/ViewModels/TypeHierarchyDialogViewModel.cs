@@ -17,18 +17,19 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.TextManager.Interop;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using Document = Microsoft.CodeAnalysis.Document;
 using Solution = Microsoft.CodeAnalysis.Solution;
 using TextDocument = EnvDTE.TextDocument;
+using TextSpan = Microsoft.CodeAnalysis.Text.TextSpan;
 using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
@@ -42,6 +43,8 @@ namespace boilersExtensions.ViewModels
         private IVsWindowFrame _diffWindowFrame;
         private Document _document;
         private string _extractedCSharpCode;
+        private int _adjustedAddedBytes;
+        private Dictionary<int, int> _mapping;
 
         // 完全な型スパン情報
         private TextSpan _fullTypeSpan;
@@ -271,7 +274,7 @@ namespace boilersExtensions.ViewModels
         }
 
         public async Task InitializeRazorAsync(ITypeSymbol typeSymbol, Document document, int position,
-            string razorFilePath, string csharpCode, TextSpan fullTypeSpan)
+            string razorFilePath, string csharpCode, TextSpan fullTypeSpan, Dictionary<int, int> mapping, int adjustedAddedBytes)
         {
             try
             {
@@ -285,6 +288,12 @@ namespace boilersExtensions.ViewModels
 
                 // C#コードを保存
                 _extractedCSharpCode = csharpCode;
+
+                // 追加バイト数を保存
+                _adjustedAddedBytes = adjustedAddedBytes;
+
+                // マッピング情報を保存
+                _mapping = mapping;
 
                 // 実際の型名を取得
                 var actualTypeText = typeSymbol.Name;
@@ -1497,8 +1506,8 @@ namespace boilersExtensions.ViewModels
 
                                         impactList.Add(new TypeReferenceInfo
                                         {
-                                            FilePath = genDoc.FilePath,
-                                            FileName = Path.GetFileName(genDoc.FilePath),
+                                            FilePath = RazorFileUtility.GetOriginalFilePath(genDoc.FilePath),
+                                            FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(genDoc.FilePath)),
                                             LineNumber = refLine,
                                             Column = linePosition.Character + 1,
                                             Text = referenceText,
@@ -1542,7 +1551,7 @@ namespace boilersExtensions.ViewModels
                                                         {
                                                             FilePath = RazorFileUtility.GetOriginalFilePath(genDoc2.FilePath),
                                                             FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(genDoc2.FilePath)),
-                                                            LineNumber = refLine,
+                                                            LineNumber = _mapping is null ? refLine : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[refLine]),
                                                             IssueType = issue.IssueType,
                                                             Description = issue.Description,
                                                             SuggestedFix = issue.SuggestedFix,
@@ -2758,7 +2767,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "イベントアクセシビリティの不一致",
                 Description =
                     $"イベント '{originalEvent.Name}' のアクセシビリティが異なります: '{originalEvent.DeclaredAccessibility}' → '{newEvent.DeclaredAccessibility}'",
@@ -2887,7 +2896,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "イベント欠落",
                 Description = $"イベント '{eventSymbol.Name}' は新しい型に存在しません。",
                 SuggestedFix = "新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。",
@@ -2905,7 +2914,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "イベント型の不一致",
                 Description =
                     $"イベント '{originalEvent.Name}' のデリゲート型が異なります: '{originalEvent.Type}' → '{newEvent.Type}'",
@@ -3057,7 +3066,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "メソッド欠落",
                 Description = $"メソッド '{method.Name}' は新しい型に存在しません。",
                 SuggestedFix = "新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。",
@@ -3274,7 +3283,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "メソッドシグネチャの不一致",
                 Description = $"メソッド '{original.Name}' のシグネチャが新しい型では異なります。{incompatibilityDetails}",
                 SuggestedFix = "メソッド呼び出しを修正するか、アダプターを実装して互換性を確保してください。",
@@ -3326,7 +3335,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "プロパティ欠落",
                 Description = $"プロパティ '{property.Name}' は新しい型に存在しません。",
                 SuggestedFix = "新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。",
@@ -3344,7 +3353,7 @@ namespace boilersExtensions.ViewModels
             {
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
-                LineNumber = lineSpan.StartLinePosition.Line + 1,
+                LineNumber = _mapping is null ? lineSpan.StartLinePosition.Line + 1 : GetLineNumberFromPosition(_extractedCSharpCode, _mapping[lineSpan.StartLinePosition.Line + 1]),
                 IssueType = "プロパティ型の不一致",
                 Description = $"プロパティ '{original.Name}' の型が異なります: '{original.Type}' → '{newProperty.Type}'",
                 SuggestedFix = "型変換または拡張メソッドを使用して互換性を確保することを検討してください。",

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
@@ -100,7 +101,7 @@ namespace boilersExtensions.Commands
                     try
                     {
                         // カーソル位置の型シンボルを取得
-                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, code, codeToRazorMapping) =
+                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, code, codeToRazorMapping, adjustedAddedBytes) =
                             await TypeHierarchyAnalyzer.GetTypeSymbolAtPositionAsync(
                                 document, selectedSpan.Value.Start.Position);
 
@@ -201,7 +202,7 @@ namespace boilersExtensions.Commands
 
                         // ダイアログを表示（完全な型スパン情報も追加）
                         ShowTypeHierarchyDialog(typeSymbol, document, selectedSpan.Value.Start.Position,
-                            replacementSpan, textView.TextBuffer, fullTypeSpan, code);
+                            replacementSpan, textView.TextBuffer, fullTypeSpan, code, codeToRazorMapping, adjustedAddedBytes);
                     }
                     catch (Exception ex)
                     {
@@ -265,9 +266,9 @@ namespace boilersExtensions.Commands
         /// <summary>
         ///     型階層ダイアログを表示
         /// </summary>
-        private static void ShowTypeHierarchyDialog(
-            ITypeSymbol typeSymbol, Document document, int position, SnapshotSpan selectedSpan, ITextBuffer textBuffer,
-            TextSpan fullTypeSpan, string code)
+        private static void ShowTypeHierarchyDialog(ITypeSymbol typeSymbol, Document document, int position,
+            SnapshotSpan selectedSpan, ITextBuffer textBuffer,
+            TextSpan fullTypeSpan, string code, Dictionary<int, int> codeToRazorMapping, int adjustedAddedBytes)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -298,7 +299,7 @@ namespace boilersExtensions.Commands
                         // ここでは、解析されたC#コードとともに、元のファイルパスも渡す
                         var razorFilePath = documentPath;
                         await viewModel.InitializeRazorAsync(typeSymbol, document, position,
-                            razorFilePath, code, fullTypeSpan);
+                            razorFilePath, code, fullTypeSpan, codeToRazorMapping, adjustedAddedBytes);
                     }
                     else
                     {
