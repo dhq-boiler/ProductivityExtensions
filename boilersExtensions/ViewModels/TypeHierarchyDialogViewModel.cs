@@ -27,6 +27,7 @@ using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using Document = Microsoft.CodeAnalysis.Document;
 using Solution = Microsoft.CodeAnalysis.Solution;
+using TextDocument = EnvDTE.TextDocument;
 using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
@@ -599,32 +600,169 @@ namespace boilersExtensions.ViewModels
                               (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
                                _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
+            // DTEオブジェクトを取得
+            var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+
             if (isRazorFile)
             {
-                // Razorファイル用の処理
-                // ファイルを直接読み書きする
-                var razorContent = File.ReadAllText(_razorFilePath);
-
-                // 新しい型名を取得
-                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
-
-                // 元の型名を探す
-                var originalTypeName = _originalTypeSymbol.Name;
-                var position = razorContent.IndexOf(originalTypeName);
-
-                if (position >= 0)
+                try
                 {
-                    // 型名を置換
-                    var newContent = razorContent.Substring(0, position) +
-                                     newTypeName +
-                                     razorContent.Substring(position + originalTypeName.Length);
+                    // ファイルを開いて編集するか、既に開いている場合は直接編集する
+                    EnvDTE.Document openedDoc = null;
 
-                    // ファイルに書き戻す
-                    File.WriteAllText(_razorFilePath, newContent);
+                    try
+                    {
+                        // 既に開いているか確認
+                        EnvDTE.Document activeDoc = dte.ActiveDocument;
+                        if (activeDoc != null && string.Equals(activeDoc.FullName, _razorFilePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            openedDoc = activeDoc;
+                        }
+                        else
+                        {
+                            // ファイルを開く
+                            openedDoc = dte.ItemOperations.OpenFile(_razorFilePath).Document;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error opening file: {ex.Message}");
+
+                        // 代替方法：直接ファイルを読み書きする
+                        ProcessRazorFileDirectly();
+                        return;
+                    }
+
+                    if (openedDoc != null)
+                    {
+                        // テキスト編集用のオブジェクトを取得
+                        var textDoc = openedDoc.Object("TextDocument") as TextDocument;
+                        if (textDoc != null)
+                        {
+                            // 新しい型名を取得
+                            var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
+                            var originalTypeName = _originalTypeSymbol.Name;
+
+                            // カーソル位置またはスパン情報が存在する場合
+                            if (_fullTypeSpan.Start >= 0 || _position > 0)
+                            {
+                                // 目標の行番号を取得
+                                int targetLine = 0;
+
+                                if (_position > 0)
+                                {
+                                    // 位置情報から行番号を取得
+                                    var editPoint = textDoc.StartPoint.CreateEditPoint();
+                                    var text = editPoint.GetText(textDoc.EndPoint);
+                                    targetLine = GetLineNumberFromPosition(text, _position);
+                                }
+                                else if (_extractedCSharpCode != null)
+                                {
+                                    // C#コード内での位置から行番号を推定
+                                    int offset = _fullTypeSpan.Start;
+                                    targetLine = GetLineNumberFromPosition(_extractedCSharpCode, offset);
+                                }
+
+                                if (targetLine > 0)
+                                {
+                                    // 対象の行までスキップ
+                                    var editPoint = textDoc.StartPoint.CreateEditPoint();
+                                    editPoint.LineDown(targetLine - 1);
+
+                                    // 行内で型名を検索
+                                    var lineText = editPoint.GetLines(editPoint.Line, editPoint.Line + 1);
+                                    int inLinePos = lineText.IndexOf(originalTypeName);
+
+                                    if (inLinePos >= 0)
+                                    {
+                                        // UndoContextを開始
+                                        dte.UndoContext.Open("Type Replacement");
+
+                                        try
+                                        {
+                                            // 編集ポイントを型名の開始位置に移動
+                                            editPoint.CharRight(inLinePos);
+
+                                            // 元の型名を削除して新しい型名を挿入
+                                            editPoint.Delete(originalTypeName.Length);
+                                            editPoint.Insert(newTypeName);
+
+                                            // 変更を適用
+                                            openedDoc.Save();
+                                        }
+                                        finally
+                                        {
+                                            // UndoContextを閉じる
+                                            dte.UndoContext.Close();
+                                        }
+
+                                        return; // 正常に完了
+                                    }
+                                }
+                            }
+
+                            // 行番号での検索に失敗した場合、カーソル位置を使用するか確認
+                            var selection = textDoc.Selection;
+                            if (selection != null)
+                            {
+                                // 現在のカーソル行のテキストを取得
+                                var currentLine = selection.CurrentLine;
+                                var lineText = selection.Text;
+
+                                // カーソル行内で型名を検索
+                                int inLinePos = lineText.IndexOf(originalTypeName);
+                                if (inLinePos >= 0)
+                                {
+                                    // UndoContextを開始
+                                    dte.UndoContext.Open("Type Replacement");
+
+                                    try
+                                    {
+                                        // 編集ポイントを型名の開始位置に移動
+                                        selection.MoveToLineAndOffset(currentLine, inLinePos + 1);
+
+                                        // 元の型名を削除して新しい型名を挿入
+                                        selection.Delete(originalTypeName.Length);
+                                        selection.Insert(newTypeName);
+
+                                        // 変更を適用
+                                        openedDoc.Save();
+                                    }
+                                    finally
+                                    {
+                                        // UndoContextを閉じる
+                                        dte.UndoContext.Close();
+                                    }
+
+                                    return; // 正常に完了
+                                }
+                            }
+
+                            // 上記の方法で見つからない場合は、ユーザーに確認して通常の方法で置換
+                            var result = MessageBox.Show(
+                                "特定の行での型の置換ができませんでした。\n最初に見つかった型名を置換しますか？",
+                                "型置換",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Question);
+
+                            if (result == MessageBoxResult.Yes)
+                            {
+                                // 通常の検索置換を実行
+                                ProcessRazorFileStandard(textDoc, originalTypeName, newTypeName);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("テキストドキュメントとして編集できませんでした。",
+                                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    MessageBox.Show("型を置換する位置を特定できませんでした。", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Debug.WriteLine($"Error modifying Razor file: {ex.Message}");
+                    MessageBox.Show($"Razorファイルの編集中にエラーが発生しました: {ex.Message}",
+                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -643,7 +781,6 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // DTEのUndoContextを開始
-                var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
                 dte.UndoContext.Open("Type Replacement");
 
                 try
@@ -669,6 +806,129 @@ namespace boilersExtensions.ViewModels
             }
         }
 
+        // 通常の検索置換
+        private void ProcessRazorFileStandard(TextDocument textDoc, string originalTypeName, string newTypeName)
+        {
+            var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+
+            // UndoContextを開始
+            dte.UndoContext.Open("Type Replacement");
+
+            try
+            {
+                // 編集ポイントを作成
+                var editPoint = textDoc.StartPoint.CreateEditPoint();
+
+                // ドキュメント全体のテキストを取得
+                var text = editPoint.GetText(textDoc.EndPoint);
+
+                // 元の型名を探す
+                var position = text.IndexOf(originalTypeName);
+
+                if (position >= 0)
+                {
+                    // 編集ポイントを型名の開始位置に移動
+                    editPoint.MoveToAbsoluteOffset(position + 1);
+
+                    // 元の型名を削除して新しい型名を挿入
+                    editPoint.Delete(originalTypeName.Length);
+                    editPoint.Insert(newTypeName);
+
+                    // 変更を適用
+                    (textDoc as EnvDTE.Document).Save();
+                }
+                else
+                {
+                    MessageBox.Show("型を置換する位置を特定できませんでした。",
+                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            finally
+            {
+                // UndoContextを閉じる
+                dte.UndoContext.Close();
+            }
+        }
+
+        // ファイルを直接読み書きする方法
+        private void ProcessRazorFileDirectly()
+        {
+            try
+            {
+                // ファイルを直接読み書きする
+                var razorContent = File.ReadAllText(_razorFilePath);
+
+                // 新しい型名を取得
+                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
+
+                // 元の型名を探す
+                var originalTypeName = _originalTypeSymbol.Name;
+
+                // ソーステキストを行に分割して特定の行を検索
+                var lines = razorContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
+                int targetLine = -1;
+
+                // 位置情報から行番号を推定
+                if (_position > 0)
+                {
+                    targetLine = GetLineNumberFromPosition(razorContent, _position);
+                }
+
+                if (targetLine > 0 && targetLine <= lines.Length)
+                {
+                    // 対象の行のテキスト
+                    string lineText = lines[targetLine - 1];
+
+                    // 行内で型名を検索
+                    int inLinePos = lineText.IndexOf(originalTypeName);
+                    if (inLinePos >= 0)
+                    {
+                        // 行内の型名を置換
+                        lines[targetLine - 1] = lineText.Substring(0, inLinePos) +
+                                               newTypeName +
+                                               lineText.Substring(inLinePos + originalTypeName.Length);
+
+                        // ファイルに書き戻す
+                        File.WriteAllLines(_razorFilePath, lines);
+                        return;
+                    }
+                }
+
+                // 行番号での検索に失敗した場合、ユーザーに確認
+                var result = MessageBox.Show(
+                    "特定の行での型の置換ができませんでした。\n最初に見つかった型名を置換しますか？",
+                    "型置換",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    // 通常の検索置換
+                    var position = razorContent.IndexOf(originalTypeName);
+                    if (position >= 0)
+                    {
+                        var newContent = razorContent.Substring(0, position) +
+                                         newTypeName +
+                                         razorContent.Substring(position + originalTypeName.Length);
+
+                        // ファイルに書き戻す
+                        File.WriteAllText(_razorFilePath, newContent);
+                    }
+                    else
+                    {
+                        MessageBox.Show("型を置換する位置を特定できませんでした。",
+                            "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error processing Razor file directly: {ex.Message}");
+                MessageBox.Show($"ファイルの直接編集中にエラーが発生しました: {ex.Message}",
+                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         /// <summary>
         ///     表示用に型名を簡略化
         /// </summary>
@@ -690,7 +950,8 @@ namespace boilersExtensions.ViewModels
                     // ジェネリック部分を抽出 (例: System.Collections.Generic.List<int> -> System.Collections.Generic.List と <int>)
                     var baseTypeName = fullName.Substring(0, genericStart);
                     var typeParams = fullName.Substring(genericStart); // <int> 部分
-                    var originalTypeParams = originalTypeText.Substring(originalGenericStart); // <int> 部分
+                    var originalTypeParams = originalGenericStart != -1 ? originalTypeText.Substring(originalGenericStart) // <int> 部分
+                            : $"<{OriginalTypeName}>"; //元の型自身が型パラメーターになる 
 
                     // 型パラメーターの数が異なる場合は元の型名をそのまま返す
                     if (typeParams.Count(x => x == ',') != originalTypeParams.Count(x => x == ','))
@@ -803,7 +1064,7 @@ namespace boilersExtensions.ViewModels
         {
             try
             {
-                if (SelectedType.Value == null || _document == null)
+                if (SelectedType.Value == null)
                 {
                     return;
                 }
@@ -811,24 +1072,146 @@ namespace boilersExtensions.ViewModels
                 IsProcessing.Value = true;
                 ProcessingStatus.Value = "コード変更をプレビュー中...";
 
-                // 現在のドキュメントのテキストを取得
-                var sourceText = await _document.GetTextAsync();
-                var originalCode = sourceText.ToString();
+                string originalCode;
+                string newCode;
 
-                // 型を置換した新しいコードを生成
-                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _typeSpan.GetText());
+                // Razorファイルの場合
+                bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                                   (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                    _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
-                // 置換後のテキストを作成
-                var start = _typeSpan.Span.Start;
-                var end = _typeSpan.Span.End;
-                var newCode = originalCode.Substring(0, start) +
+                if (isRazorFile && _document == null)
+                {
+                    // Razorファイルの内容を直接読み込む
+                    originalCode = File.ReadAllText(_razorFilePath);
+                    string originalTypeName = _originalTypeSymbol.Name;
+                    string newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeName);
+
+                    // ソーステキストを行に分割
+                    var lines = originalCode.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
+                    int targetLine = -1;
+
+                    // 位置情報から行番号を推定
+                    if (_position > 0)
+                    {
+                        targetLine = GetLineNumberFromPosition(originalCode, _position);
+                    }
+                    else if (_fullTypeSpan.Start >= 0 && _extractedCSharpCode != null)
+                    {
+                        // C#コード内での位置から行番号を推定
+                        targetLine = GetLineNumberFromPosition(_extractedCSharpCode, _fullTypeSpan.Start);
+                    }
+
+                    // 行が特定できた場合
+                    if (targetLine > 0 && targetLine <= lines.Length)
+                    {
+                        Debug.WriteLine($"Targeting line {targetLine} for preview");
+
+                        // 対象の行のテキスト
+                        string lineText = lines[targetLine - 1];
+
+                        // 行内で型名を検索
+                        int inLinePos = lineText.IndexOf(originalTypeName);
+                        if (inLinePos >= 0)
+                        {
+                            // 変更後のテキストを作成（対象行のみ変更）
+                            var modifiedLines = new string[lines.Length];
+                            Array.Copy(lines, modifiedLines, lines.Length);
+
+                            // 行の中の型名を置換
+                            modifiedLines[targetLine - 1] = lineText.Substring(0, inLinePos) +
+                                                          newTypeName +
+                                                          lineText.Substring(inLinePos + originalTypeName.Length);
+
+                            // 変更後のコードを作成
+                            newCode = string.Join(Environment.NewLine, modifiedLines);
+
+                            // DiffViewerを使って差分を表示
+                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                            var diffViewer = new DiffViewer();
+                            _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true,
+                                                                "型変更のプレビュー",
+                                                                $"行 {targetLine} の型名を置換します");
+
+                            IsProcessing.Value = false;
+                            ProcessingStatus.Value = "準備完了";
+                            return;
+                        }
+                    }
+
+                    // 行番号での検索に失敗した場合、ユーザーに確認
+                    var result = MessageBox.Show(
+                        "特定の行での型名が見つかりませんでした。\n最初に見つかった型名でプレビューしますか？",
+                        "プレビュー確認",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        // 通常の検索置換でプレビュー
+                        int position = originalCode.IndexOf(originalTypeName);
+                        if (position >= 0)
+                        {
+                            newCode = originalCode.Substring(0, position) +
+                                      newTypeName +
+                                      originalCode.Substring(position + originalTypeName.Length);
+
+                            // DiffViewerを使って差分を表示
+                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                            var diffViewer = new DiffViewer();
+                            _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true,
+                                                                "型変更のプレビュー",
+                                                                "最初に見つかった型名を置換します");
+                        }
+                        else
+                        {
+                            MessageBox.Show("型を置換する位置を特定できませんでした。",
+                                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                            IsProcessing.Value = false;
+                            ProcessingStatus.Value = "準備完了";
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // ユーザーがキャンセルした場合
+                        IsProcessing.Value = false;
+                        ProcessingStatus.Value = "準備完了";
+                        return;
+                    }
+                }
+                else if (_document != null)
+                {
+                    // 通常のC#ファイル用の既存処理
+                    var sourceText = await _document.GetTextAsync();
+                    originalCode = sourceText.ToString();
+
+                    // 型を置換した新しいコードを生成
+                    var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _typeSpan.GetText());
+
+                    // 置換後のテキストを作成
+                    var start = _typeSpan.Span.Start;
+                    var end = _typeSpan.Span.End;
+                    newCode = originalCode.Substring(0, start) +
                               newTypeName +
                               originalCode.Substring(end);
+                }
+                else
+                {
+                    // どちらの条件も満たさない場合（エラー状態）
+                    Debug.WriteLine("Error: Both _document and _razorFilePath are invalid");
+                    IsProcessing.Value = false;
+                    ProcessingStatus.Value = "準備完了";
+                    return;
+                }
 
                 // DiffViewerを使って差分を表示
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                var diffViewer = new DiffViewer();
-                _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true, "型変更のプレビュー", "型変更を適用するか検討してください");
+                var commonDiffViewer = new DiffViewer();
+                _diffWindowFrame = commonDiffViewer.ShowDiff(originalCode, newCode, true,
+                                                          "型変更のプレビュー",
+                                                          "型変更を適用するか検討してください");
             }
             catch (Exception ex)
             {
@@ -843,6 +1226,22 @@ namespace boilersExtensions.ViewModels
                 IsProcessing.Value = false;
                 ProcessingStatus.Value = "準備完了";
             }
+        }
+
+        // 位置情報から行番号を取得するヘルパーメソッド (既に定義されていなければ追加)
+        private int GetLineNumberFromPosition(string text, int position)
+        {
+            if (string.IsNullOrEmpty(text) || position < 0 || position >= text.Length)
+                return -1;
+
+            int line = 1;
+            for (int i = 0; i < position && i < text.Length; i++)
+            {
+                if (text[i] == '\n')
+                    line++;
+            }
+
+            return line;
         }
 
         /// <summary>
