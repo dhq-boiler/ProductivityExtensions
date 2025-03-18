@@ -366,26 +366,6 @@ namespace boilersExtensions.Commands
             return null;
         }
 
-        // オリジナルのパスを取得するための補助メソッド
-        private static string GetOriginalFilePath(string generatedPath)
-        {
-            if (string.IsNullOrEmpty(generatedPath))
-            {
-                return null;
-            }
-
-            // 生成されたパスから元のファイルパスを抽出
-            var razorIndex = generatedPath.IndexOf(".razor", StringComparison.OrdinalIgnoreCase);
-            if (razorIndex > 0)
-            {
-                // ".razor"の後に識別子が付いている場合、それを取り除く
-                var baseFilePath = generatedPath.Substring(0, razorIndex + 6); // +6 for ".razor"
-                return baseFilePath;
-            }
-
-            return generatedPath;
-        }
-
         /// <summary>
         ///     選択されたワードの範囲を取得
         /// </summary>
