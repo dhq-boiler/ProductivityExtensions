@@ -1853,7 +1853,7 @@ namespace boilersExtensions.Utils
             var typeInfo = new TypeHierarchyInfo
             {
                 DisplayName = displayName,
-                FullName = fullName,
+                FullName = typeSymbol.ToString(),
                 IsInterface = typeSymbol.TypeKind == TypeKind.Interface,
                 Accessibility = typeSymbol.DeclaredAccessibility.ToString(),
                 IsDefinedInSolution = !typeSymbol.Locations.All(loc => loc.IsInMetadata),

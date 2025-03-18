@@ -12,6 +12,7 @@ using System.Windows;
 using boilersExtensions.Utils;
 using boilersExtensions.Views;
 using EnvDTE;
+using LibGit2Sharp;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -2209,6 +2210,38 @@ namespace boilersExtensions.ViewModels
                 }
             }
 
+            // より一般的な固有メンバーのチェック
+            var originalSpecificMembers = originalMembers
+                .Where(m => !m.IsImplicitlyDeclared &&
+                            !newMembers.Any(nm => nm.Name == m.Name))
+                .ToList();
+
+            // 解析対象のコードを取得
+            string codeToAnalyze = _extractedCSharpCode ?? string.Empty;
+
+            foreach (var specificMember in originalSpecificMembers)
+            {
+                // 重要なメンバー（プロパティやパブリックメソッド）のみを対象にする
+                if (specificMember.DeclaredAccessibility == Accessibility.Public ||
+                    specificMember.DeclaredAccessibility == Accessibility.Internal)
+                {
+                    // 実際にそのメンバーが使用されているかどうかをチェック
+                    bool isUsed = codeToAnalyze.Contains($".{specificMember.Name}") ||
+                                  codeToAnalyze.Contains($"{originalType.Name}.{specificMember.Name}");
+
+                    if (isUsed)
+                    {
+                        issues.Add(new CompatibilityIssue
+                        {
+                            IssueType = "メンバーアクセスの不一致",
+                            Description = $"元の型の '{specificMember.Name}' メンバーは新しい型には存在しません。",
+                            SuggestedFix = $"'{specificMember.Name}' にアクセスするコードを修正するか、代替手段を実装してください。",
+                            Member = specificMember.Name
+                        });
+                    }
+                }
+            }
+
             return issues;
         }
 
@@ -2237,7 +2270,7 @@ namespace boilersExtensions.ViewModels
                             {
                                 var expressionType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
                                 return expressionType != null &&
-                                       SymbolEqualityComparer.Default.Equals(expressionType, originalType);
+                                       expressionType.ToString() == originalType.ToString();
                             }
                         }
                         else if (i.Expression is IdentifierNameSyntax identifier &&
@@ -2248,7 +2281,7 @@ namespace boilersExtensions.ViewModels
                             if (symbol is IMethodSymbol methodSymbol)
                             {
                                 return methodSymbol.ContainingType != null &&
-                                       SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, originalType);
+                                       methodSymbol.ContainingType.ToString() == originalType.ToString();
                             }
                         }
                         return false;
@@ -2260,12 +2293,18 @@ namespace boilersExtensions.ViewModels
                 // プロパティアクセスを検索
                 var propertyAccesses = root.DescendantNodes()
                     .OfType<MemberAccessExpressionSyntax>()
-                    .Where(m => {
-                        if (m.Name.Identifier.Text == issue.Member)
+                    .Where(m =>
+                    {
+                        var issueMember = issue.Member;
+                        if (issueMember.StartsWith("get_"))
+                            issueMember = issueMember.Remove(0, 4);
+                        else if (issueMember.StartsWith("set_"))
+                            issueMember = issueMember.Remove(0, 4);
+                        if (m.Name.Identifier.Text == issueMember)
                         {
                             var expressionType = semanticModel.GetTypeInfo(m.Expression).Type;
                             return expressionType != null &&
-                                   SymbolEqualityComparer.Default.Equals(expressionType, originalType);
+                                   expressionType.ToString() == originalType.ToString();
                         }
                         return false;
                     })
@@ -2282,7 +2321,7 @@ namespace boilersExtensions.ViewModels
                         {
                             var expressionType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
                             return expressionType != null &&
-                                   SymbolEqualityComparer.Default.Equals(expressionType, originalType);
+                                   expressionType.ToString() == originalType.ToString();
                         }
                         return false;
                     })
@@ -2298,7 +2337,7 @@ namespace boilersExtensions.ViewModels
                     .Where(t => {
                         var symbolInfo = semanticModel.GetSymbolInfo(t);
                         return symbolInfo.Symbol != null &&
-                               SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, originalType);
+                               symbolInfo.Symbol.ToString() == originalType.ToString();
                     })
                     .ToList();
 
