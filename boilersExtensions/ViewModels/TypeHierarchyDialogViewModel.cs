@@ -2548,69 +2548,6 @@ namespace boilersExtensions.ViewModels
             return line.ToString();
         }
 
-        public async Task<ImpactAnalysisResult> AnalyzeCompatibility()
-        {
-            var result = new ImpactAnalysisResult
-            {
-                OriginalType = _originalTypeSymbol.ToDisplayString(),
-                NewType = SelectedType.Value.DisplayName,
-                TotalReferences = 0,
-                PotentialIssues = new List<PotentialIssue>()
-            };
-
-            var solution = _document.Project.Solution;
-            var references = await SymbolFinder.FindReferencesAsync(_originalTypeSymbol, solution);
-
-            foreach (var reference in references)
-            {
-                result.TotalReferences += reference.Locations.Count();
-
-                foreach (var location in reference.Locations)
-                {
-                    // 参照箇所のシンタックスノードを取得
-                    var syntaxTree = await location.Document.GetSyntaxTreeAsync();
-                    var semanticModel = await location.Document.GetSemanticModelAsync();
-                    var node = await syntaxTree.GetRootAsync();
-                    var referenceNode = node.FindNode(location.Location.SourceSpan);
-
-                    // 互換性チェック
-                    var issues = CheckCompatibility(referenceNode, semanticModel, _originalTypeSymbol,
-                        SelectedType.Value);
-
-                    if (issues.Any())
-                    {
-                        result.PotentialIssues.AddRange(issues);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private List<PotentialIssue> CheckCompatibility(SyntaxNode node, SemanticModel semanticModel,
-            ITypeSymbol originalType, TypeHierarchyAnalyzer.TypeHierarchyInfo newType)
-        {
-            var issues = new List<PotentialIssue>();
-
-            // メソッドコールの場合
-            if (node.Parent is InvocationExpressionSyntax invocation)
-            {
-                // 呼び出しメソッドの解析
-                // 新しい型に同名のメソッドが存在するか、引数の互換性など
-            }
-
-            // プロパティアクセスの場合
-            if (node.Parent is MemberAccessExpressionSyntax memberAccess)
-            {
-                // 新しい型に同名のプロパティが存在するかなど
-            }
-
-            // その他、型の使用状況に応じたチェック
-            // ...
-
-            return issues;
-        }
-
         private async Task<List<PotentialIssue>> AnalyzePotentialIssues(ISymbol symbol, ITypeSymbol originalType,
             TypeHierarchyAnalyzer.TypeHierarchyInfo newTypeInfo)
         {
