@@ -1540,8 +1540,8 @@ namespace boilersExtensions.ViewModels
                                                         // 潜在的な問題として追加
                                                         potentialIssues.Add(new PotentialIssue
                                                         {
-                                                            FilePath = genDoc2.FilePath,
-                                                            FileName = Path.GetFileName(genDoc2.FilePath),
+                                                            FilePath = RazorFileUtility.GetOriginalFilePath(genDoc2.FilePath),
+                                                            FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(genDoc2.FilePath)),
                                                             LineNumber = refLine,
                                                             IssueType = issue.IssueType,
                                                             Description = issue.Description,
@@ -2506,8 +2506,8 @@ namespace boilersExtensions.ViewModels
 
                     var referenceInfo = new TypeReferenceInfo
                     {
-                        FilePath = location.Document.FilePath,
-                        FileName = Path.GetFileName(location.Document.FilePath),
+                        FilePath = RazorFileUtility.GetOriginalFilePath(location.Document.FilePath),
+                        FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(location.Document.FilePath)),
                         LineNumber = line,
                         Column = lineSpan.StartLinePosition.Character + 1,
                         Text = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line),
@@ -2756,8 +2756,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "イベントアクセシビリティの不一致",
                 Description =
@@ -2885,8 +2885,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "イベント欠落",
                 Description = $"イベント '{eventSymbol.Name}' は新しい型に存在しません。",
@@ -2903,8 +2903,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "イベント型の不一致",
                 Description =
@@ -3055,8 +3055,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "メソッド欠落",
                 Description = $"メソッド '{method.Name}' は新しい型に存在しません。",
@@ -3272,8 +3272,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "メソッドシグネチャの不一致",
                 Description = $"メソッド '{original.Name}' のシグネチャが新しい型では異なります。{incompatibilityDetails}",
@@ -3324,8 +3324,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "プロパティ欠落",
                 Description = $"プロパティ '{property.Name}' は新しい型に存在しません。",
@@ -3342,8 +3342,8 @@ namespace boilersExtensions.ViewModels
 
             return new PotentialIssue
             {
-                FilePath = filePath,
-                FileName = Path.GetFileName(filePath),
+                FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
+                FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = lineSpan.StartLinePosition.Line + 1,
                 IssueType = "プロパティ型の不一致",
                 Description = $"プロパティ '{original.Name}' の型が異なります: '{original.Type}' → '{newProperty.Type}'",
