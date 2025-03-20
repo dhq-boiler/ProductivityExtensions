@@ -54,6 +54,9 @@
 	    <Group guid="guidTypeHierarchyCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
 		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
 	    </Group>
+	    <Group guid="guidRegionNavigatorCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
+		    <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+	    </Group>
     </Groups>
 
     <!--Buttons section. -->
@@ -103,6 +106,12 @@
 		      <ButtonText>型階層から型を選択</ButtonText>
 	      </Strings>
       </Button>
+      <Button guid="guidRegionNavigatorCommandPackageCmdSet" id="RegionNavigatorCommandId" priority="0x0100" type="Button">
+	      <Parent guid="guidRegionNavigatorCommandPackageCmdSet" id="MyMenuGroup" />
+	      <Strings>
+		      <ButtonText>#region/#endregion間を移動</ButtonText>
+	      </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -114,6 +123,12 @@
             must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
     </Bitmaps>
   </Commands>
+	
+  <KeyBindings>
+	  <!-- Ctrl+F2 でリージョン間移動コマンドを実行 -->
+	  <KeyBinding guid="guidRegionNavigatorCommandPackageCmdSet" id="RegionNavigatorCommandId" 
+	              editor="guidVSStd97" key1="VK_F2" mod1="Control" />
+  </KeyBindings>
 
   <Symbols>
     <!-- This is the package guid. -->
@@ -143,6 +158,10 @@
     <GuidSymbol name="guidTypeHierarchyCommandPackageCmdSet" value="{c92b03a4-fb47-4d9d-8ab2-40d27c61788c}">
 	    <IDSymbol name="MyMenuGroup" value="0x1020" />
 	    <IDSymbol name="TypeHierarchyCommandId" value="0x0100" />
+    </GuidSymbol>
+    <GuidSymbol name="guidRegionNavigatorCommandPackageCmdSet" value="{b6894a95-f2d7-4d2e-a80f-223c722d40c1}">
+	    <IDSymbol name="MyMenuGroup" value="0x1020" />
+	    <IDSymbol name="RegionNavigatorCommandId" value="0x0100" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >

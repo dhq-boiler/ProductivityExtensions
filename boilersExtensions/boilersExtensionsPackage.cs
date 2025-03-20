@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using boilersExtensions.Commands;
@@ -48,6 +49,12 @@ namespace boilersExtensions
             await UpdateGuidCommand.InitializeAsync(this);
             await BatchUpdateGuidCommand.InitializeAsync(this);
             await TypeHierarchyCommand.InitializeAsync(this);
+            await RegionNavigatorCommand.InitializeAsync(this);
+
+            // 手動で拡張機能を初期化
+            Debug.WriteLine("Initializing RegionNavigator extensions manually");
+            ManualExtensionInitializer.Initialize(this);
+            Debug.WriteLine("Manual initialization completed");
         }
     }
 }
