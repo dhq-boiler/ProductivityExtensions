@@ -125,6 +125,7 @@
   </Commands>
 	
   <KeyBindings>
+	  <!-- Ctrl+F2 でリージョン間移動コマンドを実行 -->
 	  <KeyBinding guid="guidRegionNavigatorCommandPackageCmdSet" id="RegionNavigatorCommandId" 
 	              editor="guidVSStd97" key1="VK_F2" mod1="Control" />
   </KeyBindings>

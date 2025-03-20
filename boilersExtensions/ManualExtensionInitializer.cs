@@ -20,36 +20,24 @@ namespace boilersExtensions
             new Dictionary<IWpfTextView, TextEditor.Extensions.RegionNavigatorExtension>();
 
         /// <summary>
-        /// Visual Studioのテキストエディタイベントにフックし、拡張機能を初期化します
+        /// 拡張機能を手動で初期化する
         /// </summary>
-        public static void Initialize(IServiceProvider serviceProvider)
+        /// <param name="package">拡張機能のパッケージ</param>
+        public static void Initialize(AsyncPackage package)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            Debug.WriteLine("ManualExtensionInitializer.Initialize called");
-
             try
             {
-                // 現在開いているドキュメントに対して拡張機能を適用
-                EnvDTE.DTE dte = (EnvDTE.DTE)serviceProvider.GetService(typeof(EnvDTE.DTE));
-                if (dte != null && dte.ActiveDocument != null)
-                {
-                    InitializeForActiveDocument(serviceProvider);
-                }
+                Debug.WriteLine("ManualExtensionInitializer.Initialize: Starting manual extension initialization");
 
-                // ドキュメントがアクティブになったときに拡張機能を初期化するためのイベントをフック
-                var runningDocTable = (IVsRunningDocumentTable)serviceProvider.GetService(typeof(SVsRunningDocumentTable));
-                if (runningDocTable != null)
-                {
-                    var runningDocTableEvents = new RunningDocTableEvents(serviceProvider);
-                    uint cookie;
-                    runningDocTable.AdviseRunningDocTableEvents(runningDocTableEvents, out cookie);
-                }
+                // ここで特別な初期化が必要な拡張機能を初期化する
+                // 現在は特に何もしないが、将来的に必要になった場合のために骨組みを用意
 
-                Debug.WriteLine("ManualExtensionInitializer initialized successfully");
+                Debug.WriteLine("ManualExtensionInitializer.Initialize: Finished manual extension initialization");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error initializing extensions: {ex.Message}");
+                Debug.WriteLine($"ManualExtensionInitializer.Initialize: Error during initialization - {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
             }
         }
 

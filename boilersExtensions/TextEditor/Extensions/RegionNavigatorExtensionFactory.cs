@@ -110,13 +110,13 @@ namespace boilersExtensions.TextEditor.Extensions
                     return;
                 }
 
-                // Ctrl+Alt+クリックの組み合わせを処理
-                if (Keyboard.Modifiers != (ModifierKeys.Control | ModifierKeys.Alt))
+                // Ctrl+クリックの組み合わせを処理
+                if (Keyboard.Modifiers != ModifierKeys.Control)
                 {
                     return;
                 }
 
-                Debug.WriteLine("Ctrl+Alt+Click detected");
+                Debug.WriteLine("Ctrl+Click detected");
                 _isHandlingClick = true;
 
                 try

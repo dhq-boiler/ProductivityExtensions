@@ -47,6 +47,16 @@ namespace boilersExtensions.Commands
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new RegionNavigatorCommand();
             commandService.AddCommand(Instance);
+
+            Debug.WriteLine("RegionNavigatorCommand initialized successfully with keyboard shortcut Ctrl+F2");
+        }
+
+        /// <summary>
+        /// コマンドを実行
+        /// </summary>
+        public void Invoke()
+        {
+            Execute(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -58,10 +68,13 @@ namespace boilersExtensions.Commands
 
             try
             {
+                Debug.WriteLine("RegionNavigatorCommand Execute called");
+
                 // 現在のテキストビューを取得
                 var textView = GetCurrentTextView();
                 if (textView == null)
                 {
+                    Debug.WriteLine("Failed to get current text view");
                     return;
                 }
 
@@ -70,19 +83,24 @@ namespace boilersExtensions.Commands
                 var currentLine = textView.TextSnapshot.GetLineFromPosition(caretPosition.Position);
                 var currentLineText = currentLine.GetText();
 
+                Debug.WriteLine($"Current line: {currentLine.LineNumber + 1}, Text: {currentLineText.Trim()}");
+
                 // #region または #endregion を含む行かチェック
                 if (IsRegionStart(currentLineText))
                 {
+                    Debug.WriteLine("Found #region line");
                     // #region から対応する #endregion にジャンプ
                     JumpToMatchingEndRegion(textView, currentLine);
                 }
                 else if (IsRegionEnd(currentLineText))
                 {
+                    Debug.WriteLine("Found #endregion line");
                     // #endregion から対応する #region にジャンプ
                     JumpToMatchingStartRegion(textView, currentLine);
                 }
                 else
                 {
+                    Debug.WriteLine("Not on a region directive, looking for nearest one");
                     // カーソル行が #region/#endregion でなければ最も近い region/endregion を検索
                     FindAndJumpToNearestRegion(textView, currentLine);
                 }
@@ -90,6 +108,7 @@ namespace boilersExtensions.Commands
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in Execute: {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
             }
         }
 
@@ -112,22 +131,26 @@ namespace boilersExtensions.Commands
                 {
                     // ネストしたリージョンの開始
                     nestedLevel++;
+                    Debug.WriteLine($"Found nested #region at line {i + 1}, nestedLevel: {nestedLevel}");
                 }
                 else if (IsRegionEnd(lineText))
                 {
                     if (nestedLevel == 0)
                     {
                         // 対応する #endregion が見つかった
+                        Debug.WriteLine($"Found matching #endregion at line {i + 1}");
                         MoveCaretToLine(textView, i);
                         return;
                     }
 
                     // ネストしたリージョンの終了
                     nestedLevel--;
+                    Debug.WriteLine($"Found nested #endregion at line {i + 1}, nestedLevel: {nestedLevel}");
                 }
             }
 
             // 対応する #endregion が見つからなかった
+            Debug.WriteLine("No matching #endregion found");
             ShowMessage("対応する #endregion が見つかりませんでした。");
         }
 
@@ -150,22 +173,26 @@ namespace boilersExtensions.Commands
                 {
                     // ネストしたリージョンの終了
                     nestedLevel++;
+                    Debug.WriteLine($"Found nested #endregion at line {i + 1}, nestedLevel: {nestedLevel}");
                 }
                 else if (IsRegionStart(lineText))
                 {
                     if (nestedLevel == 0)
                     {
                         // 対応する #region が見つかった
+                        Debug.WriteLine($"Found matching #region at line {i + 1}");
                         MoveCaretToLine(textView, i);
                         return;
                     }
 
                     // ネストしたリージョンの開始
                     nestedLevel--;
+                    Debug.WriteLine($"Found nested #region at line {i + 1}, nestedLevel: {nestedLevel}");
                 }
             }
 
             // 対応する #region が見つからなかった
+            Debug.WriteLine("No matching #region found");
             ShowMessage("対応する #region が見つかりませんでした。");
         }
 
@@ -178,6 +205,8 @@ namespace boilersExtensions.Commands
             var currentLineNumber = currentLine.LineNumber;
             var nearestRegionLineNumber = -1;
             var minDistance = int.MaxValue;
+
+            Debug.WriteLine($"Finding nearest region directive from line {currentLineNumber + 1}");
 
             // すべての行を検索して最も近い #region/#endregion を見つける
             for (var i = 0; i < snapshot.LineCount; i++)
@@ -192,16 +221,19 @@ namespace boilersExtensions.Commands
                     {
                         minDistance = distance;
                         nearestRegionLineNumber = i;
+                        Debug.WriteLine($"Found region directive at line {i + 1}, distance: {distance}");
                     }
                 }
             }
 
             if (nearestRegionLineNumber >= 0)
             {
+                Debug.WriteLine($"Moving to nearest region directive at line {nearestRegionLineNumber + 1}");
                 MoveCaretToLine(textView, nearestRegionLineNumber);
             }
             else
             {
+                Debug.WriteLine("No region directives found in document");
                 ShowMessage("ドキュメント内に #region/#endregion が見つかりませんでした。");
             }
         }
@@ -235,7 +267,40 @@ namespace boilersExtensions.Commands
             textView.Selection.Clear();
 
             // スクロールして表示
-            textView.ViewScroller.EnsureSpanVisible(new SnapshotSpan(line.Start, line.End), EnsureSpanVisibleOptions.AlwaysCenter);
+            textView.ViewScroller.EnsureSpanVisible(new SnapshotSpan(line.Start, line.End),
+                EnsureSpanVisibleOptions.AlwaysCenter);
+
+            // 一時的に行をハイライト
+            HighlightLine(textView, line);
+        }
+
+        /// <summary>
+        /// 行を一時的にハイライト
+        /// </summary>
+        private static void HighlightLine(IWpfTextView textView, ITextSnapshotLine line)
+        {
+            try
+            {
+                // 行全体を選択
+                textView.Selection.Select(
+                    new SnapshotSpan(line.Start, line.End),
+                    false);
+
+                // 500ミリ秒後に選択を解除
+                System.Windows.Threading.DispatcherTimer dispatcherTimer =
+                    new System.Windows.Threading.DispatcherTimer();
+                dispatcherTimer.Interval = TimeSpan.FromMilliseconds(500);
+                dispatcherTimer.Tick += (s, e) =>
+                {
+                    dispatcherTimer.Stop();
+                    textView.Selection.Clear();
+                };
+                dispatcherTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error highlighting line: {ex.Message}");
+            }
         }
 
         /// <summary>
