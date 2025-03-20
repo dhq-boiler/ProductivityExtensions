@@ -9,6 +9,7 @@ using boilersExtensions.Commands;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Text.Formatting;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Utilities;
 
@@ -59,6 +60,10 @@ namespace boilersExtensions.TextEditor.Extensions
         private readonly IWpfTextView _textView;
         private bool _isDisposed = false;
         private bool _isHandlingClick = false;  // クリック処理中かどうかのフラグ
+        private DispatcherTimer _hoverTimer; // マウスホバー用タイマー
+        private Point _lastMousePosition; // 最後のマウス位置
+        private ITextSnapshotLine _lastHighlightedLine; // 最後にハイライトした行
+        private bool _isSelectingRegion = false; // リージョン選択中フラグ
 
         /// <summary>
         /// コンストラクタ
@@ -75,7 +80,14 @@ namespace boilersExtensions.TextEditor.Extensions
 
             // プレビューマウスイベントのハンドラを登録（通常のイベントより先に発生）
             _textView.VisualElement.PreviewMouseLeftButtonDown += OnMouseLeftButtonDown;
+            _textView.VisualElement.MouseMove += OnMouseMove; // マウス移動イベントを追加
+            _textView.VisualElement.MouseLeave += OnMouseLeave; // マウスがエディタから出たときのイベントを追加
             _textView.Closed += OnTextViewClosed;
+
+            // ホバータイマーを初期化（マウスがある位置に一定時間とどまったときに処理を実行）
+            _hoverTimer = new DispatcherTimer();
+            _hoverTimer.Interval = TimeSpan.FromMilliseconds(300); // 300msのホバー時間
+            _hoverTimer.Tick += OnHoverTimerTick;
 
             Debug.WriteLine("RegionNavigatorExtension event handlers registered");
         }
@@ -88,11 +100,120 @@ namespace boilersExtensions.TextEditor.Extensions
             if (_textView?.VisualElement != null)
             {
                 _textView.VisualElement.PreviewMouseLeftButtonDown -= OnMouseLeftButtonDown;
+                _textView.VisualElement.MouseMove -= OnMouseMove;
+                _textView.VisualElement.MouseLeave -= OnMouseLeave;
             }
 
             if (_textView != null)
             {
                 _textView.Closed -= OnTextViewClosed;
+            }
+
+            // タイマーのクリーンアップ
+            if (_hoverTimer != null)
+            {
+                _hoverTimer.Stop();
+                _hoverTimer.Tick -= OnHoverTimerTick;
+            }
+        }
+
+        /// <summary>
+        /// マウスの移動イベント - ホバー検出に使用
+        /// </summary>
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            try
+            {
+                // 現在位置を保存
+                _lastMousePosition = e.GetPosition(_textView.VisualElement);
+
+                // タイマーをリセット
+                _hoverTimer.Stop();
+                _hoverTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in OnMouseMove: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// マウスがテキストビューから離れたとき
+        /// </summary>
+        private void OnMouseLeave(object sender, MouseEventArgs e)
+        {
+            try
+            {
+                // タイマーを停止
+                _hoverTimer.Stop();
+
+                // 選択状態をクリア（リージョン自動選択をキャンセル）
+                if (_isSelectingRegion)
+                {
+                    _textView.Selection.Clear();
+                    _isSelectingRegion = false;
+                    _lastHighlightedLine = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in OnMouseLeave: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// ホバータイマーのTickイベント - マウスが一定時間同じ場所にとどまったとき
+        /// </summary>
+        private void OnHoverTimerTick(object sender, EventArgs e)
+        {
+            try
+            {
+                // タイマーを停止
+                _hoverTimer.Stop();
+
+                // マウス位置から行を取得
+                var snapshotLine = GetTextLineFromMousePosition(_lastMousePosition);
+                if (snapshotLine == null)
+                {
+                    // 行が見つからない場合は選択をクリア
+                    if (_isSelectingRegion)
+                    {
+                        _textView.Selection.Clear();
+                        _isSelectingRegion = false;
+                        _lastHighlightedLine = null;
+                    }
+                    return;
+                }
+
+                var lineText = snapshotLine.GetText();
+
+                // すでに同じ行が選択されていれば何もしない
+                if (_lastHighlightedLine != null && _lastHighlightedLine.LineNumber == snapshotLine.LineNumber)
+                {
+                    return;
+                }
+
+                // region/endregion行かチェック
+                if (IsRegionDirective(lineText))
+                {
+                    // 行全体を選択
+                    _textView.Selection.Select(new SnapshotSpan(snapshotLine.Start, snapshotLine.End), false);
+                    _lastHighlightedLine = snapshotLine;
+                    _isSelectingRegion = true;
+
+                    Debug.WriteLine($"Hovering over region directive at line {snapshotLine.LineNumber + 1}: {lineText.Trim()}");
+                }
+                else if (_isSelectingRegion)
+                {
+                    // リージョン行でなければ選択をクリア
+                    _textView.Selection.Clear();
+                    _isSelectingRegion = false;
+                    _lastHighlightedLine = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in OnHoverTimerTick: {ex.Message}");
             }
         }
 
@@ -121,28 +242,23 @@ namespace boilersExtensions.TextEditor.Extensions
 
                 try
                 {
-                    // クリック位置のテキスト位置を取得
                     var point = e.GetPosition(_textView.VisualElement);
                     Debug.WriteLine($"Click position: X={point.X}, Y={point.Y}");
 
-                    ITextSnapshotLine clickedLine = null;
-                    int? position = null;
-
-                    // まず通常の方法でクリック位置から行を取得
-                    position = GetPositionFromPoint(point);
-                    if (position.HasValue)
-                    {
-                        clickedLine = _textView.TextSnapshot.GetLineFromPosition(position.Value);
-                        Debug.WriteLine($"Position from point: {position.Value}, Line: {clickedLine.LineNumber + 1}");
-                    }
-
-                    // 位置が取得できなかった場合、代替手段として現在のカーソル位置を使用
+                    // マウス位置から行を取得（改良版）
+                    var clickedLine = GetTextLineFromMousePosition(point);
                     if (clickedLine == null)
                     {
+                        // マウス座標で行が見つからない場合、カーソル位置の行を使用
                         clickedLine = _textView.Caret.Position.BufferPosition.GetContainingLine();
                         Debug.WriteLine($"Using caret line instead: {clickedLine.LineNumber + 1}");
                     }
+                    else
+                    {
+                        Debug.WriteLine($"Found line at mouse position: {clickedLine.LineNumber + 1}");
+                    }
 
+                    // 行が取得できた場合の処理
                     if (clickedLine != null)
                     {
                         var lineText = clickedLine.GetText();
@@ -197,6 +313,152 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
+        /// マウス位置からテキスト行を取得する改良版メソッド
+        /// </summary>
+        private ITextSnapshotLine GetTextLineFromMousePosition(Point mousePosition)
+        {
+            // 保守的な対応として、いずれかが利用できない場合はnullを返す
+            if (_textView == null || _textView.IsClosed)
+            {
+                Debug.WriteLine("TextView is null or closed");
+                return null;
+            }
+
+            try
+            {
+                // 方法1: TextViewLines.GetTextViewLineContainingYCoordinate を使用
+                var textViewLines = _textView.TextViewLines;
+                if (textViewLines != null)
+                {
+                    IWpfTextViewLine viewLine = null;
+
+                    try
+                    {
+                        // 表示範囲内にあるかどうかをチェック
+                        bool isInView = (mousePosition.Y >= 0 &&
+                                       mousePosition.Y <= _textView.ViewportHeight &&
+                                       mousePosition.X >= 0 &&
+                                       mousePosition.X <= _textView.ViewportWidth);
+
+                        if (isInView)
+                        {
+                            viewLine = textViewLines.GetTextViewLineContainingYCoordinate(mousePosition.Y) as IWpfTextViewLine;
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Mouse position outside viewport: X={mousePosition.X}, Y={mousePosition.Y}, " +
+                                          $"Viewport: {_textView.ViewportWidth}x{_textView.ViewportHeight}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error getting line at Y coordinate: {ex.Message}");
+                    }
+
+                    if (viewLine != null)
+                    {
+                        var snapshotLine = viewLine.Start.GetContainingLine();
+                        Debug.WriteLine($"Method 1: Found line {snapshotLine.LineNumber + 1}");
+                        return snapshotLine;
+                    }
+                    Debug.WriteLine("Method 1: No line found at Y coordinate");
+                }
+                else
+                {
+                    Debug.WriteLine("TextViewLines is null or empty");
+                }
+
+                // 方法2: マウス入力時に選択されている行があればそれを使用
+                if (_textView.Selection != null && !_textView.Selection.IsEmpty)
+                {
+                    var selectedSpan = _textView.Selection.StreamSelectionSpan;
+                    var startLine = selectedSpan.Start.Position.GetContainingLine();
+                    Debug.WriteLine($"Method 2: Using currently selected line {startLine.LineNumber + 1}");
+                    return startLine;
+                }
+
+                // 方法3: 表示されている行範囲から近似計算
+                // 表示中の最初と最後の行を取得
+                try
+                {
+                    if (textViewLines != null)
+                    {
+                        var firstVisibleLine = textViewLines.FirstVisibleLine;
+                        var lastVisibleLine = textViewLines.LastVisibleLine;
+
+                        if (firstVisibleLine != null && lastVisibleLine != null)
+                        {
+                            var firstLine = firstVisibleLine.Start.GetContainingLine();
+                            var lastLine = lastVisibleLine.End.GetContainingLine();
+                            var firstLineNumber = firstLine.LineNumber;
+                            var lastLineNumber = lastLine.LineNumber;
+
+                            // 表示範囲内の行数
+                            var visibleLineCount = lastLineNumber - firstLineNumber + 1;
+
+                            // マウスの相対Y位置から行を推定
+                            double viewportHeight = _textView.ViewportHeight;
+                            if (viewportHeight > 0)
+                            {
+                                double relativeY = mousePosition.Y / viewportHeight;
+                                relativeY = Math.Max(0, Math.Min(1, relativeY)); // 0～1の範囲に制限
+
+                                int estimatedLineOffset = (int)(relativeY * visibleLineCount);
+                                int estimatedLineNumber = firstLineNumber + estimatedLineOffset;
+
+                                // 範囲チェック
+                                estimatedLineNumber = Math.Max(0, Math.Min(_textView.TextSnapshot.LineCount - 1, estimatedLineNumber));
+
+                                var estimatedLine = _textView.TextSnapshot.GetLineFromLineNumber(estimatedLineNumber);
+                                Debug.WriteLine($"Method 3: Estimated line {estimatedLine.LineNumber + 1} " +
+                                              $"(from range {firstLineNumber + 1}-{lastLineNumber + 1}, relativeY={relativeY:F2})");
+                                return estimatedLine;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error estimating line from viewport: {ex.Message}");
+                }
+
+                // 方法4: キャレット位置の行を使用
+                try
+                {
+                    var caretLine = _textView.Caret.Position.BufferPosition.GetContainingLine();
+                    Debug.WriteLine($"Method 4: Using caret line {caretLine.LineNumber + 1}");
+                    return caretLine;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error getting caret line: {ex.Message}");
+                }
+
+                // 方法5: 最後の手段 - 全くダメな場合はドキュメント内の適当な場所（中央あたり）
+                try
+                {
+                    int middleLineNumber = _textView.TextSnapshot.LineCount / 2;
+                    var middleLine = _textView.TextSnapshot.GetLineFromLineNumber(middleLineNumber);
+                    Debug.WriteLine($"Method 5: Using middle line {middleLine.LineNumber + 1} as last resort");
+                    return middleLine;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error getting middle line: {ex.Message}");
+                }
+
+                // もし本当に何も見つからない場合はnullを返す
+                Debug.WriteLine("All line detection methods failed");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Unhandled error in GetTextLineFromMousePosition: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// 最も近いリージョンディレクティブを探す
         /// </summary>
         private ITextSnapshotLine FindClosestRegionDirective(ITextSnapshotLine currentLine)
@@ -224,63 +486,6 @@ namespace boilersExtensions.TextEditor.Extensions
             }
 
             return closestLine;
-        }
-
-        /// <summary>
-        /// クリック位置からテキスト位置を取得（改善版）
-        /// </summary>
-        private int? GetPositionFromPoint(System.Windows.Point point)
-        {
-            Debug.WriteLine($"GetPositionFromPoint: Point X={point.X}, Y={point.Y}");
-
-            try
-            {
-                // クリック位置をテキストビューの座標系に変換してテキスト位置を取得
-                var line = _textView.TextViewLines.GetTextViewLineContainingYCoordinate(point.Y);
-                if (line != null)
-                {
-                    // 1. 水平位置からバッファ位置を計算
-                    var bufferPosition = line.GetBufferPositionFromXCoordinate(point.X, false);
-                    if (bufferPosition.HasValue)
-                    {
-                        Debug.WriteLine($"Found buffer position from line: {bufferPosition.Value.Position}");
-                        return bufferPosition.Value.Position;
-                    }
-
-                    // 2. クリック位置から最も近いインサーション位置を取得
-                    var insPos = line.GetInsertionBufferPositionFromXCoordinate(point.X);
-                    Debug.WriteLine($"Found insertion position: {insPos.Position}");
-                    return insPos.Position;
-
-                    // 3. X座標が範囲外の場合は、行の開始または終了を使用
-                    // (この部分は実際には実行されませんが、念のためコードとして残しておきます)
-                    var position = point.X < line.TextLeft ? line.Start.Position : line.End.Position;
-                    Debug.WriteLine($"Using line {(point.X < line.TextLeft ? "start" : "end")} position: {position}");
-                    return position;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"GetPositionFromPoint error: {ex.Message}");
-                Debug.WriteLine(ex.StackTrace);
-            }
-
-            // 最終的なフォールバック: カーソル位置を使用
-            try
-            {
-                if (_textView.Caret != null && _textView.Caret.Position.BufferPosition != null)
-                {
-                    var caretPosition = _textView.Caret.Position.BufferPosition.Position;
-                    Debug.WriteLine($"Falling back to caret position: {caretPosition}");
-                    return caretPosition;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Caret position fallback error: {ex.Message}");
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -317,6 +522,24 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
+        /// 指定された行のテキストが#regionか調べる
+        /// </summary>
+        private bool IsStartRegionDirective(string lineText)
+        {
+            var trimmedLine = lineText.TrimStart();
+            return Regex.IsMatch(trimmedLine, @"^#\s*region\b");
+        }
+
+        /// <summary>
+        /// 指定された行のテキストが#endregionか調べる
+        /// </summary>
+        private bool IsEndRegionDirective(string lineText)
+        {
+            var trimmedLine = lineText.TrimStart();
+            return Regex.IsMatch(trimmedLine, @"^#\s*endregion\b");
+        }
+
+        /// <summary>
         /// 対応するリージョンディレクティブに移動
         /// </summary>
         private void ExecuteRegionNavigation(ITextSnapshotLine line)
@@ -324,10 +547,9 @@ namespace boilersExtensions.TextEditor.Extensions
             try
             {
                 var lineText = line.GetText().TrimStart();
-                var isStartRegion = Regex.IsMatch(lineText, @"^#\s*region\b");
+                bool isStartRegion = IsStartRegionDirective(lineText);
                 var snapshot = _textView.TextSnapshot;
                 var startLineNumber = line.LineNumber;
-                var nestedLevel = 0;
 
                 Debug.WriteLine($"ExecuteRegionNavigation: Line {startLineNumber + 1}, IsStartRegion: {isStartRegion}, Text: {lineText.Trim()}");
 
@@ -336,56 +558,12 @@ namespace boilersExtensions.TextEditor.Extensions
                 if (isStartRegion)
                 {
                     // #region から対応する #endregion を検索
-                    for (var i = startLineNumber + 1; i < snapshot.LineCount; i++)
-                    {
-                        var currentLine = snapshot.GetLineFromLineNumber(i);
-                        var currentLineText = currentLine.GetText().TrimStart();
-
-                        if (Regex.IsMatch(currentLineText, @"^#\s*region\b"))
-                        {
-                            nestedLevel++;
-                            Debug.WriteLine($"Found nested #region at line {i + 1}, nestedLevel: {nestedLevel}");
-                        }
-                        else if (Regex.IsMatch(currentLineText, @"^#\s*endregion\b"))
-                        {
-                            if (nestedLevel == 0)
-                            {
-                                // 対応する #endregion が見つかった
-                                Debug.WriteLine($"Found matching #endregion at line {i + 1}");
-                                matchingLine = currentLine;
-                                break;
-                            }
-                            nestedLevel--;
-                            Debug.WriteLine($"Found nested #endregion at line {i + 1}, nestedLevel: {nestedLevel}");
-                        }
-                    }
+                    matchingLine = FindMatchingEndRegion(startLineNumber);
                 }
-                else
+                else if (IsEndRegionDirective(lineText))
                 {
                     // #endregion から対応する #region を検索
-                    for (var i = startLineNumber - 1; i >= 0; i--)
-                    {
-                        var currentLine = snapshot.GetLineFromLineNumber(i);
-                        var currentLineText = currentLine.GetText().TrimStart();
-
-                        if (Regex.IsMatch(currentLineText, @"^#\s*endregion\b"))
-                        {
-                            nestedLevel++;
-                            Debug.WriteLine($"Found nested #endregion at line {i + 1}, nestedLevel: {nestedLevel}");
-                        }
-                        else if (Regex.IsMatch(currentLineText, @"^#\s*region\b"))
-                        {
-                            if (nestedLevel == 0)
-                            {
-                                // 対応する #region が見つかった
-                                Debug.WriteLine($"Found matching #region at line {i + 1}");
-                                matchingLine = currentLine;
-                                break;
-                            }
-                            nestedLevel--;
-                            Debug.WriteLine($"Found nested #region at line {i + 1}, nestedLevel: {nestedLevel}");
-                        }
-                    }
+                    matchingLine = FindMatchingStartRegion(startLineNumber);
                 }
 
                 if (matchingLine != null)
@@ -408,6 +586,90 @@ namespace boilersExtensions.TextEditor.Extensions
                 Debug.WriteLine($"ExecuteRegionNavigation error: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
             }
+        }
+
+        /// <summary>
+        /// 指定された行の #region に対応する #endregion を検索する改良版
+        /// スタックベースの実装でネストされたリージョンを正確に処理
+        /// </summary>
+        private ITextSnapshotLine FindMatchingEndRegion(int startLineNumber)
+        {
+            var snapshot = _textView.TextSnapshot;
+            var stack = new System.Collections.Generic.Stack<int>();
+
+            // 開始行を基準として検索を始める
+            stack.Push(startLineNumber);
+
+            for (int i = startLineNumber + 1; i < snapshot.LineCount; i++)
+            {
+                var currentLine = snapshot.GetLineFromLineNumber(i);
+                var lineText = currentLine.GetText().TrimStart();
+
+                if (IsStartRegionDirective(lineText))
+                {
+                    // ネストされた #region を見つけたらスタックに追加
+                    stack.Push(i);
+                    Debug.WriteLine($"Found nested #region at line {i + 1}, stack depth: {stack.Count}");
+                }
+                else if (IsEndRegionDirective(lineText))
+                {
+                    // #endregion を見つけたらスタックから1つ取り出す
+                    stack.Pop();
+                    Debug.WriteLine($"Found #endregion at line {i + 1}, stack depth: {stack.Count}");
+
+                    // スタックが空になったら、これが対応する #endregion
+                    if (stack.Count == 0)
+                    {
+                        Debug.WriteLine($"Found matching #endregion at line {i + 1}");
+                        return currentLine;
+                    }
+                }
+            }
+
+            Debug.WriteLine("No matching #endregion found");
+            return null;
+        }
+
+        /// <summary>
+        /// 指定された行の #endregion に対応する #region を検索する改良版
+        /// スタックベースの実装でネストされたリージョンを正確に処理
+        /// </summary>
+        private ITextSnapshotLine FindMatchingStartRegion(int endLineNumber)
+        {
+            var snapshot = _textView.TextSnapshot;
+            var stack = new System.Collections.Generic.Stack<int>();
+
+            // 終了行を基準として検索を始める
+            stack.Push(endLineNumber);
+
+            for (int i = endLineNumber - 1; i >= 0; i--)
+            {
+                var currentLine = snapshot.GetLineFromLineNumber(i);
+                var lineText = currentLine.GetText().TrimStart();
+
+                if (IsEndRegionDirective(lineText))
+                {
+                    // ネストされた #endregion を見つけたらスタックに追加
+                    stack.Push(i);
+                    Debug.WriteLine($"Found nested #endregion at line {i + 1}, stack depth: {stack.Count}");
+                }
+                else if (IsStartRegionDirective(lineText))
+                {
+                    // #region を見つけたらスタックから1つ取り出す
+                    stack.Pop();
+                    Debug.WriteLine($"Found #region at line {i + 1}, stack depth: {stack.Count}");
+
+                    // スタックが空になったら、これが対応する #region
+                    if (stack.Count == 0)
+                    {
+                        Debug.WriteLine($"Found matching #region at line {i + 1}");
+                        return currentLine;
+                    }
+                }
+            }
+
+            Debug.WriteLine("No matching #region found");
+            return null;
         }
 
         /// <summary>
@@ -450,45 +712,15 @@ namespace boilersExtensions.TextEditor.Extensions
                         new SnapshotSpan(line.Start, line.End),
                         EnsureSpanVisibleOptions.AlwaysCenter);
 
-                    // 行をハイライト（一時的に）
-                    HighlightLine(line);
+                    // 行を自動選択
+                    _textView.Selection.Select(new SnapshotSpan(line.Start, line.End), false);
+                    _lastHighlightedLine = line;
+                    _isSelectingRegion = true;
                 });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"MoveCaretToLine error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 行を一時的にハイライト
-        /// </summary>
-        private void HighlightLine(ITextSnapshotLine line)
-        {
-            try
-            {
-                // 行全体を選択
-                _textView.Selection.Select(
-                    new SnapshotSpan(line.Start, line.End),
-                    false);
-
-                // 500ミリ秒後に選択を解除
-                var dispatcherTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromMilliseconds(500)
-                };
-
-                dispatcherTimer.Tick += (s, e) =>
-                {
-                    dispatcherTimer.Stop();
-                    _textView.Selection.Clear();
-                };
-
-                dispatcherTimer.Start();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"HighlightLine error: {ex.Message}");
             }
         }
 

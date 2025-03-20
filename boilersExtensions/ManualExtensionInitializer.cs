@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
@@ -8,172 +7,257 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Shell.Interop;
+using System.Collections.Generic;
+using boilersExtensions.TextEditor.Extensions;
 
 namespace boilersExtensions
 {
     /// <summary>
-    /// 拡張機能を手動で初期化するためのヘルパークラス
+    /// エディタの拡張機能を手動で初期化するためのクラス
     /// </summary>
-    internal static class ManualExtensionInitializer
+    public static class ManualExtensionInitializer
     {
-        private static Dictionary<IWpfTextView, TextEditor.Extensions.RegionNavigatorExtension> _extensions = 
-            new Dictionary<IWpfTextView, TextEditor.Extensions.RegionNavigatorExtension>();
+        private static bool _initialized = false;
+        private static readonly Dictionary<IWpfTextView, RegionNavigatorExtension> _extensions =
+            new Dictionary<IWpfTextView, RegionNavigatorExtension>();
 
         /// <summary>
-        /// 拡張機能を手動で初期化する
+        /// パッケージが読み込まれた際に手動で初期化
         /// </summary>
-        /// <param name="package">拡張機能のパッケージ</param>
         public static void Initialize(AsyncPackage package)
         {
+            if (_initialized)
+            {
+                return;
+            }
+
             try
             {
-                Debug.WriteLine("ManualExtensionInitializer.Initialize: Starting manual extension initialization");
+                // UIスレッドに切り替え（非同期のため）
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    Debug.WriteLine("ManualExtensionInitializer: Starting to initialize extensions");
 
-                // ここで特別な初期化が必要な拡張機能を初期化する
-                // 現在は特に何もしないが、将来的に必要になった場合のために骨組みを用意
+                    // EditorAdaptersFactoryService を取得
+                    var componentModel = await package.GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
+                    if (componentModel == null)
+                    {
+                        Debug.WriteLine("ManualExtensionInitializer: Failed to get SComponentModel service");
+                        return;
+                    }
 
-                Debug.WriteLine("ManualExtensionInitializer.Initialize: Finished manual extension initialization");
+                    var editorAdaptersFactoryService = componentModel.GetService<IVsEditorAdaptersFactoryService>();
+                    var navigatorService = componentModel.GetService<ITextStructureNavigatorSelectorService>();
+
+                    if (editorAdaptersFactoryService == null || navigatorService == null)
+                    {
+                        Debug.WriteLine("ManualExtensionInitializer: Required services not available");
+                        return;
+                    }
+
+                    // イベントハンドラを登録
+                    await RegisterEventHandlers(package, editorAdaptersFactoryService, navigatorService);
+
+                    // 現在開いているテキストビューを取得して初期化
+                    await InitializeActiveTextView(package, editorAdaptersFactoryService, navigatorService);
+
+                    _initialized = true;
+                    Debug.WriteLine("ManualExtensionInitializer: Successfully initialized");
+                });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ManualExtensionInitializer.Initialize: Error during initialization - {ex.Message}");
+                Debug.WriteLine($"ManualExtensionInitializer: Error during initialization: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
             }
         }
 
         /// <summary>
-        /// 現在アクティブなドキュメントに拡張機能を適用
+        /// イベントハンドラを登録
         /// </summary>
-        public static void InitializeForActiveDocument(IServiceProvider serviceProvider)
+        private static async System.Threading.Tasks.Task RegisterEventHandlers(AsyncPackage package,
+            IVsEditorAdaptersFactoryService editorAdaptersFactoryService,
+            ITextStructureNavigatorSelectorService navigatorService)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            Debug.WriteLine("InitializeForActiveDocument called");
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             try
             {
-                // テキストマネージャーからアクティブなビューを取得
-                var textManager = (IVsTextManager)serviceProvider.GetService(typeof(SVsTextManager));
-                if (textManager == null)
+                // ウィンドウフレームのイベントを監視
+                var windowFrameEvents = await package.GetServiceAsync(typeof(SVsUIShell)) as IVsUIShell;
+                if (windowFrameEvents != null)
                 {
-                    Debug.WriteLine("IVsTextManager is null");
-                    return;
-                }
+                    Debug.WriteLine("ManualExtensionInitializer: Registering for window frame events");
 
-                textManager.GetActiveView(1, null, out IVsTextView vsTextView);
-                if (vsTextView == null)
-                {
-                    Debug.WriteLine("Active IVsTextView is null");
-                    return;
-                }
-
-                // コンポーネントモデルからエディタサービスを取得
-                var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
-                if (componentModel == null)
-                {
-                    Debug.WriteLine("IComponentModel is null");
-                    return;
-                }
-
-                var editorFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>();
-                if (editorFactory == null)
-                {
-                    Debug.WriteLine("IVsEditorAdaptersFactoryService is null");
-                    return;
-                }
-
-                // WPFテキストビューを取得
-                var wpfTextView = editorFactory.GetWpfTextView(vsTextView);
-                if (wpfTextView == null)
-                {
-                    Debug.WriteLine("WpfTextView is null");
-                    return;
-                }
-
-                // 拡張機能が既に適用されているか確認
-                if (_extensions.ContainsKey(wpfTextView))
-                {
-                    Debug.WriteLine("Extension already applied to this view");
-                    return;
-                }
-
-                // ナビゲーションサービスを取得
-                var navigatorService = componentModel.GetService<ITextStructureNavigatorSelectorService>();
-                if (navigatorService == null)
-                {
-                    Debug.WriteLine("ITextStructureNavigatorSelectorService is null");
-                    return;
-                }
-
-                // 拡張機能を作成して登録
-                var extension = new TextEditor.Extensions.RegionNavigatorExtension(wpfTextView, navigatorService);
-                _extensions[wpfTextView] = extension;
-
-                // テキストビューが閉じられたときに拡張機能を解放するためのイベントを登録
-                wpfTextView.Closed += (sender, args) =>
-                {
-                    if (_extensions.ContainsKey(wpfTextView))
+                    // ドキュメントウィンドウのイベントを監視する
+                    var vsMonitorSelection = await package.GetServiceAsync(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
+                    if (vsMonitorSelection != null)
                     {
-                        _extensions.Remove(wpfTextView);
-                        Debug.WriteLine("Extension removed for closed text view");
+                        uint cookie = 0;
+                        vsMonitorSelection.AdviseSelectionEvents(
+                            new SelectionEventHandler(editorAdaptersFactoryService, navigatorService), out cookie);
+                        Debug.WriteLine($"ManualExtensionInitializer: Registered selection events, cookie: {cookie}");
                     }
-                };
+                }
 
-                Debug.WriteLine("Extension successfully applied to active document");
+                Debug.WriteLine("ManualExtensionInitializer: Successfully registered event handlers");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in InitializeForActiveDocument: {ex.Message}");
+                Debug.WriteLine($"ManualExtensionInitializer: Error registering event handlers: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 実行中ドキュメントテーブルのイベントを処理するクラス
+        /// 現在アクティブなテキストビューを初期化
         /// </summary>
-        private class RunningDocTableEvents : IVsRunningDocTableEvents
+        private static async System.Threading.Tasks.Task InitializeActiveTextView(AsyncPackage package,
+            IVsEditorAdaptersFactoryService editorAdaptersFactoryService,
+            ITextStructureNavigatorSelectorService navigatorService)
         {
-            private readonly IServiceProvider _serviceProvider;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            public RunningDocTableEvents(IServiceProvider serviceProvider)
+            try
             {
-                _serviceProvider = serviceProvider;
+                // アクティブなテキストビューを取得
+                var textManager = await package.GetServiceAsync(typeof(SVsTextManager)) as IVsTextManager;
+                if (textManager != null)
+                {
+                    textManager.GetActiveView(1, null, out var vsTextView);
+                    if (vsTextView != null)
+                    {
+                        // TextViewを取得してRegionNavigatorExtensionを追加
+                        var wpfTextView = editorAdaptersFactoryService.GetWpfTextView(vsTextView);
+                        if (wpfTextView != null)
+                        {
+                            AttachToTextView(wpfTextView, navigatorService);
+                            Debug.WriteLine("ManualExtensionInitializer: Attached to active text view");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ManualExtensionInitializer: Error initializing active text view: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// テキストビューに拡張機能をアタッチ
+        /// </summary>
+        public static void AttachToTextView(IWpfTextView textView, ITextStructureNavigatorSelectorService navigatorService)
+        {
+            try
+            {
+                if (textView == null || navigatorService == null)
+                {
+                    Debug.WriteLine("AttachToTextView: TextView or NavigatorService is null");
+                    return;
+                }
+
+                // すでにアタッチされているかチェック
+                if (_extensions.ContainsKey(textView))
+                {
+                    Debug.WriteLine("AttachToTextView: Extension already attached to this TextView");
+                    return;
+                }
+
+                // TextView.Propertiesで確認
+                if (textView.Properties.ContainsProperty(typeof(RegionNavigatorExtension)))
+                {
+                    Debug.WriteLine("AttachToTextView: Extension already exists in TextView properties");
+                    return;
+                }
+
+                // 新しいRegionNavigatorExtensionをテキストビューにアタッチ
+                var extension = new RegionNavigatorExtension(textView, navigatorService);
+
+                // 辞書に追加して追跡
+                _extensions[textView] = extension;
+
+                // テキストビューのプロパティにも追加
+                textView.Properties.AddProperty(typeof(RegionNavigatorExtension), extension);
+
+                // テキストビューが閉じられたときにクリーンアップするためのハンドラ
+                textView.Closed += (s, e) =>
+                {
+                    if (_extensions.ContainsKey(textView))
+                    {
+                        _extensions.Remove(textView);
+                        Debug.WriteLine("TextView Closed: Removed extension from tracking dictionary");
+                    }
+                };
+
+                Debug.WriteLine($"Successfully attached new RegionNavigatorExtension to TextView (hash: {textView.GetHashCode()})");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error attaching extension to TextView: {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
+            }
+        }
+
+        /// <summary>
+        /// ドキュメント選択イベントを処理するためのクラス
+        /// </summary>
+        private class SelectionEventHandler : IVsSelectionEvents
+        {
+            private readonly IVsEditorAdaptersFactoryService _editorAdaptersFactoryService;
+            private readonly ITextStructureNavigatorSelectorService _navigatorService;
+
+            public SelectionEventHandler(
+                IVsEditorAdaptersFactoryService editorAdaptersFactoryService,
+                ITextStructureNavigatorSelectorService navigatorService)
+            {
+                _editorAdaptersFactoryService = editorAdaptersFactoryService;
+                _navigatorService = navigatorService;
             }
 
-            public int OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+            public int OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
             {
-                return 0;
+                return Microsoft.VisualStudio.VSConstants.S_OK;
             }
 
-            public int OnBeforeLastDocumentUnlock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
+            public int OnElementValueChanged(uint elementid, object varValueOld, object varValueNew)
             {
-                return 0;
-            }
-
-            public int OnAfterSave(uint docCookie)
-            {
-                return 0;
-            }
-
-            public int OnAfterAttributeChange(uint docCookie, uint grfAttribs)
-            {
-                return 0;
-            }
-
-            public int OnBeforeDocumentWindowShow(uint docCookie, int fFirstShow, IVsWindowFrame pFrame)
-            {
-                if (fFirstShow != 0)
+                if (elementid == (uint)Microsoft.VisualStudio.VSConstants.VSSELELEMID.SEID_DocumentFrame)
                 {
                     ThreadHelper.JoinableTaskFactory.Run(async () =>
                     {
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                        InitializeForActiveDocument(_serviceProvider);
+
+                        try
+                        {
+                            if (varValueNew is IVsWindowFrame frame)
+                            {
+                                // ドキュメントのテキストビューを取得
+                                frame.GetProperty((int)__VSFPROPID.VSFPROPID_DocView, out object docView);
+
+                                if (docView is IVsTextView vsTextView)
+                                {
+                                    var wpfTextView = _editorAdaptersFactoryService.GetWpfTextView(vsTextView);
+                                    if (wpfTextView != null)
+                                    {
+                                        AttachToTextView(wpfTextView, _navigatorService);
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error in OnElementValueChanged: {ex.Message}");
+                        }
                     });
                 }
-                return 0;
+                return Microsoft.VisualStudio.VSConstants.S_OK;
             }
 
-            public int OnAfterDocumentWindowHide(uint docCookie, IVsWindowFrame pFrame)
+            public int OnSelectionChanged(IVsHierarchy pHierOld, uint itemidOld, IVsMultiItemSelect pMISOld,
+                ISelectionContainer pSCOld, IVsHierarchy pHierNew, uint itemidNew, IVsMultiItemSelect pMISNew,
+                ISelectionContainer pSCNew)
             {
-                return 0;
+                return Microsoft.VisualStudio.VSConstants.S_OK;
             }
         }
     }
