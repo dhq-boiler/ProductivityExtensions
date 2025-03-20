@@ -62,6 +62,7 @@
     <Compile Include="ManualExtensionInitializer.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\RegionNavigatorExtensionFactory.cs" />
+    <Compile Include="TextEditor\Extensions\SolutionExplorerSynchronizerFactory.cs" />
     <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
     <Compile Include="Utils\BookmarkManager.cs" />
     <Compile Include="Utils\DynamicTypeResolver.cs" />
