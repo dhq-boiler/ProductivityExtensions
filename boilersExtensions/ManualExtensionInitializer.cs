@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Collections.Generic;
 using boilersExtensions.TextEditor.Extensions;
+using boilersExtensions.Commands;
 
 namespace boilersExtensions
 {
@@ -61,6 +62,19 @@ namespace boilersExtensions
 
                     // 現在開いているテキストビューを取得して初期化
                     await InitializeActiveTextView(package, editorAdaptersFactoryService, navigatorService);
+
+                    //コマンドを初期化
+                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    {
+                        await NavigateGitHubLinesCommand.InitializeAsync(package);
+                        await RenameProjectCommand.InitializeAsync(package);
+                        await RenameSolutionCommand.InitializeAsync(package);
+                        await UpdateGuidCommand.InitializeAsync(package);
+                        await BatchUpdateGuidCommand.InitializeAsync(package);
+                        await TypeHierarchyCommand.InitializeAsync(package);
+                        await RegionNavigatorCommand.InitializeAsync(package);
+                        await SyncToSolutionExplorerCommand.InitializeAsync(package);
+                    });
 
                     _initialized = true;
                     Debug.WriteLine("ManualExtensionInitializer: Successfully initialized");

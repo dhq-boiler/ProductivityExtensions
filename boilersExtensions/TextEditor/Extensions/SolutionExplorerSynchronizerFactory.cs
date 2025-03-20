@@ -176,8 +176,6 @@ namespace boilersExtensions.TextEditor.Extensions
 
                         // ソリューションエクスプローラーで対象ファイルを選択
                         await SelectFileInSolutionExplorerAsync(dte, filePath);
-
-                        _lastSynchronizedFile = filePath;
                     }
                     finally
                     {

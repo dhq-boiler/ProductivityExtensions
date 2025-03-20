@@ -50,6 +50,7 @@
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
+    <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
     <Compile Include="Commands\TypeHierarchyCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
