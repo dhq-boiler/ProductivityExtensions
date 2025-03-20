@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using boilersExtensions.Commands;
+using boilersExtensions.DialogPages;
 using Microsoft.VisualStudio.Shell;
 using Task = System.Threading.Tasks.Task;
 
@@ -30,6 +31,7 @@ namespace boilersExtensions
     [Guid(PackageGuidString)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [InstalledProductRegistration("#110", "#112", "1.0")]
+    [ProvideOptionPage(typeof(BoilersExtensionsOptionPage), "boilersExtensions", "機能", 0, 0, true)]
     public sealed class boilersExtensionsPackage : AsyncPackage
     {
         public const string PackageGuidString = "e26b6f0b-d63a-4590-bd2f-8b201c2413dc";
@@ -51,6 +53,9 @@ namespace boilersExtensions
             await TypeHierarchyCommand.InitializeAsync(this);
             await RegionNavigatorCommand.InitializeAsync(this);
             await SyncToSolutionExplorerCommand.InitializeAsync(this);
+
+            // 新しい拡張機能設定コマンドを初期化
+            await BoilersExtensionsSettingsCommand.InitializeAsync(this);
 
             // 手動で拡張機能を初期化
             Debug.WriteLine("Initializing RegionNavigator extensions manually");

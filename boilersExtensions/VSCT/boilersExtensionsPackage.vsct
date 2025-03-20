@@ -31,6 +31,16 @@
     group; your package should define its own command set in order to avoid collisions
     with command ids defined by other packages. -->
 
+		<Menus>
+			<!-- 拡張機能メニューを追加 -->
+			<Menu guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenu" priority="0x700" type="Menu">
+				<Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS"/>
+				<Strings>
+					<ButtonText>boilersExtensions</ButtonText>
+				</Strings>
+			</Menu>
+		</Menus>
+
 		<!-- In this section you can define new menu groups. A menu group is a container for
          other menus or buttons (commands); from a visual point of view you can see the
          group as the part of a menu contained between two lines. The parent of a group
@@ -59,6 +69,9 @@
 			</Group>
 			<Group guid="guidSyncToSolutionExplorerCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_EZDOCWINTAB"/>
+			</Group>
+			<Group guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup" priority="0x0600">
+				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenu"/>
 			</Group>
 		</Groups>
 
@@ -121,6 +134,12 @@
 					<ButtonText>ソリューションエクスプローラーで表示</ButtonText>
 				</Strings>
 			</Button>
+			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="cmdExtensionsSettings" priority="0x0100" type="Button">
+				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup"/>
+				<Strings>
+					<ButtonText>設定</ButtonText>
+				</Strings>
+			</Button>
 		</Buttons>
 
 		<!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -175,6 +194,15 @@
 		<GuidSymbol name="guidSyncToSolutionExplorerCommandPackageCmdSet" value="{b9af64c5-3f2d-4a53-a5c3-924a11e8d439}">
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="SyncToSolutionExplorerCommandId" value="0x0100" />
+		</GuidSymbol>
+		<!--<GuidSymbol name="guidBoilersExtensionsSettingsCommandPackageCmdSet" value="{f4ae3e4b-8f5f-4a5e-9f7b-5e9c82f7a3d1}">
+			<IDSymbol name="MyMenuGroup" value="0x1020" />
+			<IDSymbol name="BoilersExtensionsSettingsCommandId" value="0x1000" />
+		</GuidSymbol>-->
+		<GuidSymbol name="guidBoilersExtensionsExtensionsCmdSet" value="{0A3B7D5F-6D61-4B5E-9A4F-6D0E6F8B3F1C}">
+			<IDSymbol name="BoilersExtensionsMenu" value="0x1000"/>
+			<IDSymbol name="BoilersExtensionsMenuGroup" value="0x1020"/>
+			<IDSymbol name="cmdExtensionsSettings" value="0x0100"/>
 		</GuidSymbol>
 
 		<GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >

@@ -48,6 +48,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
+    <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
     <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
@@ -59,6 +60,9 @@
     </Compile>
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
+    <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
