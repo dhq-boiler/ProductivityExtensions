@@ -1,13 +1,11 @@
 ﻿using System;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-using boilersExtensions.Commands;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -249,33 +247,6 @@ namespace boilersExtensions.TextEditor.Extensions
                     // マウスカーソルが指す行を取得して保持
                     _mouseHoverLine = GetTextLineFromMousePosition(point);
 
-                    //// カーソル位置の行を取得
-                    //var caretLine = _textView.Caret.Position.BufferPosition.GetContainingLine();
-
-                    //// カーソル位置とマウスカーソル位置の行が異なる場合のデバッグ出力
-                    //if (_mouseHoverLine != null && _mouseHoverLine.LineNumber != caretLine.LineNumber)
-                    //{
-                    //    Debug.WriteLine($"Potential line mismatch detected:");
-                    //    Debug.WriteLine($"Mouse hover line: {_mouseHoverLine.LineNumber + 1} - \"{_mouseHoverLine.GetText().Trim()}\"");
-                    //    Debug.WriteLine($"Caret line: {caretLine.LineNumber + 1} - \"{caretLine.GetText().Trim()}\"");
-                    //}
-
-                    //// DTEを使用してクリック位置を確認（追加のデバッグ情報）
-                    //try
-                    //{
-                    //    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
-                    //    if (dte?.ActiveDocument?.Selection is EnvDTE.TextSelection selection)
-                    //    {
-                    //        int currentLine = selection.CurrentLine;
-                    //        int currentColumn = selection.CurrentColumn;
-                    //        Debug.WriteLine($"Current DTE position: Line {currentLine}, Column {currentColumn}");
-                    //    }
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    Debug.WriteLine($"Failed to get DTE selection: {ex.Message}");
-                    //}
-
                     // Windowsクリックイベントの座標ではなく、テキストエディタの座標系に変換（重要）
                     Point textViewPoint;
                     try
@@ -293,19 +264,6 @@ namespace boilersExtensions.TextEditor.Extensions
                         Debug.WriteLine($"Error converting coordinates: {ex.Message}");
                         textViewPoint = point; // 変換失敗時は元の座標を使用
                     }
-
-                    //// マウス位置から行を取得（スクロール位置も考慮した改良版）
-                    //var clickedLine = GetTextLineFromMousePosition(point);
-                    //if (clickedLine == null)
-                    //{
-                    //    // マウス座標で行が見つからない場合、カーソル位置の行を使用
-                    //    clickedLine = _textView.Caret.Position.BufferPosition.GetContainingLine();
-                    //    Debug.WriteLine($"Using caret line instead: {clickedLine.LineNumber + 1}");
-                    //}
-                    //else
-                    //{
-                    //    Debug.WriteLine($"Found line at mouse position: {clickedLine.LineNumber + 1} | Text: {clickedLine.GetText().Trim()}");
-                    //}
 
                     // 行が取得できた場合の処理
                     if (_mouseHoverLine != null)
@@ -331,29 +289,6 @@ namespace boilersExtensions.TextEditor.Extensions
 
                             // region/endregion間の移動を実行
                             ExecuteRegionNavigation(lineToProcess);
-                        }
-                        else
-                        {
-                            //Debug.WriteLine("Not a region directive line, searching for closest region directive");
-
-                            //// 近くのリージョンディレクティブを検索
-                            //var closestRegionLine = FindClosestRegionDirective(clickedLine);
-                            //if (closestRegionLine != null)
-                            //{
-                            //    Debug.WriteLine($"Found closest region directive at line {closestRegionLine.LineNumber + 1}: \"{closestRegionLine.GetText().Trim()}\"");
-                            //    e.Handled = true;
-
-                            //    // 最も近いリージョンに移動
-                            //    MoveCaretToExactLine(closestRegionLine);
-
-                            //    // リージョン間ジャンプの実行
-                            //    ExecuteRegionNavigation(closestRegionLine);
-                            //}
-                            //else
-                            //{
-                            //    Debug.WriteLine("No region directive found in the document");
-                            //    ShowMessage("ドキュメント内にリージョンディレクティブが見つかりませんでした。");
-                            //}
                         }
                     }
                     else
@@ -488,68 +423,6 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// 指定された行（ITextSnapshotLine）にカーソルを移動
-        /// </summary>
-        private void MoveCaretToClickedLine(ITextSnapshotLine line)
-        {
-            try
-            {
-                // UIスレッドで実行
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    // 行の先頭位置を取得
-                    var position = line.Start.Position;
-
-                    // 行頭の空白をスキップした位置を取得
-                    var lineText = line.GetText();
-                    var nonWhitespacePosition = position;
-                    for (var i = 0; i < lineText.Length; i++)
-                    {
-                        if (!char.IsWhiteSpace(lineText[i]))
-                        {
-                            nonWhitespacePosition = position + i;
-                            break;
-                        }
-                    }
-
-                    // 現在のカーソル位置を退避
-                    var oldPosition = _textView.Caret.Position.BufferPosition;
-
-                    // カーソルを移動（ただし選択やスクロールはしない）
-                    _textView.Caret.MoveTo(new SnapshotPoint(_textView.TextSnapshot, nonWhitespacePosition));
-
-                    // 変更がバッファに反映されるようにDTEを使って確実に更新
-                    try
-                    {
-                        var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
-                        if (dte?.ActiveDocument?.Selection is EnvDTE.TextSelection selection)
-                        {
-                            // ライン番号とキャラクタ位置を1ベースの値に変換
-                            int lineNumber = line.LineNumber + 1;
-                            // 行頭からの文字数を計算
-                            int column = nonWhitespacePosition - line.Start.Position + 1;
-                            selection.MoveToLineAndOffset(lineNumber, column);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Failed to update DTE selection: {ex.Message}");
-                        // エラーが発生した場合は単純な方法にフォールバック
-                        _textView.Caret.MoveTo(new SnapshotPoint(_textView.TextSnapshot, nonWhitespacePosition));
-                    }
-
-                    Debug.WriteLine($"Moved caret to line {line.LineNumber + 1} at position {nonWhitespacePosition}");
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MoveCaretToClickedLine error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
         /// マウス位置からテキスト行を取得する改良版メソッド
         /// </summary>
         private ITextSnapshotLine GetTextLineFromMousePosition(Point mousePosition)
@@ -594,26 +467,6 @@ namespace boilersExtensions.TextEditor.Extensions
 
                                 return snapshotLine;
                             }
-                            //// 直接行を取得するために、GetTextViewLineContainingYCoordinateを使用]
-                            //var normalizedMousePosition = mousePosition.Y + (textViewLines.FirstOrDefault()?.Top ?? 0);
-                            //var textViewLine = textViewLines.GetTextViewLineContainingYCoordinate(normalizedMousePosition);
-                            //viewLine = textViewLine as IWpfTextViewLine;
-
-                            //if (viewLine != null)
-                            //{
-                            //    var snapshotLine = viewLine.Start.GetContainingLine();
-                            //    Debug.WriteLine($"Method 1: Found line {snapshotLine.LineNumber + 1} using Y coordinate {mousePosition.Y:F1}");
-                            //    Debug.WriteLine($"Line bounds: Top={viewLine.Top:F1}, Bottom={viewLine.Bottom:F1}, TextTop={viewLine.TextTop:F1}, TextBottom={viewLine.TextBottom:F1}");
-
-                            //    // ハイライト表示して確認
-                            //    HighlightLine(snapshotLine, "Found by mouse Y coordinate");
-
-                            //    return snapshotLine;
-                            //}
-                            //else
-                            //{
-                            //    Debug.WriteLine($"Method 1: GetTextViewLineContainingYCoordinate returned null for Y={mousePosition.Y:F1}");
-                            //}
                         }
                         else
                         {
@@ -709,35 +562,7 @@ namespace boilersExtensions.TextEditor.Extensions
                     Debug.WriteLine($"Error getting caret line: {ex.Message}");
                 }
 
-                //// 方法5: クリックした点に最も近い可視行を見つける
-                //try
-                //{
-                //    var visibleLines = _textView.TextViewLines.Where(l => l.IsVisible()).ToList();
-                //    if (visibleLines.Count > 0)
-                //    {
-                //        // Y座標に基づいて最も近い行を見つける
-                //        var closestLine = visibleLines
-                //            .OrderBy(l => Math.Abs(l.TextTop + l.TextHeight / 2 - mousePosition.Y))
-                //            .FirstOrDefault();
-
-                //        if (closestLine != null)
-                //        {
-                //            var snapshotLine = closestLine.Start.GetContainingLine();
-                //            Debug.WriteLine($"Method 5: Found closest visible line {snapshotLine.LineNumber + 1} (distance: {Math.Abs(closestLine.TextTop + closestLine.TextHeight / 2 - mousePosition.Y):F1}px)");
-
-                //            // 見つかった行をハイライト
-                //            HighlightLine(snapshotLine, "Found by closest visible line");
-
-                //            return snapshotLine;
-                //        }
-                //    }
-                //}
-                //catch (Exception ex)
-                //{
-                //    Debug.WriteLine($"Error finding closest visible line: {ex.Message}");
-                //}
-
-                // 方法6: テキストビューの最上部や一番近い表示行を使用
+                // 方法5: テキストビューの最上部や一番近い表示行を使用
                 try
                 {
                     if (textViewLines != null && textViewLines.Count > 0)
@@ -857,36 +682,6 @@ namespace boilersExtensions.TextEditor.Extensions
             {
                 Debug.WriteLine($"Error highlighting line: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// 最も近いリージョンディレクティブを探す
-        /// </summary>
-        private ITextSnapshotLine FindClosestRegionDirective(ITextSnapshotLine currentLine)
-        {
-            var snapshot = _textView.TextSnapshot;
-            var currentLineNumber = currentLine.LineNumber;
-            ITextSnapshotLine closestLine = null;
-            var minDistance = int.MaxValue;
-
-            // 現在の行から上下に検索
-            for (var i = 0; i < snapshot.LineCount; i++)
-            {
-                var line = snapshot.GetLineFromLineNumber(i);
-                var lineText = line.GetText();
-
-                if (IsRegionDirective(lineText))
-                {
-                    var distance = Math.Abs(i - currentLineNumber);
-                    if (distance < minDistance)
-                    {
-                        minDistance = distance;
-                        closestLine = line;
-                    }
-                }
-            }
-
-            return closestLine;
         }
 
         /// <summary>
@@ -1134,58 +929,6 @@ namespace boilersExtensions.TextEditor.Extensions
 
             Debug.WriteLine("No matching #region found");
             return null;
-        }
-
-        /// <summary>
-        /// 指定された行にカーソルを移動
-        /// </summary>
-        private void MoveCaretToLine(int lineNumber)
-        {
-            try
-            {
-                // UIスレッドで実行
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    var line = _textView.TextSnapshot.GetLineFromLineNumber(lineNumber);
-
-                    // 行の先頭位置を取得
-                    var position = line.Start.Position;
-
-                    // 行頭の空白をスキップした位置を取得
-                    var lineText = line.GetText();
-                    var nonWhitespacePosition = position;
-                    for (var i = 0; i < lineText.Length; i++)
-                    {
-                        if (!char.IsWhiteSpace(lineText[i]))
-                        {
-                            nonWhitespacePosition = position + i;
-                            break;
-                        }
-                    }
-
-                    // カーソルを移動
-                    _textView.Caret.MoveTo(new SnapshotPoint(_textView.TextSnapshot, nonWhitespacePosition));
-
-                    // 選択範囲をクリア
-                    _textView.Selection.Clear();
-
-                    // スクロールして表示
-                    _textView.ViewScroller.EnsureSpanVisible(
-                        new SnapshotSpan(line.Start, line.End),
-                        EnsureSpanVisibleOptions.AlwaysCenter);
-
-                    // 行を自動選択
-                    _textView.Selection.Select(new SnapshotSpan(line.Start, line.End), false);
-                    _lastHighlightedLine = line;
-                    _isSelectingRegion = true;
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MoveCaretToLine error: {ex.Message}");
-            }
         }
 
         /// <summary>
