@@ -178,7 +178,8 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
                 // Find all references to the parameter within the method
                 var references = await SymbolFinder.FindReferencesAsync(parameterSymbol,
                     document.Project.Solution, cancellationToken);
-                var referenceCount = references.AsValueEnumerable().SelectMany(r => r.Locations.AsValueEnumerable()).Count();
+                var referenceCount = references.AsValueEnumerable().SelectMany(r => r.Locations.AsValueEnumerable())
+                    .Count();
 
                 if (referenceCount == 0)
                 {

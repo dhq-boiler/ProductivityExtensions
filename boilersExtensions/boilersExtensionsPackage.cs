@@ -6,7 +6,6 @@ using boilersExtensions.Commands;
 using boilersExtensions.DialogPages;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using stdole;
 using Task = System.Threading.Tasks.Task;
 
 namespace boilersExtensions

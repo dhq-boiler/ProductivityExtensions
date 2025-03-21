@@ -224,14 +224,18 @@ namespace boilersExtensions.TextEditor.Adornments
                         var semanticModel = compilation.GetSemanticModel(tree);
 
                         // 通常のメソッド定義を取得
-                        var methodDeclarations = root.DescendantNodes().AsValueEnumerable().OfType<MethodDeclarationSyntax>().ToList();
+                        var methodDeclarations = root.DescendantNodes().AsValueEnumerable()
+                            .OfType<MethodDeclarationSyntax>().ToList();
 
                         // Top-Level Statements（グローバルステートメント）を取得
-                        var globalStatements = root.DescendantNodes().AsValueEnumerable().OfType<GlobalStatementSyntax>().ToList();
+                        var globalStatements = root.DescendantNodes().AsValueEnumerable()
+                            .OfType<GlobalStatementSyntax>().ToList();
 
                         // グローバルステートメントの中のローカル関数を取得
                         var localFunctions = globalStatements.AsValueEnumerable()
-                            .SelectMany(gs => gs.DescendantNodes().AsValueEnumerable().OfType<LocalFunctionStatementSyntax>()).ToList();
+                            .SelectMany(gs =>
+                                gs.DescendantNodes().AsValueEnumerable().OfType<LocalFunctionStatementSyntax>())
+                            .ToList();
 
                         // 分析結果をキャプチャ
                         var unusedParams = new List<TextSpan>();

@@ -2,8 +2,6 @@
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
-//using System.Linq;
-using ZLinq;
 using System.Threading.Tasks;
 using EnvDTE;
 using LibGit2Sharp;
@@ -11,6 +9,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
 using Microsoft.VisualStudio.TextManager.Interop;
+using ZLinq;
 using Process = System.Diagnostics.Process;
 using Task = System.Threading.Tasks.Task;
 
@@ -44,10 +43,8 @@ namespace boilersExtensions
         /// </summary>
         /// <param name="package">Owner Package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private NavigateGitHubLinesCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private NavigateGitHubLinesCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         /// <summary>
         ///     Gets the instance of the command.
@@ -68,7 +65,7 @@ namespace boilersExtensions
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsNavigateGitHubLinesEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsNavigateGitHubLinesEnabled;
 
                 if (!featureEnabled)
                 {

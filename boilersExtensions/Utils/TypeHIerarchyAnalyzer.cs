@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -78,7 +79,8 @@ namespace boilersExtensions.Utils
 
                     // デバッグ出力
                     Debug.WriteLine($"@usingディレクティブ: {string.Join(", ", usingDirectives)}");
-                    Debug.WriteLine($"@injectディレクティブ: {string.Join(", ", injectDirectives.AsValueEnumerable().Select(x => $"{x.type} {x.name}"))}");
+                    Debug.WriteLine(
+                        $"@injectディレクティブ: {string.Join(", ", injectDirectives.AsValueEnumerable().Select(x => $"{x.type} {x.name}"))}");
 
                     // C#コードブロックを探す簡易パーサーとポジションマッピングを取得
                     var (csharpBlocks, mappedPosition, blockStartPosition) =
@@ -347,12 +349,12 @@ namespace boilersExtensions.Utils
             // 2. 生成コードの行番号とRazorファイルの行番号のマッピングを作成
             foreach (var block in codeBlocks)
             {
-                int razorLineStart = block.RazorLineNumber;
-                int generatedLineStart = block.GeneratedLineStart;
-                int blockLineCount = block.LineCount;
+                var razorLineStart = block.RazorLineNumber;
+                var generatedLineStart = block.GeneratedLineStart;
+                var blockLineCount = block.LineCount;
 
                 // 各行に対してマッピングを作成
-                for (int i = 0; i < blockLineCount; i++)
+                for (var i = 0; i < blockLineCount; i++)
                 {
                     if (generatedLineStart + i < generatedCodeLines.Length)
                     {
@@ -387,22 +389,22 @@ namespace boilersExtensions.Utils
             // ただし文字位置ではなく行番号を使用
 
             // @{ ... } パターンの検出
-            for (int lineNumber = 0; lineNumber < razorLines.Length; lineNumber++)
+            for (var lineNumber = 0; lineNumber < razorLines.Length; lineNumber++)
             {
-                string line = razorLines[lineNumber];
+                var line = razorLines[lineNumber];
 
                 if (line.Contains("@{"))
                 {
                     // ブロックの開始行を見つけた
-                    int startLine = lineNumber;
-                    int braceCount = 1;
-                    int endLine = startLine;
+                    var startLine = lineNumber;
+                    var braceCount = 1;
+                    var endLine = startLine;
 
                     // 閉じ括弧を探す
                     while (braceCount > 0 && endLine < razorLines.Length - 1)
                     {
                         endLine++;
-                        string currentLine = razorLines[endLine];
+                        var currentLine = razorLines[endLine];
 
                         braceCount += CountOccurrences(currentLine, '{');
                         braceCount -= CountOccurrences(currentLine, '}');
@@ -430,20 +432,20 @@ namespace boilersExtensions.Utils
         private static int FindGeneratedLineStart(string[] razorLines, int startLine, int endLine)
         {
             // Razorブロックの内容を取得
-            StringBuilder blockContent = new StringBuilder();
-            for (int i = startLine; i <= endLine; i++)
+            var blockContent = new StringBuilder();
+            for (var i = startLine; i <= endLine; i++)
             {
                 blockContent.AppendLine(razorLines[i].Trim());
             }
 
-            string contentSignature = blockContent.ToString().Trim();
+            var contentSignature = blockContent.ToString().Trim();
 
             // 特徴的な部分を抽出（先頭の数行または特徴的なパターン）
             string signature;
             if (contentSignature.Length > 100)
             {
                 // 長いブロックの場合は先頭の特徴的な部分を使用
-                int signatureLength = Math.Min(contentSignature.Length, 100);
+                var signatureLength = Math.Min(contentSignature.Length, 100);
                 signature = contentSignature.Substring(0, signatureLength)
                     .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
                     .AsValueEnumerable()
@@ -477,13 +479,6 @@ namespace boilersExtensions.Utils
         {
             return text
                 .AsValueEnumerable().Count(c => c == character);
-        }
-
-        private class CodeBlockInfo
-        {
-            public int RazorLineNumber { get; set; }    // Razorファイルでの行番号
-            public int GeneratedLineStart { get; set; } // 生成コードでの開始行
-            public int LineCount { get; set; }          // ブロックの行数
         }
 
         /// <summary>
@@ -799,7 +794,7 @@ namespace boilersExtensions.Utils
 
                 // 基本的な.NET参照を追加
                 references.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
-                references.Add(MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location));
+                references.Add(MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location));
                 references.Add(MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location));
                 references.Add(MetadataReference.CreateFromFile(typeof(DisplayAttribute).Assembly.Location));
 
@@ -1156,7 +1151,8 @@ namespace boilersExtensions.Utils
                                 .AsValueEnumerable()
                                 .FirstOrDefault(p => p.Documents
                                     .AsValueEnumerable().Any(d =>
-                                    string.Equals(d.FilePath, activeDocumentPath, StringComparison.OrdinalIgnoreCase)));
+                                        string.Equals(d.FilePath, activeDocumentPath,
+                                            StringComparison.OrdinalIgnoreCase)));
 
                             if (project != null)
                             {
@@ -1773,11 +1769,11 @@ namespace boilersExtensions.Utils
                         // 型パラメータを元の型から取得
                         var typeArgs = string.Join(", ", originalNamedType.TypeArguments
                             .AsValueEnumerable().Select(arg =>
-                            showUseSpecialTypes
-                                ? arg.ToDisplayString(new SymbolDisplayFormat(
-                                    miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
-                                : arg.ToDisplayString()
-                        ));
+                                showUseSpecialTypes
+                                    ? arg.ToDisplayString(new SymbolDisplayFormat(
+                                        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
+                                    : arg.ToDisplayString()
+                            ));
 
                         // 最終的な表示名を作成 (例: IReadOnlyCollection<string>)
                         displayName = $"{baseName}<{typeArgs}>";
@@ -1969,7 +1965,7 @@ namespace boilersExtensions.Utils
                 // アセンブリ内のすべての型をチェック
                 foreach (var assembly in compilation.References
                              .AsValueEnumerable().Select(r =>
-                             compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
+                                 compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
                 {
                     if (assembly == null)
                     {
@@ -2022,10 +2018,10 @@ namespace boilersExtensions.Utils
 
                         var matchingTypes = allTypes
                             .AsValueEnumerable().Where(t =>
-                            t.Name == targetName &&
-                            t.TypeKind == TypeKind.Interface &&
-                            !candidates
-                                .AsValueEnumerable().Any(c => c.FullName == t.ToDisplayString()));
+                                t.Name == targetName &&
+                                t.TypeKind == TypeKind.Interface &&
+                                !candidates
+                                    .AsValueEnumerable().Any(c => c.FullName == t.ToDisplayString()));
 
                         foreach (var type in matchingTypes.ToList())
                         {
@@ -2088,7 +2084,7 @@ namespace boilersExtensions.Utils
             // Search for types with similar names in all referenced assemblies
             foreach (var assembly in compilation.References
                          .AsValueEnumerable().Select(r =>
-                         compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
+                             compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
             {
                 if (assembly != null)
                 {
@@ -2163,6 +2159,13 @@ namespace boilersExtensions.Utils
                     SearchForSimilarInterfaces(subNamespace, pattern, candidates, originalType, showUseSpecialTypes);
                 }
             }
+        }
+
+        private class CodeBlockInfo
+        {
+            public int RazorLineNumber { get; set; } // Razorファイルでの行番号
+            public int GeneratedLineStart { get; set; } // 生成コードでの開始行
+            public int LineCount { get; set; } // ブロックの行数
         }
 
         /// <summary>

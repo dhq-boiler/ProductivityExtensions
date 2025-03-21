@@ -91,7 +91,7 @@ namespace boilersExtensions.Utils
         public ReactiveCommand<PotentialIssue> NavigateToIssueCommand { get; }
         public ReactiveCommand<TypeReferenceInfo> ToggleBookmarkCommand { get; }
 
-        public ReactivePropertySlim<bool> IsRazorFile { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactivePropertySlim<bool> IsRazorFile { get; } = new ReactivePropertySlim<bool>();
 
         // 影響分析の基本情報
         public string OriginalTypeName { get; set; }
@@ -161,7 +161,9 @@ namespace boilersExtensions.Utils
         private int GetRazorLineNumber(int generatedCodeLine)
         {
             if (Mapping == null || ExtractedCSharpCode == null || string.IsNullOrEmpty(RazorFilePath))
+            {
                 return 0;
+            }
 
             // マッピングから行番号を取得
             if (Mapping.TryGetValue(generatedCodeLine, out var position))
@@ -177,13 +179,17 @@ namespace boilersExtensions.Utils
         private int GetLineNumberFromPosition(string text, int position)
         {
             if (string.IsNullOrEmpty(text) || position < 0 || position >= text.Length)
+            {
                 return 0;
+            }
 
-            int line = 1;
-            for (int i = 0; i < position; i++)
+            var line = 1;
+            for (var i = 0; i < position; i++)
             {
                 if (text[i] == '\n')
+                {
                     line++;
+                }
             }
 
             return line;
@@ -207,7 +213,7 @@ namespace boilersExtensions.Utils
                     }
 
                     // Verify if this is a Razor file
-                    bool isRazorFile = IsRazorFile.Value;
+                    var isRazorFile = IsRazorFile.Value;
 
                     // ファイルを開く
                     var window = dte.ItemOperations.OpenFile(reference.FilePath);
@@ -218,7 +224,7 @@ namespace boilersExtensions.Utils
                         if (textDoc != null)
                         {
                             // 指定した行にカーソルを移動 (ファイル種類に応じて行番号を選択)
-                            int targetLine = isRazorFile && reference.RazorLineNumber > 0
+                            var targetLine = isRazorFile && reference.RazorLineNumber > 0
                                 ? reference.RazorLineNumber
                                 : reference.LineNumber;
 
@@ -267,7 +273,7 @@ namespace boilersExtensions.Utils
                     }
 
                     // Verify if this is a Razor file
-                    bool isRazorFile = IsRazorFile.Value;
+                    var isRazorFile = IsRazorFile.Value;
 
                     // ファイルを開く
                     var window = dte.ItemOperations.OpenFile(issue.FilePath);
@@ -278,7 +284,7 @@ namespace boilersExtensions.Utils
                         if (textDoc != null)
                         {
                             // 指定した行にカーソルを移動 (ファイル種類に応じて行番号を選択)
-                            int targetLine = isRazorFile && issue.RazorLineNumber > 0
+                            var targetLine = isRazorFile && issue.RazorLineNumber > 0
                                 ? issue.RazorLineNumber
                                 : issue.LineNumber;
 
@@ -344,7 +350,9 @@ namespace boilersExtensions.Utils
         {
             // マッピング情報がなければ何もしない
             if (Mapping == null || string.IsNullOrEmpty(ExtractedCSharpCode) || string.IsNullOrEmpty(RazorFilePath))
+            {
                 return;
+            }
 
             // Razorファイルの内容を読み込む（行番号の計算に使用）
             if (string.IsNullOrEmpty(_razorContent) && File.Exists(RazorFilePath))
@@ -368,7 +376,7 @@ namespace boilersExtensions.Utils
                     reference.FileName = Path.GetFileName(reference.FilePath);
 
                     // 2. 生成コードの行番号からRazor行番号を計算（改善されたマッピングを使用）
-                    int razorLine = RazorMappingHelper.MapToRazorLine(
+                    var razorLine = RazorMappingHelper.MapToRazorLine(
                         Mapping, ExtractedCSharpCode, reference.LineNumber);
 
                     // 3. ファイル内容を使用した代替方法を試みる
@@ -395,10 +403,11 @@ namespace boilersExtensions.Utils
                     issue.FilePath = ResolveAccurateFilePath(issue.FilePath);
                     issue.FileName = Path.GetFileName(issue.FilePath);
 
-                    int razorLine = RazorMappingHelper.MapToRazorLine(
+                    var razorLine = RazorMappingHelper.MapToRazorLine(
                         Mapping, ExtractedCSharpCode, issue.LineNumber);
 
-                    if (razorLine <= 0 && !string.IsNullOrEmpty(_razorContent) && !string.IsNullOrEmpty(issue.CodeSnippet))
+                    if (razorLine <= 0 && !string.IsNullOrEmpty(_razorContent) &&
+                        !string.IsNullOrEmpty(issue.CodeSnippet))
                     {
                         razorLine = TryFindLineByContent(_razorContent, issue.CodeSnippet.Trim());
                     }
@@ -423,18 +432,20 @@ namespace boilersExtensions.Utils
         private string ResolveAccurateFilePath(string originalPath)
         {
             if (string.IsNullOrEmpty(originalPath))
+            {
                 return string.Empty;
+            }
 
-            string resolvedPath = RazorFileUtility.GetOriginalFilePath(originalPath);
+            var resolvedPath = RazorFileUtility.GetOriginalFilePath(originalPath);
 
             // パスが実際に存在するか確認
             if (!File.Exists(resolvedPath) && !string.IsNullOrEmpty(RazorFilePath))
             {
                 // RazorFilePathを基準にして相対パスを解決してみる
-                string directory = Path.GetDirectoryName(RazorFilePath);
-                string fileName = Path.GetFileName(resolvedPath);
+                var directory = Path.GetDirectoryName(RazorFilePath);
+                var fileName = Path.GetFileName(resolvedPath);
 
-                string candidatePath = Path.Combine(directory, fileName);
+                var candidatePath = Path.Combine(directory, fileName);
                 if (File.Exists(candidatePath))
                 {
                     return candidatePath;
@@ -448,16 +459,20 @@ namespace boilersExtensions.Utils
         private int TryFindLineByContent(string fileContent, string lineContent)
         {
             if (string.IsNullOrEmpty(fileContent) || string.IsNullOrEmpty(lineContent))
+            {
                 return 0;
+            }
 
             // 特徴的な内容を抽出（短すぎる場合は無視）
             if (lineContent.Length < 10)
+            {
                 return 0;
+            }
 
-            string[] contentLines = fileContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
+            var contentLines = fileContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
 
             // 各行をチェック
-            for (int i = 0; i < contentLines.Length; i++)
+            for (var i = 0; i < contentLines.Length; i++)
             {
                 if (contentLines[i].Contains(lineContent))
                 {

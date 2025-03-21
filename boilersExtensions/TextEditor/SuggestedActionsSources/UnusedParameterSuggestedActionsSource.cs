@@ -191,7 +191,8 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
                 var references =
                     await SymbolFinder.FindReferencesAsync(parameterSymbol, document.Project.Solution,
                         cancellationToken);
-                var referenceCount = references.AsValueEnumerable().SelectMany(r => r.Locations.AsValueEnumerable()).Count();
+                var referenceCount = references.AsValueEnumerable().SelectMany(r => r.Locations.AsValueEnumerable())
+                    .Count();
 
                 // If parameter has references, don't create an extent
                 if (referenceCount > 0)

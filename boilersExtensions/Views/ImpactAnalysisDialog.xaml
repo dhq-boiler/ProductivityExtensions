@@ -14,7 +14,6 @@
     mc:Ignorable="d">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <converters:InverseBooleanToStringConverter x:Key="InverseBooleanToStringConverter" />
         <Style TargetType="Button">
             <Setter Property="Margin" Value="5" />
@@ -128,7 +127,8 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                             <DataGridTextColumn.Visibility>
-                                <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                <Binding Path="DataContext.IsRazorFile.Value"
+                                         RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
                                     <Binding.Converter>
                                         <BooleanToVisibilityConverter />
                                     </Binding.Converter>
@@ -163,7 +163,8 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                             <DataGridTextColumn.Visibility>
-                                <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                <Binding Path="DataContext.IsRazorFile.Value"
+                                         RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
                                     <Binding.Converter>
                                         <BooleanToVisibilityConverter />
                                     </Binding.Converter>
@@ -195,7 +196,8 @@
                 </DataGrid>
             </TabItem>
 
-            <TabItem Header="潜在的な問題（従来表示）" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TabItem Header="潜在的な問題（従来表示）"
+                     Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ListView
                     Background="#222222"
                     Foreground="White"
@@ -230,14 +232,18 @@
                                             <ContentControl.Style>
                                                 <Style TargetType="ContentControl">
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding DataContext.IsRazorFile.Value, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
+                                                        <DataTrigger
+                                                            Binding="{Binding DataContext.IsRazorFile.Value, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                            Value="True">
                                                             <Setter Property="Content">
                                                                 <Setter.Value>
                                                                     <TextBlock Text="{Binding RazorLineNumber}" />
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </DataTrigger>
-                                                        <DataTrigger Binding="{Binding DataContext.IsRazorFile.Value, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False">
+                                                        <DataTrigger
+                                                            Binding="{Binding DataContext.IsRazorFile.Value, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                            Value="False">
                                                             <Setter Property="Content">
                                                                 <Setter.Value>
                                                                     <TextBlock Text="{Binding LineNumber}" />
@@ -293,12 +299,14 @@
             </TabItem>
 
             <!--  グループ化された潜在的な問題のタブ  -->
-            <TabItem Header="潜在的な問題（整理済み）" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TabItem Header="潜在的な問題（整理済み）"
+                     Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ScrollViewer Background="#222222">
                     <ItemsControl ItemsSource="{Binding GroupedIssues}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}" Style="{StaticResource IssueExpanderStyle}">
+                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}"
+                                          Style="{StaticResource IssueExpanderStyle}">
                                     <Expander.Header>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -438,7 +446,8 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                         <DataGridTextColumn.Visibility>
-                                                            <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                                            <Binding Path="DataContext.IsRazorFile.Value"
+                                                                     RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
                                                                 <Binding.Converter>
                                                                     <BooleanToVisibilityConverter />
                                                                 </Binding.Converter>
@@ -469,7 +478,8 @@
                                                                 <Setter Property="HorizontalAlignment" Value="Center" />
                                                                 <!--  Razorの行が0の場合は表示を調整  -->
                                                                 <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding RazorLineNumber}" Value="0">
+                                                                    <DataTrigger Binding="{Binding RazorLineNumber}"
+                                                                        Value="0">
                                                                         <Setter Property="Text" Value="-" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>

@@ -35,10 +35,8 @@ namespace boilersExtensions.Commands
 
         private static OleMenuCommand menuItem;
 
-        private BatchUpdateGuidCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private BatchUpdateGuidCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         /// <summary>
         ///     Gets the instance of the command.
@@ -118,7 +116,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsBatchUpdateGuidEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsBatchUpdateGuidEnabled;
 
                 if (!featureEnabled)
                 {

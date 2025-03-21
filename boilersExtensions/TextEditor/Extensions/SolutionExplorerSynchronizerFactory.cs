@@ -3,7 +3,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using boilersExtensions.DialogPages;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
@@ -12,7 +11,7 @@ using Microsoft.VisualStudio.Utilities;
 namespace boilersExtensions.TextEditor.Extensions
 {
     /// <summary>
-    /// ファイルを開いた時にソリューションエクスプローラーで対応するファイルを選択・ハイライトする拡張機能
+    ///     ファイルを開いた時にソリューションエクスプローラーで対応するファイルを選択・ハイライトする拡張機能
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType("text")]
@@ -20,7 +19,7 @@ namespace boilersExtensions.TextEditor.Extensions
     internal sealed class SolutionExplorerSynchronizerFactory : IWpfTextViewCreationListener
     {
         /// <summary>
-        /// テキストビュー作成時の処理
+        ///     テキストビュー作成時の処理
         /// </summary>
         public void TextViewCreated(IWpfTextView textView)
         {
@@ -42,20 +41,20 @@ namespace boilersExtensions.TextEditor.Extensions
     }
 
     /// <summary>
-    /// ソリューションエクスプローラー同期機能
+    ///     ソリューションエクスプローラー同期機能
     /// </summary>
     internal sealed class SolutionExplorerSynchronizer : IDisposable
     {
-        private readonly IWpfTextView _textView;
-        private bool _isDisposed = false;
-        private bool _isSynchronizing = false;
-        private DateTime _lastSync = DateTime.MinValue;
-        private string _lastSyncedFile = string.Empty;
         // 同期間隔の最小値（ミリ秒）- ここを調整して頻度を下げる
         private const int MIN_SYNC_INTERVAL_MS = 2000;
+        private readonly IWpfTextView _textView;
+        private bool _isDisposed;
+        private bool _isSynchronizing;
+        private DateTime _lastSync = DateTime.MinValue;
+        private string _lastSyncedFile = string.Empty;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public SolutionExplorerSynchronizer(IWpfTextView textView)
         {
@@ -66,7 +65,7 @@ namespace boilersExtensions.TextEditor.Extensions
             // イベントハンドラを解除（念のため）
             CleanupEventHandlers();
 
-            var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+            var dte = (DTE)Package.GetGlobalService(typeof(DTE));
             if (dte == null)
             {
                 Debug.WriteLine("DTE service not available");
@@ -74,7 +73,7 @@ namespace boilersExtensions.TextEditor.Extensions
             }
 
             // ActiveDocument の変更を監視（これは残す - ファイルが切り替わったときのみ）
-            dte.Events.DocumentEvents.DocumentOpened += (Document doc) =>
+            dte.Events.DocumentEvents.DocumentOpened += doc =>
             {
                 Debug.WriteLine($"Document opened: {doc.FullName}");
                 SynchronizeWithSolutionExplorer();
@@ -93,8 +92,25 @@ namespace boilersExtensions.TextEditor.Extensions
             Debug.WriteLine("SolutionExplorerSynchronizer event handlers registered");
         }
 
+        // サービスプロバイダー
+        private static IAsyncServiceProvider ServiceProvider =>
+            AsyncPackage.GetGlobalService(typeof(IAsyncServiceProvider)) as IAsyncServiceProvider;
+
         /// <summary>
-        /// イベントハンドラを解除
+        ///     リソースの解放
+        /// </summary>
+        public void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                _isDisposed = true;
+                CleanupEventHandlers();
+                Debug.WriteLine("SolutionExplorerSynchronizer disposed");
+            }
+        }
+
+        /// <summary>
+        ///     イベントハンドラを解除
         /// </summary>
         private void CleanupEventHandlers()
         {
@@ -111,7 +127,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// テキストビューがフォーカスを得たとき - 無効化
+        ///     テキストビューがフォーカスを得たとき - 無効化
         /// </summary>
         private void OnTextViewGotFocus(object sender, EventArgs e)
         {
@@ -130,7 +146,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// テキストバッファが変更されたとき - 無効化
+        ///     テキストバッファが変更されたとき - 無効化
         /// </summary>
         private void OnTextBufferChanged(object sender, EventArgs e)
         {
@@ -149,7 +165,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// ソリューションエクスプローラーとの同期処理
+        ///     ソリューションエクスプローラーとの同期処理
         /// </summary>
         private void SynchronizeWithSolutionExplorer()
         {
@@ -173,7 +189,8 @@ namespace boilersExtensions.TextEditor.Extensions
                 var timeSinceLastSync = (now - _lastSync).TotalMilliseconds;
                 if (timeSinceLastSync < MIN_SYNC_INTERVAL_MS)
                 {
-                    Debug.WriteLine($"Skipping sync - last sync was {timeSinceLastSync}ms ago (minimum: {MIN_SYNC_INTERVAL_MS}ms)");
+                    Debug.WriteLine(
+                        $"Skipping sync - last sync was {timeSinceLastSync}ms ago (minimum: {MIN_SYNC_INTERVAL_MS}ms)");
                     return;
                 }
 
@@ -187,7 +204,7 @@ namespace boilersExtensions.TextEditor.Extensions
                         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                         // DTEサービスを取得
-                        var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                        var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                         if (dte == null)
                         {
                             Debug.WriteLine("DTE service not available");
@@ -200,7 +217,7 @@ namespace boilersExtensions.TextEditor.Extensions
                             return;
                         }
 
-                        string filePath = dte.ActiveDocument.FullName;
+                        var filePath = dte.ActiveDocument.FullName;
 
                         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                         {
@@ -239,7 +256,7 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// ソリューションエクスプローラーでファイルを選択・表示する
+        ///     ソリューションエクスプローラーでファイルを選択・表示する
         /// </summary>
         private async Task SelectFileInSolutionExplorerAsync(DTE dte, string filePath)
         {
@@ -251,15 +268,15 @@ namespace boilersExtensions.TextEditor.Extensions
                 try
                 {
                     // 複数のコマンドを試して、どれかが動作するようにする
-                    string[] commandsToTry = new[]
+                    var commandsToTry = new[]
                     {
-                        "SolutionExplorer.SyncWithActiveDocument",     // VS2019/2022での標準コマンド
-                        "View.TrackDocumentInSolutionExplorer",        // よく使われるコマンド
-                        "View.SynchronizeClassView",                   // 別の関連コマンド
+                        "SolutionExplorer.SyncWithActiveDocument", // VS2019/2022での標準コマンド
+                        "View.TrackDocumentInSolutionExplorer", // よく使われるコマンド
+                        "View.SynchronizeClassView", // 別の関連コマンド
                         "SolutionExplorer.SynchronizeWithActiveDocument" // 別の表記
                     };
 
-                    foreach (string commandName in commandsToTry)
+                    foreach (var commandName in commandsToTry)
                     {
                         try
                         {
@@ -274,7 +291,6 @@ namespace boilersExtensions.TextEditor.Extensions
                         {
                             Debug.WriteLine($"Error executing {commandName}: {specificCmdEx.Message}");
                             // 次のコマンドを試す
-                            continue;
                         }
                     }
 
@@ -294,7 +310,7 @@ namespace boilersExtensions.TextEditor.Extensions
                     Window solutionExplorer = null;
                     try
                     {
-                        solutionExplorer = dte.Windows.Item(EnvDTE.Constants.vsWindowKindSolutionExplorer);
+                        solutionExplorer = dte.Windows.Item(Constants.vsWindowKindSolutionExplorer);
                     }
                     catch (Exception ex)
                     {
@@ -354,7 +370,6 @@ namespace boilersExtensions.TextEditor.Extensions
                                         dte.ExecuteCommand("SolutionExplorer.SyncWithActiveDocument");
                                         Debug.WriteLine("Executed SolutionExplorer.SyncWithActiveDocument command");
                                     }
-                                    return;
                                 }
                                 catch (Exception cmdEx)
                                 {
@@ -381,29 +396,12 @@ namespace boilersExtensions.TextEditor.Extensions
         }
 
         /// <summary>
-        /// テキストビューが閉じられたときのクリーンアップ
+        ///     テキストビューが閉じられたときのクリーンアップ
         /// </summary>
         private void OnTextViewClosed(object sender, EventArgs e)
         {
             Debug.WriteLine("TextViewClosed event triggered - cleaning up");
             Dispose();
         }
-
-        /// <summary>
-        /// リソースの解放
-        /// </summary>
-        public void Dispose()
-        {
-            if (!_isDisposed)
-            {
-                _isDisposed = true;
-                CleanupEventHandlers();
-                Debug.WriteLine("SolutionExplorerSynchronizer disposed");
-            }
-        }
-
-        // サービスプロバイダー
-        private static IAsyncServiceProvider ServiceProvider =>
-            AsyncPackage.GetGlobalService(typeof(IAsyncServiceProvider)) as IAsyncServiceProvider;
     }
 }

@@ -144,7 +144,8 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             }
 
             // 変更された変数が1つだけの場合、その型を返り値として使用
-            var writtenOutside = dataFlowAnalysis.WrittenInside.AsValueEnumerable().Intersect(dataFlowAnalysis.WrittenOutside).ToList();
+            var writtenOutside = dataFlowAnalysis.WrittenInside.AsValueEnumerable()
+                .Intersect(dataFlowAnalysis.WrittenOutside).ToList();
             if (writtenOutside.Count == 1)
             {
                 return writtenOutside[0].GetType().ToString();
@@ -188,14 +189,16 @@ namespace boilersExtensions.TextEditor.SuggestedActions
         private int FindMethodInsertionPoint(SyntaxNode root, SyntaxNode selectedNode)
         {
             // 現在のメソッドの終了位置を見つける
-            var containingMethod = selectedNode.Ancestors().AsValueEnumerable().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+            var containingMethod = selectedNode.Ancestors().AsValueEnumerable().OfType<MethodDeclarationSyntax>()
+                .FirstOrDefault();
             if (containingMethod != null)
             {
                 return containingMethod.Span.End;
             }
 
             // メソッドが見つからない場合はクラスの終了位置の手前に挿入
-            var containingClass = selectedNode.Ancestors().AsValueEnumerable().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            var containingClass = selectedNode.Ancestors().AsValueEnumerable().OfType<ClassDeclarationSyntax>()
+                .FirstOrDefault();
             if (containingClass != null)
             {
                 return containingClass.Span.End - 1;

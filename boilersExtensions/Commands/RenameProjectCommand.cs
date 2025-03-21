@@ -30,10 +30,8 @@ namespace boilersExtensions
         private static OleMenuCommand menuItem;
 
 
-        private RenameProjectCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private RenameProjectCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         /// <summary>
         ///     Gets the instance of the command.
@@ -95,7 +93,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// コマンドの有効/無効状態を更新
+        ///     コマンドの有効/無効状態を更新
         /// </summary>
         private static void BeforeQueryStatus(object sender, EventArgs e)
         {
@@ -104,7 +102,7 @@ namespace boilersExtensions
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsRenameProjectEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsRenameProjectEnabled;
 
                 if (!featureEnabled)
                 {

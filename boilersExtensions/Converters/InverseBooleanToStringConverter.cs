@@ -5,7 +5,7 @@ using System.Windows.Data;
 namespace boilersExtensions.Converters
 {
     /// <summary>
-    /// Booleanの値を反転し、パラメータとして受け取った文字列を使い分けるコンバーター
+    ///     Booleanの値を反転し、パラメータとして受け取った文字列を使い分けるコンバーター
     /// </summary>
     public class InverseBooleanToStringConverter : IValueConverter
     {
@@ -13,16 +13,17 @@ namespace boilersExtensions.Converters
         {
             if (value is bool boolValue)
             {
-                bool invertedValue = !boolValue;
+                var invertedValue = !boolValue;
 
                 // パラメーターがある場合はそれを使用
                 if (parameter != null)
                 {
-                    string[] parts = parameter.ToString().Split(',');
+                    var parts = parameter.ToString().Split(',');
                     if (parts.Length >= 2)
                     {
                         return invertedValue ? parts[0].Trim() : parts[1].Trim();
                     }
+
                     return invertedValue ? parameter.ToString() : "行";
                 }
 

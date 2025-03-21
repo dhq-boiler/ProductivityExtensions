@@ -1,29 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using boilersExtensions.Commands;
+using boilersExtensions.TextEditor.Extensions;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.TextManager.Interop;
-using Microsoft.VisualStudio.ComponentModelHost;
-using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Shell.Interop;
-using System.Collections.Generic;
-using boilersExtensions.TextEditor.Extensions;
-using boilersExtensions.Commands;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Text.Operations;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace boilersExtensions
 {
     /// <summary>
-    /// エディタの拡張機能を手動で初期化するためのクラス
+    ///     エディタの拡張機能を手動で初期化するためのクラス
     /// </summary>
     public static class ManualExtensionInitializer
     {
-        private static bool _initialized = false;
+        private static bool _initialized;
+
         private static readonly Dictionary<IWpfTextView, RegionNavigatorExtension> _extensions =
             new Dictionary<IWpfTextView, RegionNavigatorExtension>();
 
         /// <summary>
-        /// パッケージが読み込まれた際に手動で初期化
+        ///     パッケージが読み込まれた際に手動で初期化
         /// </summary>
         public static void Initialize(AsyncPackage package)
         {
@@ -88,9 +91,9 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// イベントハンドラを登録
+        ///     イベントハンドラを登録
         /// </summary>
-        private static async System.Threading.Tasks.Task RegisterEventHandlers(AsyncPackage package,
+        private static async Task RegisterEventHandlers(AsyncPackage package,
             IVsEditorAdaptersFactoryService editorAdaptersFactoryService,
             ITextStructureNavigatorSelectorService navigatorService)
         {
@@ -105,7 +108,8 @@ namespace boilersExtensions
                     Debug.WriteLine("ManualExtensionInitializer: Registering for window frame events");
 
                     // ドキュメントウィンドウのイベントを監視する
-                    var vsMonitorSelection = await package.GetServiceAsync(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
+                    var vsMonitorSelection =
+                        await package.GetServiceAsync(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
                     if (vsMonitorSelection != null)
                     {
                         uint cookie = 0;
@@ -124,9 +128,9 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// 現在アクティブなテキストビューを初期化
+        ///     現在アクティブなテキストビューを初期化
         /// </summary>
-        private static async System.Threading.Tasks.Task InitializeActiveTextView(AsyncPackage package,
+        private static async Task InitializeActiveTextView(AsyncPackage package,
             IVsEditorAdaptersFactoryService editorAdaptersFactoryService,
             ITextStructureNavigatorSelectorService navigatorService)
         {
@@ -158,9 +162,10 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// テキストビューに拡張機能をアタッチ
+        ///     テキストビューに拡張機能をアタッチ
         /// </summary>
-        public static void AttachToTextView(IWpfTextView textView, ITextStructureNavigatorSelectorService navigatorService)
+        public static void AttachToTextView(IWpfTextView textView,
+            ITextStructureNavigatorSelectorService navigatorService)
         {
             try
             {
@@ -203,7 +208,8 @@ namespace boilersExtensions
                     }
                 };
 
-                Debug.WriteLine($"Successfully attached new RegionNavigatorExtension to TextView (hash: {textView.GetHashCode()})");
+                Debug.WriteLine(
+                    $"Successfully attached new RegionNavigatorExtension to TextView (hash: {textView.GetHashCode()})");
             }
             catch (Exception ex)
             {
@@ -213,7 +219,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// ドキュメント選択イベントを処理するためのクラス
+        ///     ドキュメント選択イベントを処理するためのクラス
         /// </summary>
         private class SelectionEventHandler : IVsSelectionEvents
         {
@@ -228,14 +234,11 @@ namespace boilersExtensions
                 _navigatorService = navigatorService;
             }
 
-            public int OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
-            {
-                return Microsoft.VisualStudio.VSConstants.S_OK;
-            }
+            public int OnCmdUIContextChanged(uint dwCmdUICookie, int fActive) => VSConstants.S_OK;
 
             public int OnElementValueChanged(uint elementid, object varValueOld, object varValueNew)
             {
-                if (elementid == (uint)Microsoft.VisualStudio.VSConstants.VSSELELEMID.SEID_DocumentFrame)
+                if (elementid == (uint)VSConstants.VSSELELEMID.SEID_DocumentFrame)
                 {
                     ThreadHelper.JoinableTaskFactory.Run(async () =>
                     {
@@ -246,7 +249,7 @@ namespace boilersExtensions
                             if (varValueNew is IVsWindowFrame frame)
                             {
                                 // ドキュメントのテキストビューを取得
-                                frame.GetProperty((int)__VSFPROPID.VSFPROPID_DocView, out object docView);
+                                frame.GetProperty((int)__VSFPROPID.VSFPROPID_DocView, out var docView);
 
                                 if (docView is IVsTextView vsTextView)
                                 {
@@ -264,15 +267,14 @@ namespace boilersExtensions
                         }
                     });
                 }
-                return Microsoft.VisualStudio.VSConstants.S_OK;
+
+                return VSConstants.S_OK;
             }
 
             public int OnSelectionChanged(IVsHierarchy pHierOld, uint itemidOld, IVsMultiItemSelect pMISOld,
                 ISelectionContainer pSCOld, IVsHierarchy pHierNew, uint itemidNew, IVsMultiItemSelect pMISNew,
-                ISelectionContainer pSCNew)
-            {
-                return Microsoft.VisualStudio.VSConstants.S_OK;
-            }
+                ISelectionContainer pSCNew) =>
+                VSConstants.S_OK;
         }
     }
 }

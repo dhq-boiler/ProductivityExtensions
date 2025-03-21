@@ -337,12 +337,12 @@ namespace boilersExtensions.ViewModels
                         // GuidInfoリストを作成
                         GuidList = _guidPositions.Values
                             .AsValueEnumerable().Select(pos =>
-                            new GuidInfo(
-                                pos.Guid,
-                                null,
-                                true,
-                                pos.Occurrences
-                            )).ToList();
+                                new GuidInfo(
+                                    pos.Guid,
+                                    null,
+                                    true,
+                                    pos.Occurrences
+                                )).ToList();
                     });
                 });
 
