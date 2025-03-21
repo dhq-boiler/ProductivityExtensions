@@ -14,11 +14,11 @@ internal sealed class BoilersExtensionsSettingsCommand
 {
     public const int CommandId = 0x0100;
     public static readonly Guid CommandSet = new Guid("0A3B7D5F-6D61-4B5E-9A4F-6D0E6F8B3F1C");
-    private readonly AsyncPackage package;
+    public AsyncPackage Package { get; }
 
     private BoilersExtensionsSettingsCommand(AsyncPackage package, OleMenuCommandService commandService)
     {
-        this.package = package ?? throw new ArgumentNullException(nameof(package));
+        this.Package = package ?? throw new ArgumentNullException(nameof(package));
         commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
         var menuCommandID = new CommandID(CommandSet, CommandId);
@@ -42,7 +42,7 @@ internal sealed class BoilersExtensionsSettingsCommand
 
         try
         {
-            package.ShowOptionPage(typeof(BoilersExtensionsOptionPage));
+            Package.ShowOptionPage(typeof(BoilersExtensionsOptionPage));
         }
         catch (Exception ex)
         {

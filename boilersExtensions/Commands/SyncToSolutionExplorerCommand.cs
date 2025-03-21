@@ -23,8 +23,9 @@ namespace boilersExtensions.Commands
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        private SyncToSolutionExplorerCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        private SyncToSolutionExplorerCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
+            base.BeforeQueryStatus += BeforeQueryStatus;
         }
 
         public static SyncToSolutionExplorerCommand Instance { get; private set; }
@@ -55,6 +56,13 @@ namespace boilersExtensions.Commands
 
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled)
+                {
+                    Debug.WriteLine("SyncToSolutionExplorer feature is disabled in settings");
+                    return;
+                }
+
                 Debug.WriteLine("SyncToSolutionExplorerCommand Execute called");
 
                 // DTEオブジェクトを取得
@@ -230,15 +238,31 @@ namespace boilersExtensions.Commands
             }
         }
 
+        
+
         /// <summary>
         /// コマンドの有効/無効状態を更新
         /// </summary>
-        private static void BeforeQueryStatus(object sender, EventArgs e)
+        private static new void BeforeQueryStatus(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             if (sender is OleMenuCommand command)
             {
+                // 設定で無効化されているかチェック
+                bool featureEnabled = BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
+                // 機能が有効な場合は通常の条件で表示/非表示を決定
+                command.Visible = true;
+
                 // DTEオブジェクトを取得
                 var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
 

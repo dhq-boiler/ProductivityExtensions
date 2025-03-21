@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
+﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 
 namespace boilersExtensions.DialogPages
@@ -14,40 +9,84 @@ namespace boilersExtensions.DialogPages
     public class BoilersExtensionsOptionPage : DialogPage
     {
         private bool _enableTypeHierarchy = true;
-        private bool _enableRegionNavigation = true;
-        private bool _enableSolutionExplorerSync = true;
+        private bool _enableRegionNavigator = true;
+        private bool _enableSyncToSolutionExplorer = true;
+        private bool _enableNavigateGitHubLines = true;
+        private bool _enableRenameProject = true;
+        private bool _enableRenameSolution = true;
+        private bool _enableUpdateGuid = true;
+        private bool _enableBatchUpdateGuid = true;
 
-        [Category("一般設定")]
-        [DisplayName("型階層選択を有効化")]
-        [Description("型階層選択機能を有効または無効にします。")]
+        [Category("機能の有効/無効")]
+        [DisplayName("型階層を有効にする")]
+        [Description("Ctrl+クリックで型階層から型を選択できる機能を有効にします。")]
         public bool EnableTypeHierarchy
         {
-            get => _enableTypeHierarchy;
-            set => _enableTypeHierarchy = value;
+            get { return _enableTypeHierarchy; }
+            set { _enableTypeHierarchy = value; }
         }
 
-        [Category("一般設定")]
-        [DisplayName("リージョンナビゲーションを有効化")]
-        [Description("リージョン間の移動機能を有効または無効にします。")]
-        public bool EnableRegionNavigation
+        [Category("機能の有効/無効")]
+        [DisplayName("リージョンナビゲータを有効にする")]
+        [Description("Ctrl+F2でリージョン間を移動できる機能を有効にします。")]
+        public bool EnableRegionNavigator
         {
-            get => _enableRegionNavigation;
-            set => _enableRegionNavigation = value;
+            get { return _enableRegionNavigator; }
+            set { _enableRegionNavigator = value; }
         }
 
-        [Category("一般設定")]
-        [DisplayName("ソリューションエクスプローラー同期を有効化")]
-        [Description("ソリューションエクスプローラーとの同期機能を有効または無効にします。")]
-        public bool EnableSolutionExplorerSync
+        [Category("機能の有効/無効")]
+        [DisplayName("ソリューションエクスプローラー同期を有効にする")]
+        [Description("現在のファイルをソリューションエクスプローラーで表示する機能を有効にします。")]
+        public bool EnableSyncToSolutionExplorer
         {
-            get => _enableSolutionExplorerSync;
-            set => _enableSolutionExplorerSync = value;
+            get { return _enableSyncToSolutionExplorer; }
+            set { _enableSyncToSolutionExplorer = value; }
         }
 
-        protected override void OnApply(PageApplyEventArgs e)
+        [Category("機能の有効/無効")]
+        [DisplayName("GitHubリンクナビゲーションを有効にする")]
+        [Description("GitHubホスティングリポジトリの該当行を開く機能を有効にします。")]
+        public bool EnableNavigateGitHubLines
         {
-            // 設定が変更された際の追加処理（必要に応じて）
-            base.OnApply(e);
+            get { return _enableNavigateGitHubLines; }
+            set { _enableNavigateGitHubLines = value; }
+        }
+
+        [Category("機能の有効/無効")]
+        [DisplayName("プロジェクトリネームを有効にする")]
+        [Description("プロジェクトをリネームする機能を有効にします。")]
+        public bool EnableRenameProject
+        {
+            get { return _enableRenameProject; }
+            set { _enableRenameProject = value; }
+        }
+
+        [Category("機能の有効/無効")]
+        [DisplayName("ソリューションリネームを有効にする")]
+        [Description("ソリューションをリネームする機能を有効にします。")]
+        public bool EnableRenameSolution
+        {
+            get { return _enableRenameSolution; }
+            set { _enableRenameSolution = value; }
+        }
+
+        [Category("機能の有効/無効")]
+        [DisplayName("GUID更新を有効にする")]
+        [Description("選択したGUID文字列を更新する機能を有効にします。")]
+        public bool EnableUpdateGuid
+        {
+            get { return _enableUpdateGuid; }
+            set { _enableUpdateGuid = value; }
+        }
+
+        [Category("機能の有効/無効")]
+        [DisplayName("GUID一括更新を有効にする")]
+        [Description("GUIDを一括更新する機能を有効にします。")]
+        public bool EnableBatchUpdateGuid
+        {
+            get { return _enableBatchUpdateGuid; }
+            set { _enableBatchUpdateGuid = value; }
         }
     }
 }

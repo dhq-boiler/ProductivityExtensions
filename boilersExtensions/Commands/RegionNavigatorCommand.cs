@@ -28,8 +28,9 @@ namespace boilersExtensions.Commands
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        private RegionNavigatorCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        private RegionNavigatorCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
+            base.BeforeQueryStatus += BeforeQueryStatus;
         }
 
         public static RegionNavigatorCommand Instance { get; private set; }
@@ -68,6 +69,13 @@ namespace boilersExtensions.Commands
 
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!BoilersExtensionsSettings.IsRegionNavigatorEnabled)
+                {
+                    Debug.WriteLine("RegionNavigator feature is disabled in settings");
+                    return;
+                }
+
                 Debug.WriteLine("RegionNavigatorCommand Execute called");
 
                 // 現在のテキストビューを取得
@@ -328,6 +336,20 @@ namespace boilersExtensions.Commands
 
             if (sender is OleMenuCommand command)
             {
+                // 設定で無効化されているかチェック
+                bool featureEnabled = BoilersExtensionsSettings.IsRegionNavigatorEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
+                // 機能が有効な場合は通常の条件で表示/非表示を決定
+                command.Visible = true;
+
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 

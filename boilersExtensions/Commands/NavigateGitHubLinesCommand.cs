@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,10 +41,11 @@ namespace boilersExtensions
         ///     Initializes a new instance of the <see cref="NavigateGitHubLinesCommand" /> class.
         ///     Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
-        /// <param name="package">Owner package, not null.</param>
+        /// <param name="package">Owner Package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private NavigateGitHubLinesCommand() : base(Execute, OnBeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        private NavigateGitHubLinesCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
+            base.BeforeQueryStatus += BeforeQueryStatus;
         }
 
         /// <summary>
@@ -56,14 +58,28 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        ///     Gets the service provider from the owner package.
+        ///     Gets the service provider from the owner Package.
         /// </summary>
         private static IAsyncServiceProvider ServiceProvider => package;
 
-        private static async void OnBeforeQueryStatus(object sender, EventArgs e)
+        private static async void BeforeQueryStatus(object sender, EventArgs e)
         {
             if (sender is OleMenuCommand command)
             {
+                // 設定で無効化されているかチェック
+                bool featureEnabled = BoilersExtensionsSettings.IsNavigateGitHubLinesEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
+                // 機能が有効な場合は通常の条件で表示/非表示を決定
+                command.Visible = true;
+
                 command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
             }
         }
@@ -71,7 +87,7 @@ namespace boilersExtensions
         /// <summary>
         ///     Initializes the singleton instance of the command.
         /// </summary>
-        /// <param name="package">Owner package, not null.</param>
+        /// <param name="package">Owner Package, not null.</param>
         public static async Task InitializeAsync(AsyncPackage package)
         {
             NavigateGitHubLinesCommand.package = package;
@@ -95,12 +111,20 @@ namespace boilersExtensions
         private static void Execute(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+
+            // 設定が無効な場合は何もしない
+            if (!BoilersExtensionsSettings.IsNavigateGitHubLinesEnabled)
+            {
+                Debug.WriteLine("NavigateGitHubLines feature is disabled in settings");
+                return;
+            }
+
             //string message = string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.GetType().FullName);
             //string title = "NavigateGitHubLinesCommand";
 
             //// Show a message box to prove we were here
             //VsShellUtilities.ShowMessageBox(
-            //    this.package,
+            //    this.Package,
             //    message,
             //    title,
             //    OLEMSGICON.OLEMSGICON_INFO,

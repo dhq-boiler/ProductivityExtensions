@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using boilersExtensions.ViewModels;
@@ -31,6 +32,7 @@ namespace boilersExtensions.Commands
 
         private RenameSolutionCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
+            base.BeforeQueryStatus += BeforeQueryStatus;
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        ///     Gets the service provider from the owner package.
+        ///     Gets the service provider from the owner Package.
         /// </summary>
         private static IAsyncServiceProvider ServiceProvider => package;
 
@@ -62,6 +64,13 @@ namespace boilersExtensions.Commands
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
+            // 設定が無効な場合は何もしない
+            if (!BoilersExtensionsSettings.IsRenameSolutionEnabled)
+            {
+                Debug.WriteLine("RenameSolution feature is disabled in settings");
+                return;
+            }
+
             // DTE オブジェクトの取得
             var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
@@ -79,6 +88,31 @@ namespace boilersExtensions.Commands
             };
             (window.DataContext as RenameSolutionDialogViewModel).OnDialogOpened(window);
             window.ShowDialog();
+        }
+
+        /// <summary>
+        /// コマンドの有効/無効状態を更新
+        /// </summary>
+        private static void BeforeQueryStatus(object sender, EventArgs e)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (sender is OleMenuCommand command)
+            {
+                // 設定で無効化されているかチェック
+                bool featureEnabled = BoilersExtensionsSettings.IsRenameSolutionEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
+                // 機能が有効な場合は通常の条件で表示/非表示を決定
+                command.Visible = true;
+            }
         }
     }
 }

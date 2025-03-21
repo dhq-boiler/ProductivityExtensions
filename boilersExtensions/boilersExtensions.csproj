@@ -47,6 +47,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BoilersExtensionsSettings.cs" />
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
