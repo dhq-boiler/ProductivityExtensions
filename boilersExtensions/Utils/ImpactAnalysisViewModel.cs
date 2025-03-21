@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,6 +11,7 @@ using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Disposables;
 using Reactive.Bindings.Extensions;
+using ZLinq;
 using Window = System.Windows.Window;
 
 namespace boilersExtensions.Utils
@@ -137,7 +137,7 @@ namespace boilersExtensions.Utils
             GroupedIssues.Clear();
 
             // IssueTypeとDescriptionでグループ化
-            var groups = PotentialIssues
+            var groups = PotentialIssues.AsValueEnumerable()
                 .GroupBy(issue => new { issue.IssueType, issue.Description })
                 .ToList();
 
@@ -147,11 +147,11 @@ namespace boilersExtensions.Utils
                 {
                     IssueType = group.Key.IssueType,
                     Description = group.Key.Description,
-                    SuggestedFix = group.First().SuggestedFix // グループの最初の問題から提案を取得
+                    SuggestedFix = group.AsValueEnumerable().First().SuggestedFix // グループの最初の問題から提案を取得
                 };
 
                 // 問題を追加（内部でファイルパスと行番号による重複排除が行われる）
-                issueGroup.AddIssues(group.ToList());
+                issueGroup.AddIssues(group.AsValueEnumerable().ToList());
 
                 GroupedIssues.Add(issueGroup);
             }

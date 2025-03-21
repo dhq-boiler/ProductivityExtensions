@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
+using ZLinq;
 
 namespace boilersExtensions.Utils
 {
@@ -270,6 +270,7 @@ namespace boilersExtensions.Utils
         {
             // 意味のある特徴的なキーワードを抽出
             return line.Split(new[] { ' ', '.', '(', ')', ',', ';', '=', '"', '\'' }, StringSplitOptions.RemoveEmptyEntries)
+                .AsValueEnumerable()
                 .Where(word => word.Length > 3 && !IsCommonWord(word))
                 .ToArray();
         }
@@ -278,7 +279,8 @@ namespace boilersExtensions.Utils
         {
             // 一般的な単語やキーワードを除外
             string[] commonWords = { "this", "null", "void", "true", "false", "async", "await", "return", "using", "class", "public", "private" };
-            return commonWords.Contains(word.ToLower());
+            return commonWords
+                .AsValueEnumerable().Contains(word.ToLower());
         }
     }
 }

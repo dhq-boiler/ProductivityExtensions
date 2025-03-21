@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Reactive.Bindings;
+using ZLinq;
 
 namespace boilersExtensions.Utils
 {
@@ -42,9 +42,9 @@ namespace boilersExtensions.Utils
             get
             {
                 // ファイルパスと行番号の組み合わせで重複を排除
-                return _allIssues
+                return _allIssues.AsValueEnumerable()
                     .GroupBy(issue => new { issue.FilePath, issue.LineNumber })
-                    .Select(group => group.First())
+                    .Select(group => group.AsValueEnumerable().First())
                     .ToList();
             }
         }
@@ -57,12 +57,12 @@ namespace boilersExtensions.Utils
         /// <summary>
         ///     代表的なコードスニペット（最初の問題のスニペット）
         /// </summary>
-        public string RepresentativeCodeSnippet => Issues.FirstOrDefault()?.CodeSnippet;
+        public string RepresentativeCodeSnippet => Issues.AsValueEnumerable().FirstOrDefault()?.CodeSnippet;
 
         /// <summary>
         ///     影響を受けるファイルの一覧（重複なし）
         /// </summary>
-        public List<string> AffectedFiles => Issues.Select(i => i.FileName).Distinct().ToList();
+        public List<string> AffectedFiles => Issues.AsValueEnumerable().Select(i => i.FileName).Distinct().ToList();
 
         /// <summary>
         ///     影響を受けるファイル数

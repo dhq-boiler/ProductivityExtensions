@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
@@ -12,6 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using ZLinq;
 using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
@@ -132,7 +132,8 @@ namespace boilersExtensions.ViewModels
             var propertyGroups = root.Descendants("PropertyGroup");
             foreach (var propertyGroup in propertyGroups)
             {
-                var rootNamespaceElm = propertyGroup.Descendants("RootNamespace").FirstOrDefault();
+                var rootNamespaceElm = propertyGroup.Descendants("RootNamespace")
+                    .AsValueEnumerable().FirstOrDefault();
                 if (rootNamespaceElm != null)
                 {
                     rootNamespaceElm.Value = NewProjectName.Value;

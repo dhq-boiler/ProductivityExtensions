@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using boilersExtensions.TextEditor.Providers;
@@ -16,6 +15,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
+using ZLinq;
 
 namespace boilersExtensions.TextEditor.SuggestedActionsSources
 {
@@ -191,7 +191,7 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
                 var references =
                     await SymbolFinder.FindReferencesAsync(parameterSymbol, document.Project.Solution,
                         cancellationToken);
-                var referenceCount = references.SelectMany(r => r.Locations).Count();
+                var referenceCount = references.AsValueEnumerable().SelectMany(r => r.Locations.AsValueEnumerable()).Count();
 
                 // If parameter has references, don't create an extent
                 if (referenceCount > 0)
@@ -215,7 +215,7 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
 
                 // パラメーターリスト内のテキストを取得
                 var parameters = lineText.Substring(paramListStart + 1, paramListEnd - paramListStart - 1);
-                var paramArray = parameters.Split(',').Select(p => p.Trim()).ToList();
+                var paramArray = parameters.Split(',').AsValueEnumerable().Select(p => p.Trim()).ToList();
 
                 // カレット位置がどのパラメーターを指しているか特定
                 var currentPos = currentPosition.Position - currentLine.Start - paramListStart - 1;
@@ -310,8 +310,8 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
             }
 
             // Find the document in the workspace using the file path
-            var document = workspace.CurrentSolution.Projects
-                .SelectMany(p => p.Documents)
+            var document = workspace.CurrentSolution.Projects.AsValueEnumerable()
+                .SelectMany(p => p.Documents.AsValueEnumerable())
                 .FirstOrDefault(d => d.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
 
             return document;

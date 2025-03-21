@@ -2,7 +2,8 @@
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
+//using System.Linq;
+using ZLinq;
 using System.Threading.Tasks;
 using EnvDTE;
 using LibGit2Sharp;
@@ -175,7 +176,7 @@ namespace boilersExtensions
                 path = path.Trim('/');
 
                 var gitRepository = new Repository(repoPath);
-                var repositoryUrl = gitRepository.Network.Remotes.FirstOrDefault()?.Url;
+                var repositoryUrl = gitRepository.Network.Remotes.AsValueEnumerable().FirstOrDefault()?.Url;
                 var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://")
                     .Replace("git://", "https://")
                     .Replace("git@", "https://")
@@ -208,7 +209,7 @@ namespace boilersExtensions
             var gitService = await ServiceProvider.GetServiceAsync(typeof(IGitExt)) as IGitExt;
 
             // Get the active repository object
-            return gitService.ActiveRepositories.FirstOrDefault();
+            return gitService.ActiveRepositories.AsValueEnumerable().FirstOrDefault();
         }
     }
 }

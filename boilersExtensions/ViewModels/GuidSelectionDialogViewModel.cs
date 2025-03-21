@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,6 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using ZLinq;
 using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
@@ -264,7 +264,8 @@ namespace boilersExtensions.ViewModels
             ThreadHelper.ThrowIfNotOnUIThread();
 
             // 編集操作の順序を逆順にすることで、置換による位置のずれを回避
-            foreach (var position in guidInfo.Positions.OrderByDescending(p => p.Line).ThenByDescending(p => p.Column))
+            foreach (var position in guidInfo.Positions
+                         .AsValueEnumerable().OrderByDescending(p => p.Line).ThenByDescending(p => p.Column).ToList())
             {
                 var editPoint = textDocument.StartPoint.CreateEditPoint();
                 editPoint.MoveToLineAndOffset(position.Line, position.Column);
@@ -334,7 +335,8 @@ namespace boilersExtensions.ViewModels
                         _guidPositions = FindAllGuidsWithPositions(Document);
 
                         // GuidInfoリストを作成
-                        GuidList = _guidPositions.Values.Select(pos =>
+                        GuidList = _guidPositions.Values
+                            .AsValueEnumerable().Select(pos =>
                             new GuidInfo(
                                 pos.Guid,
                                 null,

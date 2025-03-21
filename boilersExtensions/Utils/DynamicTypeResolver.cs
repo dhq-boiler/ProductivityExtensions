@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.CodeAnalysis;
+using ZLinq;
 
 namespace boilersExtensions.Utils
 {
@@ -48,6 +48,7 @@ namespace boilersExtensions.Utils
 
                 // 名前で検索
                 var symbols = compilation.GetSymbolsWithName(typeName, SymbolFilter.Type)
+                    .AsValueEnumerable()
                     .OfType<INamedTypeSymbol>()
                     .ToList();
 
@@ -68,6 +69,7 @@ namespace boilersExtensions.Utils
                 symbols = compilation.GetSymbolsWithName(
                         name => name.EndsWith(typeName, StringComparison.OrdinalIgnoreCase),
                         SymbolFilter.Type)
+                    .AsValueEnumerable()
                     .OfType<INamedTypeSymbol>()
                     .ToList();
 
@@ -111,10 +113,10 @@ namespace boilersExtensions.Utils
         private static INamedTypeSymbol SelectBestTypeMatch(List<INamedTypeSymbol> symbols, string typeName)
         {
             // アクセス可能性の高い順（public > internal > private）
-            symbols = symbols.OrderByDescending(s => s.DeclaredAccessibility).ToList();
+            symbols = symbols.AsValueEnumerable().OrderByDescending(s => s.DeclaredAccessibility).ToList();
 
             // UI系のライブラリを優先（Blazor、WPF、Windowsなど）
-            var uiRelated = symbols.FirstOrDefault(s =>
+            var uiRelated = symbols.AsValueEnumerable().FirstOrDefault(s =>
                 IsUIRelatedNamespace(s.ContainingNamespace.ToDisplayString()));
             if (uiRelated != null)
             {
@@ -122,14 +124,14 @@ namespace boilersExtensions.Utils
             }
 
             // 名前がそのままマッチするものを優先
-            var exactNameMatch = symbols.FirstOrDefault(s => s.Name == typeName);
+            var exactNameMatch = symbols.AsValueEnumerable().FirstOrDefault(s => s.Name == typeName);
             if (exactNameMatch != null)
             {
                 return exactNameMatch;
             }
 
             // それ以外の場合は最初の要素を返す
-            return symbols.FirstOrDefault();
+            return symbols.AsValueEnumerable().FirstOrDefault();
         }
 
         /// <summary>

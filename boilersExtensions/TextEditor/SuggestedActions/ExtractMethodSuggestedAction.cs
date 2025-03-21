@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -9,6 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
+using ZLinq;
 
 namespace boilersExtensions.TextEditor.SuggestedActions
 {
@@ -144,7 +144,7 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             }
 
             // 変更された変数が1つだけの場合、その型を返り値として使用
-            var writtenOutside = dataFlowAnalysis.WrittenInside.Intersect(dataFlowAnalysis.WrittenOutside).ToList();
+            var writtenOutside = dataFlowAnalysis.WrittenInside.AsValueEnumerable().Intersect(dataFlowAnalysis.WrittenOutside).ToList();
             if (writtenOutside.Count == 1)
             {
                 return writtenOutside[0].GetType().ToString();
@@ -159,7 +159,7 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             List<(string type, string name)> parameters,
             string returnType)
         {
-            var parameterList = string.Join(", ", parameters.Select(p => $"{p.type} {p.name}"));
+            var parameterList = string.Join(", ", parameters.AsValueEnumerable().Select(p => $"{p.type} {p.name}"));
             var indentedBody = body.Replace(Environment.NewLine, Environment.NewLine + "        ");
 
             return $@"    private {returnType} {methodName}({parameterList})
@@ -173,7 +173,7 @@ namespace boilersExtensions.TextEditor.SuggestedActions
             List<(string type, string name)> parameters,
             bool hasReturnValue)
         {
-            var argumentList = string.Join(", ", parameters.Select(p => p.name));
+            var argumentList = string.Join(", ", parameters.AsValueEnumerable().Select(p => p.name));
             var invocation = $"{methodName}({argumentList})";
 
             // 返り値がある場合は変数に代入
@@ -188,14 +188,14 @@ namespace boilersExtensions.TextEditor.SuggestedActions
         private int FindMethodInsertionPoint(SyntaxNode root, SyntaxNode selectedNode)
         {
             // 現在のメソッドの終了位置を見つける
-            var containingMethod = selectedNode.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+            var containingMethod = selectedNode.Ancestors().AsValueEnumerable().OfType<MethodDeclarationSyntax>().FirstOrDefault();
             if (containingMethod != null)
             {
                 return containingMethod.Span.End;
             }
 
             // メソッドが見つからない場合はクラスの終了位置の手前に挿入
-            var containingClass = selectedNode.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            var containingClass = selectedNode.Ancestors().AsValueEnumerable().OfType<ClassDeclarationSyntax>().FirstOrDefault();
             if (containingClass != null)
             {
                 return containingClass.Span.End - 1;

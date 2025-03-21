@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +16,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using VSLangProj;
+using ZLinq;
 using Document = Microsoft.CodeAnalysis.Document;
 using Project = EnvDTE.Project;
 using Solution = Microsoft.CodeAnalysis.Solution;
@@ -78,8 +78,7 @@ namespace boilersExtensions.Utils
 
                     // デバッグ出力
                     Debug.WriteLine($"@usingディレクティブ: {string.Join(", ", usingDirectives)}");
-                    Debug.WriteLine(
-                        $"@injectディレクティブ: {string.Join(", ", injectDirectives.Select(x => $"{x.type} {x.name}"))}");
+                    Debug.WriteLine($"@injectディレクティブ: {string.Join(", ", injectDirectives.AsValueEnumerable().Select(x => $"{x.type} {x.name}"))}");
 
                     // C#コードブロックを探す簡易パーサーとポジションマッピングを取得
                     var (csharpBlocks, mappedPosition, blockStartPosition) =
@@ -234,7 +233,8 @@ namespace boilersExtensions.Utils
                 // ジェネリック型制約
                 else if (node.Parent is TypeParameterConstraintSyntax)
                 {
-                    typeSyntax = node.Parent.ChildNodes().OfType<TypeSyntax>().FirstOrDefault();
+                    typeSyntax = node.Parent.ChildNodes()
+                        .AsValueEnumerable().OfType<TypeSyntax>().FirstOrDefault();
                     parentNode = node.Parent;
                 }
 
@@ -364,7 +364,8 @@ namespace boilersExtensions.Utils
 
             // 3. デバッグ情報を追加して検証しやすくする
             Debug.WriteLine($"マッピング情報のエントリ数: {mapping.Count}");
-            foreach (var entry in mapping.Take(10))
+            foreach (var entry in mapping
+                         .AsValueEnumerable().Take(10).ToList())
             {
                 Debug.WriteLine($"生成コード行 {entry.Key} -> Razor行 {entry.Value}");
             }
@@ -445,6 +446,7 @@ namespace boilersExtensions.Utils
                 int signatureLength = Math.Min(contentSignature.Length, 100);
                 signature = contentSignature.Substring(0, signatureLength)
                     .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                    .AsValueEnumerable()
                     .FirstOrDefault()?.Trim() ?? string.Empty;
             }
             else
@@ -473,7 +475,8 @@ namespace boilersExtensions.Utils
 
         private static int CountOccurrences(string text, char character)
         {
-            return text.Count(c => c == character);
+            return text
+                .AsValueEnumerable().Count(c => c == character);
         }
 
         private class CodeBlockInfo
@@ -512,7 +515,9 @@ namespace boilersExtensions.Utils
             }
 
             // ジェネリック型パラメータを調整
-            if (text.Contains('<') && !text.Contains('>'))
+            if (text
+                    .AsValueEnumerable().Contains('<') && !text
+                    .AsValueEnumerable().Contains('>'))
             {
                 // 不完全なジェネリック型の場合、閉じ括弧を追加
                 text += ">";
@@ -619,13 +624,15 @@ namespace boilersExtensions.Utils
                 while (!string.IsNullOrEmpty(dir))
                 {
                     // .slnファイルがあるか確認
-                    if (Directory.GetFiles(dir, "*.sln").Any())
+                    if (Directory.GetFiles(dir, "*.sln")
+                        .AsValueEnumerable().Any())
                     {
                         return dir;
                     }
 
                     // .csprojファイルがあるか確認
-                    if (Directory.GetFiles(dir, "*.csproj").Any())
+                    if (Directory.GetFiles(dir, "*.csproj")
+                        .AsValueEnumerable().Any())
                     {
                         // プロジェクトフォルダが見つかった場合はその親ディレクトリを返す
                         var _parentDir = Path.GetDirectoryName(dir);
@@ -792,7 +799,7 @@ namespace boilersExtensions.Utils
 
                 // 基本的な.NET参照を追加
                 references.Add(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
-                references.Add(MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location));
+                references.Add(MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location));
                 references.Add(MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location));
                 references.Add(MetadataReference.CreateFromFile(typeof(DisplayAttribute).Assembly.Location));
 
@@ -872,6 +879,7 @@ namespace boilersExtensions.Utils
             try
             {
                 var assembly = AppDomain.CurrentDomain.GetAssemblies()
+                    .AsValueEnumerable()
                     .FirstOrDefault(a => a.GetName().Name == assemblyName);
 
                 if (assembly != null)
@@ -905,7 +913,8 @@ namespace boilersExtensions.Utils
                     var parts = referenceName.Split('.');
                     if (parts.Length > 2)
                     {
-                        packageName = string.Join(".", parts.Take(2));
+                        packageName = string.Join(".", parts
+                            .AsValueEnumerable().Take(2));
                     }
                 }
 
@@ -924,6 +933,7 @@ namespace boilersExtensions.Utils
                     if (possiblePackageDirs.Length == 0)
                     {
                         possiblePackageDirs = Directory.GetDirectories(nugetDir)
+                            .AsValueEnumerable()
                             .Where(d => Path.GetFileName(d).IndexOf(packageName, StringComparison.OrdinalIgnoreCase) >=
                                         0 ||
                                         packageName.IndexOf(Path.GetFileName(d), StringComparison.OrdinalIgnoreCase) >=
@@ -937,7 +947,8 @@ namespace boilersExtensions.Utils
                         var versions = Directory.GetDirectories(packageDir);
                         if (versions.Length > 0)
                         {
-                            var latestVersion = versions.OrderByDescending(v => v).First();
+                            var latestVersion = versions
+                                .AsValueEnumerable().OrderByDescending(v => v).First();
 
                             // ライブラリフォルダを検索
                             var libDir = Path.Combine(latestVersion, "lib");
@@ -945,10 +956,11 @@ namespace boilersExtensions.Utils
                             {
                                 // 最新のフレームワークバージョンを検索
                                 var frameworks = Directory.GetDirectories(libDir)
+                                    .AsValueEnumerable()
                                     .Where(d => Path.GetFileName(d).StartsWith("net"))
                                     .OrderByDescending(d => d);
 
-                                foreach (var framework in frameworks)
+                                foreach (var framework in frameworks.ToList())
                                 {
                                     // DLLを検索
                                     var dllPath = Path.Combine(framework, $"{referenceName}.dll");
@@ -959,6 +971,7 @@ namespace boilersExtensions.Utils
 
                                     // 名前の一部一致でも検索
                                     var matchingFiles = Directory.GetFiles(framework, "*.dll")
+                                        .AsValueEnumerable()
                                         .Where(f => Path.GetFileNameWithoutExtension(f).IndexOf(referenceName,
                                             StringComparison.OrdinalIgnoreCase) >= 0)
                                         .ToArray();
@@ -1020,6 +1033,7 @@ namespace boilersExtensions.Utils
                                     {
                                         // 最新のフレームワークディレクトリを使用
                                         var latestFrameworkDir = frameworkDirs
+                                            .AsValueEnumerable()
                                             .OrderByDescending(d => d)
                                             .First();
 
@@ -1139,7 +1153,9 @@ namespace boilersExtensions.Utils
                         if (!string.IsNullOrEmpty(activeDocumentPath))
                         {
                             var project = workspace.CurrentSolution.Projects
-                                .FirstOrDefault(p => p.Documents.Any(d =>
+                                .AsValueEnumerable()
+                                .FirstOrDefault(p => p.Documents
+                                    .AsValueEnumerable().Any(d =>
                                     string.Equals(d.FilePath, activeDocumentPath, StringComparison.OrdinalIgnoreCase)));
 
                             if (project != null)
@@ -1201,7 +1217,8 @@ namespace boilersExtensions.Utils
                             if (!string.IsNullOrEmpty(location) && File.Exists(location))
                             {
                                 // すでに追加されていなければ追加
-                                if (!references.Any(r => r.Display == location))
+                                if (!references
+                                        .AsValueEnumerable().Any(r => r.Display == location))
                                 {
                                     references.Add(MetadataReference.CreateFromFile(location));
                                     Debug.WriteLine($"実行中アセンブリから参照追加: {name} - {location}");
@@ -1714,7 +1731,8 @@ namespace boilersExtensions.Utils
                         if (implementingType is ITypeSymbol implType)
                         {
                             // すでに追加されている派生型と重複しないようにする
-                            if (!typeInfo.DerivedClasses.Any(t => t.FullName == implType.ToDisplayString()) &&
+                            if (!typeInfo.DerivedClasses
+                                    .AsValueEnumerable().Any(t => t.FullName == implType.ToDisplayString()) &&
                                 (includeInternalTypes || implType.DeclaredAccessibility == Accessibility.Public))
                             {
                                 typeInfo.DerivedClasses.Add(CreateTypeHierarchyInfo(implType, showUseSpecialTypes));
@@ -1753,7 +1771,8 @@ namespace boilersExtensions.Utils
                         var baseName = namedType.Name;
 
                         // 型パラメータを元の型から取得
-                        var typeArgs = string.Join(", ", originalNamedType.TypeArguments.Select(arg =>
+                        var typeArgs = string.Join(", ", originalNamedType.TypeArguments
+                            .AsValueEnumerable().Select(arg =>
                             showUseSpecialTypes
                                 ? arg.ToDisplayString(new SymbolDisplayFormat(
                                     miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes))
@@ -1799,7 +1818,8 @@ namespace boilersExtensions.Utils
                 FullName = typeSymbol.ToString(),
                 IsInterface = typeSymbol.TypeKind == TypeKind.Interface,
                 Accessibility = typeSymbol.DeclaredAccessibility.ToString(),
-                IsDefinedInSolution = !typeSymbol.Locations.All(loc => loc.IsInMetadata),
+                IsDefinedInSolution = !typeSymbol.Locations
+                    .AsValueEnumerable().All(loc => loc.IsInMetadata),
                 AssemblyName = typeSymbol.ContainingAssembly?.Name,
                 RequiredNamespace = typeSymbol.ContainingNamespace?.ToDisplayString()
             };
@@ -1947,8 +1967,9 @@ namespace boilersExtensions.Utils
                 }
 
                 // アセンブリ内のすべての型をチェック
-                foreach (var assembly in compilation.References.Select(r =>
-                             compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+                foreach (var assembly in compilation.References
+                             .AsValueEnumerable().Select(r =>
+                             compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
                 {
                     if (assembly == null)
                     {
@@ -1999,12 +2020,14 @@ namespace boilersExtensions.Utils
                             targetName = "I" + baseName.Replace(pair.Key, pair.Value);
                         }
 
-                        var matchingTypes = allTypes.Where(t =>
+                        var matchingTypes = allTypes
+                            .AsValueEnumerable().Where(t =>
                             t.Name == targetName &&
                             t.TypeKind == TypeKind.Interface &&
-                            !candidates.Any(c => c.FullName == t.ToDisplayString()));
+                            !candidates
+                                .AsValueEnumerable().Any(c => c.FullName == t.ToDisplayString()));
 
-                        foreach (var type in matchingTypes)
+                        foreach (var type in matchingTypes.ToList())
                         {
                             candidates.Add(CreateTypeHierarchyInfo(type, showUseSpecialTypes, originalType));
                             Debug.WriteLine($"Added pattern-matched type: {type.ToDisplayString()}");
@@ -2020,7 +2043,8 @@ namespace boilersExtensions.Utils
                 foreach (var relatedType in relatedTypes)
                 {
                     // Only add if not already in the list
-                    if (!candidates.Any(c => c.FullName == relatedType.ToDisplayString()))
+                    if (!candidates
+                            .AsValueEnumerable().Any(c => c.FullName == relatedType.ToDisplayString()))
                     {
                         candidates.Add(CreateTypeHierarchyInfo(relatedType, showUseSpecialTypes));
                     }
@@ -2062,8 +2086,9 @@ namespace boilersExtensions.Utils
             }
 
             // Search for types with similar names in all referenced assemblies
-            foreach (var assembly in compilation.References.Select(r =>
-                         compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+            foreach (var assembly in compilation.References
+                         .AsValueEnumerable().Select(r =>
+                         compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
             {
                 if (assembly != null)
                 {
@@ -2125,7 +2150,8 @@ namespace boilersExtensions.Utils
                         name.Contains(pattern))
                     {
                         // 既に追加済みでない場合は追加
-                        if (!candidates.Any(c => c.FullName == typeSymbol.ToDisplayString()))
+                        if (!candidates
+                                .AsValueEnumerable().Any(c => c.FullName == typeSymbol.ToDisplayString()))
                         {
                             candidates.Add(CreateTypeHierarchyInfo(typeSymbol, showUseSpecialTypes));
                         }

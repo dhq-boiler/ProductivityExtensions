@@ -1,10 +1,10 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.MSBuild;
+using ZLinq;
 
 namespace boilersExtensions
 {
@@ -24,9 +24,10 @@ namespace boilersExtensions
                         var document = project.GetDocument(documentId);
                         var syntaxRoot = await document.GetSyntaxRootAsync();
 
-                        var namespaceDeclarations = syntaxRoot.DescendantNodes()
+                        var namespaceDeclarations = syntaxRoot.DescendantNodes().AsValueEnumerable()
                             .OfType<NamespaceDeclarationSyntax>()
-                            .Where(nd => nd.Name.ToString() == oldNamespace);
+                            .Where(nd => nd.Name.ToString() == oldNamespace)
+                            .ToList();
 
                         foreach (var namespaceDeclaration in namespaceDeclarations)
                         {
