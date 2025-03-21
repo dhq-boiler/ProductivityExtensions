@@ -47,9 +47,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BoilersExtensionsSettings.cs" />
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
+    <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
+    <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
     <Compile Include="Commands\TypeHierarchyCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
@@ -58,10 +61,14 @@
     </Compile>
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
+    <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\RegionNavigatorExtensionFactory.cs" />
+    <Compile Include="TextEditor\Extensions\SolutionExplorerSynchronizerFactory.cs" />
     <Compile Include="TextEditor\Extensions\TextEditorExtensions.cs" />
     <Compile Include="Utils\BookmarkManager.cs" />
     <Compile Include="Utils\DynamicTypeResolver.cs" />

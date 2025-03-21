@@ -37,8 +37,9 @@ namespace boilersExtensions.Commands
         /// <summary>
         ///     コンストラクタ
         /// </summary>
-        private TypeHierarchyCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        private TypeHierarchyCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
+            base.BeforeQueryStatus += BeforeQueryStatus;
         }
 
         public static TypeHierarchyCommand Instance { get; private set; }
@@ -67,6 +68,13 @@ namespace boilersExtensions.Commands
 
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!BoilersExtensionsSettings.IsTypeHierarchyEnabled)
+                {
+                    Debug.WriteLine("TypeHierarchy feature is disabled in settings");
+                    return;
+                }
+
                 // 現在のテキストビューを取得
                 var textView = GetCurrentTextView();
                 if (textView == null)
@@ -90,10 +98,6 @@ namespace boilersExtensions.Commands
 
                 // ドキュメントを取得
                 var document = GetDocumentFromTextView(textView);
-                //if (document == null)
-                //{
-                //    return;
-                //}
 
                 // 型解析と型階層ダイアログの表示を非同期で実行
                 Task.Run(async () =>
@@ -255,6 +259,20 @@ namespace boilersExtensions.Commands
 
             if (sender is OleMenuCommand command)
             {
+                // 設定で無効化されているかチェック
+                bool featureEnabled = BoilersExtensionsSettings.IsTypeHierarchyEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
+                // 機能が有効な場合は通常の条件で表示/非表示を決定
+                command.Visible = true;
+
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 

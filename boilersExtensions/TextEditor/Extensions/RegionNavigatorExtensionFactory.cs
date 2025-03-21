@@ -126,6 +126,12 @@ namespace boilersExtensions.TextEditor.Extensions
         {
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!IsFeatureEnabled())
+                {
+                    return;
+                }
+
                 // 現在位置を保存
                 _lastMousePosition = e.GetPosition(_textView.VisualElement);
 
@@ -146,6 +152,12 @@ namespace boilersExtensions.TextEditor.Extensions
         {
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!IsFeatureEnabled())
+                {
+                    return;
+                }
+
                 // タイマーを停止
                 _hoverTimer.Stop();
 
@@ -170,6 +182,12 @@ namespace boilersExtensions.TextEditor.Extensions
         {
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!IsFeatureEnabled())
+                {
+                    return;
+                }
+
                 // タイマーを停止
                 _hoverTimer.Stop();
 
@@ -223,6 +241,12 @@ namespace boilersExtensions.TextEditor.Extensions
         {
             try
             {
+                // 設定が無効な場合は何もしない
+                if (!IsFeatureEnabled())
+                {
+                    return;
+                }
+
                 // 処理済みのイベントは無視
                 if (e.Handled || _isHandlingClick)
                 {
@@ -309,6 +333,22 @@ namespace boilersExtensions.TextEditor.Extensions
                 Debug.WriteLine(ex.StackTrace);
                 _isHandlingClick = false;
                 _mouseHoverLine = null;
+            }
+        }
+
+        /// <summary>
+        /// 機能が有効かどうかを確認
+        /// </summary>
+        private bool IsFeatureEnabled()
+        {
+            try
+            {
+                return BoilersExtensionsSettings.IsRegionNavigatorEnabled;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error checking if region navigator is enabled: {ex.Message}");
+                return true; // エラーの場合はデフォルトで有効
             }
         }
 

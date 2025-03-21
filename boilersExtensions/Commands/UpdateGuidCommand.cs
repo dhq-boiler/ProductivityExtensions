@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EnvDTE;
@@ -28,8 +29,9 @@ namespace boilersExtensions.Commands
 
         private static OleMenuCommand menuItem;
 
-        private UpdateGuidCommand() : base(Execute, BeforeQueryStatus, new CommandID(CommandSet, CommandId))
+        private UpdateGuidCommand() : base(Execute, new CommandID(CommandSet, CommandId))
         {
+            base.BeforeQueryStatus += BeforeQueryStatus;
         }
 
         /// <summary>
@@ -42,7 +44,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        ///     Gets the service provider from the owner package.
+        ///     Gets the service provider from the owner Package.
         /// </summary>
         private static IAsyncServiceProvider ServiceProvider => package;
 
@@ -60,6 +62,13 @@ namespace boilersExtensions.Commands
         private static void Execute(object sender, EventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+
+            // 設定が無効な場合は何もしない
+            if (!BoilersExtensionsSettings.IsUpdateGuidEnabled)
+            {
+                Debug.WriteLine("UpdateGuid feature is disabled in settings");
+                return;
+            }
 
             // DTEオブジェクトを取得
             var dte = (DTE)Package.GetGlobalService(typeof(DTE));
@@ -153,6 +162,20 @@ namespace boilersExtensions.Commands
 
             if (sender is OleMenuCommand command)
             {
+                // 設定で無効化されているかチェック
+                bool featureEnabled = BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
+                // 機能が有効な場合は通常の条件で表示/非表示を決定
+                command.Visible = true;
+
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
