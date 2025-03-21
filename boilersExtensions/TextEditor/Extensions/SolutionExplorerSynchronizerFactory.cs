@@ -3,6 +3,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using boilersExtensions.DialogPages;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
@@ -48,6 +49,10 @@ namespace boilersExtensions.TextEditor.Extensions
         private readonly IWpfTextView _textView;
         private bool _isDisposed = false;
         private bool _isSynchronizing = false;
+        private DateTime _lastSync = DateTime.MinValue;
+        private string _lastSyncedFile = string.Empty;
+        // 同期間隔の最小値（ミリ秒）- ここを調整して頻度を下げる
+        private const int MIN_SYNC_INTERVAL_MS = 2000;
 
         /// <summary>
         /// コンストラクタ
@@ -68,7 +73,7 @@ namespace boilersExtensions.TextEditor.Extensions
                 return;
             }
 
-            // ActiveDocument の変更を監視
+            // ActiveDocument の変更を監視（これは残す - ファイルが切り替わったときのみ）
             dte.Events.DocumentEvents.DocumentOpened += (Document doc) =>
             {
                 Debug.WriteLine($"Document opened: {doc.FullName}");
@@ -76,9 +81,11 @@ namespace boilersExtensions.TextEditor.Extensions
             };
 
             // 各種イベントのハンドラを登録
-            _textView.GotAggregateFocus += OnTextViewGotFocus;
+            // _textView.GotAggregateFocus += OnTextViewGotFocus; // この行を削除または無効化
             _textView.Closed += OnTextViewClosed;
-            _textView.TextBuffer.Changed += OnTextBufferChanged;
+
+            // テキストバッファの変更イベントは削除 - 編集中に同期させない
+            // _textView.TextBuffer.Changed += OnTextBufferChanged;
 
             // 初回のファイル同期を実行
             SynchronizeWithSolutionExplorer();
@@ -95,14 +102,21 @@ namespace boilersExtensions.TextEditor.Extensions
             {
                 _textView.GotAggregateFocus -= OnTextViewGotFocus;
                 _textView.Closed -= OnTextViewClosed;
+
+                if (_textView.TextBuffer != null)
+                {
+                    _textView.TextBuffer.Changed -= OnTextBufferChanged;
+                }
             }
         }
 
         /// <summary>
-        /// テキストビューがフォーカスを得たとき
+        /// テキストビューがフォーカスを得たとき - 無効化
         /// </summary>
         private void OnTextViewGotFocus(object sender, EventArgs e)
         {
+            // フォーカス時の同期は無効化するか、コメントアウトする
+            /*
             try
             {
                 Debug.WriteLine("TextViewGotFocus event triggered");
@@ -112,10 +126,16 @@ namespace boilersExtensions.TextEditor.Extensions
             {
                 Debug.WriteLine($"Error in OnTextViewGotFocus: {ex.Message}");
             }
+            */
         }
 
+        /// <summary>
+        /// テキストバッファが変更されたとき - 無効化
+        /// </summary>
         private void OnTextBufferChanged(object sender, EventArgs e)
         {
+            // バッファ変更時の同期は無効化するか、コメントアウトする
+            /*
             try
             {
                 Debug.WriteLine("TextBuffer changed event triggered");
@@ -125,6 +145,7 @@ namespace boilersExtensions.TextEditor.Extensions
             {
                 Debug.WriteLine($"Error in OnTextBufferChanged: {ex.Message}");
             }
+            */
         }
 
         /// <summary>
@@ -134,10 +155,25 @@ namespace boilersExtensions.TextEditor.Extensions
         {
             try
             {
+                if (!BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled)
+                {
+                    Debug.WriteLine("SyncToSolutionExplorer feature is disabled in settings");
+                    return;
+                }
+
                 // 実行中の場合は処理しない（再入防止）
                 if (_isSynchronizing)
                 {
                     Debug.WriteLine("Already synchronizing, skipping");
+                    return;
+                }
+
+                // 過度な同期を防ぐためのスロットリング
+                var now = DateTime.Now;
+                var timeSinceLastSync = (now - _lastSync).TotalMilliseconds;
+                if (timeSinceLastSync < MIN_SYNC_INTERVAL_MS)
+                {
+                    Debug.WriteLine($"Skipping sync - last sync was {timeSinceLastSync}ms ago (minimum: {MIN_SYNC_INTERVAL_MS}ms)");
                     return;
                 }
 
@@ -172,10 +208,21 @@ namespace boilersExtensions.TextEditor.Extensions
                             return;
                         }
 
+                        // 前回同期したファイルと同じなら処理しない
+                        if (filePath == _lastSyncedFile)
+                        {
+                            Debug.WriteLine($"File already synchronized: {filePath}");
+                            return;
+                        }
+
                         Debug.WriteLine($"Synchronizing with file: {filePath}");
 
                         // ソリューションエクスプローラーで対象ファイルを選択
                         await SelectFileInSolutionExplorerAsync(dte, filePath);
+
+                        // 同期情報を更新
+                        _lastSync = DateTime.Now;
+                        _lastSyncedFile = filePath;
                     }
                     finally
                     {
@@ -256,7 +303,9 @@ namespace boilersExtensions.TextEditor.Extensions
 
                     if (solutionExplorer != null)
                     {
-                        // ソリューションエクスプローラーをアクティブにする
+                        // ソリューションエクスプローラーをアクティブにしない - ここを変更
+                        // この部分をコメントアウトするか削除して、フォーカスを取らないようにする
+                        /*
                         try
                         {
                             solutionExplorer.Activate();
@@ -266,6 +315,7 @@ namespace boilersExtensions.TextEditor.Extensions
                         {
                             Debug.WriteLine($"Error activating Solution Explorer: {ex.Message}");
                         }
+                        */
                     }
                     else
                     {
@@ -298,8 +348,12 @@ namespace boilersExtensions.TextEditor.Extensions
                                     Debug.WriteLine("Expanded project item view");
 
                                     // DTE コマンドを使用して選択（SolutionExplorer.SyncWithActiveDocument）
-                                    dte.ExecuteCommand("SolutionExplorer.SyncWithActiveDocument");
-                                    Debug.WriteLine("Executed SolutionExplorer.SyncWithActiveDocument command");
+                                    // ソリューションエクスプローラーに切り替えない方法に変更
+                                    if (dte.Commands.Item("SolutionExplorer.SyncWithActiveDocument").IsAvailable)
+                                    {
+                                        dte.ExecuteCommand("SolutionExplorer.SyncWithActiveDocument");
+                                        Debug.WriteLine("Executed SolutionExplorer.SyncWithActiveDocument command");
+                                    }
                                     return;
                                 }
                                 catch (Exception cmdEx)
