@@ -165,6 +165,25 @@ namespace boilersExtensions
         }
 
         /// <summary>
+        /// テストデータ生成機能が有効かどうか
+        /// </summary>
+        public static bool IsSeedDataGeneratorEnabled
+        {
+            get
+            {
+                try
+                {
+                    return GetOptionPageProperty<bool>("EnableSeedDataGenerator", true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error reading SeedDataGenerator setting: {ex.Message}");
+                    return true; // デフォルトで有効
+                }
+            }
+        }
+
+        /// <summary>
         ///     オプションページからプロパティを取得
         /// </summary>
         private static T GetOptionPageProperty<T>(string propertyName, T defaultValue)

@@ -47,11 +47,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Analyzers\EntityAnalyzer.cs" />
     <Compile Include="BoilersExtensionsSettings.cs" />
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
+    <Compile Include="Commands\SeedDataGeneratorCommand.cs" />
     <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
     <Compile Include="Commands\TypeHierarchyCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
@@ -64,8 +66,16 @@
     <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Generators\EnumValueGenerator.cs" />
+    <Compile Include="Generators\RandomDataProvider.cs" />
+    <Compile Include="Generators\SeedDataGenerator.cs" />
+    <Compile Include="Generators\StandardPropertyGenerator.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
+    <Compile Include="Models\EntityInfo.cs" />
+    <Compile Include="Models\PropertyInfo.cs" />
+    <Compile Include="Models\RelationshipInfo.cs" />
+    <Compile Include="Models\SeedDataConfig.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\RegionNavigatorExtensionFactory.cs" />
     <Compile Include="TextEditor\Extensions\SolutionExplorerSynchronizerFactory.cs" />
@@ -76,6 +86,7 @@
     <Compile Include="Utils\IssueGroupViewModel.cs" />
     <Compile Include="Utils\RazorFileUtility.cs" />
     <Compile Include="Utils\RazorMappingHelper.cs" />
+    <Compile Include="Utils\SeedDataInsertExecutor.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
@@ -98,7 +109,9 @@
     <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
     <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
+    <Compile Include="ViewModels\SeedDataConfigViewModel.cs" />
     <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Views\GuidSelectionDialog.xaml.cs">
       <DependentUpon>GuidSelectionDialog.xaml</DependentUpon>
     </Compile>
@@ -112,6 +125,9 @@
       <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\RenameProjectDialogViewModel.cs" />
+    <Compile Include="Views\SeedDataConfigDialog.xaml.cs">
+      <DependentUpon>SeedDataConfigDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\TypeHierarchyDialog.xaml.cs">
       <DependentUpon>TypeHierarchyDialog.xaml</DependentUpon>
     </Compile>
@@ -259,6 +275,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\RenameProjectDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SeedDataConfigDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

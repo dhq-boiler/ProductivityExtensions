@@ -140,6 +140,12 @@
 					<ButtonText>設定</ButtonText>
 				</Strings>
 			</Button>
+			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="SeedDataGeneratorCommandId" priority="0x0200" type="Button">
+				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup" />
+				<Strings>
+					<ButtonText>テストデータ生成</ButtonText>
+				</Strings>
+			</Button>
 		</Buttons>
 
 		<!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -203,6 +209,7 @@
 			<IDSymbol name="BoilersExtensionsMenu" value="0x1000"/>
 			<IDSymbol name="BoilersExtensionsMenuGroup" value="0x1020"/>
 			<IDSymbol name="cmdExtensionsSettings" value="0x0100"/>
+			<IDSymbol name="SeedDataGeneratorCommandId" value="0x0200" />
 		</GuidSymbol>
 
 		<GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >

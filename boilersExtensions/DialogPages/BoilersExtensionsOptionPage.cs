@@ -47,5 +47,10 @@ namespace boilersExtensions.DialogPages
         [DisplayName("GUID一括更新を有効にする")]
         [Description("GUIDを一括更新する機能を有効にします。")]
         public bool EnableBatchUpdateGuid { get; set; } = true;
+
+        [Category("機能の有効/無効")]
+        [DisplayName("Seedデータ生成を有効にする")]
+        [Description("Seedデータ生成機能を有効にします。")]
+        public bool EnableSeedDataGenerator { get; set; } = true;
     }
 }
