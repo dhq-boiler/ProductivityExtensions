@@ -16,6 +16,7 @@ namespace boilersExtensions.Models
         public ReactivePropertySlim<string> FullName { get; } = new ReactivePropertySlim<string>();
         public ReactivePropertySlim<int> RecordCount { get; } = new ReactivePropertySlim<int>(10);
         public ReactivePropertySlim<bool> IsSelected { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<string> FilePath { get; } = new ReactivePropertySlim<string>();
 
         public ObservableCollection<PropertyViewModel> Properties { get; } = new ObservableCollection<PropertyViewModel>();
         public ObservableCollection<RelationshipViewModel> Relationships { get; } = new ObservableCollection<RelationshipViewModel>();
@@ -27,6 +28,7 @@ namespace boilersExtensions.Models
             FullName.AddTo(Disposables);
             RecordCount.AddTo(Disposables);
             IsSelected.AddTo(Disposables);
+            FilePath.AddTo(Disposables);
         }
     }
 

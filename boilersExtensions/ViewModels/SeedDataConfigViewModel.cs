@@ -253,7 +253,8 @@ namespace boilersExtensions.ViewModels
                                 Name = { Value = entityInfo.Name },
                                 FullName = { Value = entityInfo.FullName },
                                 RecordCount = { Value = 5 }, // デフォルト値
-                                IsSelected = { Value = true }
+                                IsSelected = { Value = true },
+                                FilePath = { Value = dialog.FileName }
                             };
 
                             // プロパティを読み込み
@@ -1831,21 +1832,30 @@ namespace boilersExtensions.ViewModels
                         // EntityInfoリストを作成
                         var entityInfos = new List<EntityInfo>();
 
-                        // アクティブなドキュメントをRoslynのDocumentに変換する
-                        var document = await GetRoslynDocumentFromActiveDocumentAsync(_targetDocument);
-
-                        // EntityAnalyzerを使用してC#クラスを解析
-                        var analyzer = new Analyzers.EntityAnalyzer();
-
-                        try
+                        foreach (var entity in Entities)
                         {
-                            // 現在選択されているエンティティを解析
-                            var entities = await analyzer.AnalyzeEntitiesAsync(document);
-                            entityInfos.AddRange(entities);
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Error analyzing entities: {ex.Message}");
+                            // DTEからファイルを開く
+                            var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
+                            var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, entity.FilePath.Value);
+
+                            var envDTEDocument = documentWindow?.Document;
+
+                            // アクティブなドキュメントをRoslynのDocumentに変換する
+                            var document = await GetRoslynDocumentFromActiveDocumentAsync(envDTEDocument);
+
+                            // EntityAnalyzerを使用してC#クラスを解析
+                            var analyzer = new Analyzers.EntityAnalyzer();
+
+                            try
+                            {
+                                // 現在選択されているエンティティを解析
+                                var entities = await analyzer.AnalyzeEntitiesAsync(document);
+                                entityInfos.AddRange(entities);
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"Error analyzing entities: {ex.Message}");
+                            }
                         }
 
                         // SeedDataConfig作成
