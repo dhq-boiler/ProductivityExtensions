@@ -396,6 +396,9 @@ namespace boilersExtensions.Generators
                     // バイト配列を16進文字列に変換
                     return FormatByteArray((byte[])value);
 
+                case "Boolean":
+                    return (bool)value ? "true" : "false";
+
                 default:
                     return value.ToString();
             }

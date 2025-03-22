@@ -184,7 +184,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 外部キーの値を生成します
+        /// 外部キーの値を生成します（様々なデータ型に対応）
         /// </summary>
         private string GenerateForeignKeyValue(
             PropertyInfo property,
@@ -202,37 +202,253 @@ namespace boilersExtensions.Generators
             var relationConfig = entityConfig.GetRelationshipConfig(property.ForeignKeyTargetEntity);
             if (relationConfig != null)
             {
+                // インデックス計算（リレーションシップタイプに応じて）
+                int targetIndex;
                 switch (relationConfig.Strategy)
                 {
                     case RelationshipStrategy.OneToOne:
                         // 1対1: 同じインデックスを参照
-                        return (recordIndex + 1).ToString();
+                        targetIndex = recordIndex;
+                        break;
 
                     case RelationshipStrategy.ManyToOne:
                         // 多対1: 指定された親エンティティを参照
                         if (relationConfig.ParentRecordCount > 0)
                         {
-                            int parentIndex = recordIndex % relationConfig.ParentRecordCount + 1;
-                            return parentIndex.ToString();
+                            targetIndex = recordIndex % relationConfig.ParentRecordCount;
+                        }
+                        else
+                        {
+                            targetIndex = 0; // デフォルト: 最初の親レコード
                         }
                         break;
 
                     case RelationshipStrategy.OneToMany:
-                        // 1対多: 適切な子エンティティを参照
-                        return relationConfig.GetParentId(recordIndex);
+                        // relationConfig.GetParentIdはインデックスから親IDを計算するメソッド
+                        string parentId = relationConfig.GetParentId(recordIndex);
+                        if (int.TryParse(parentId, out int parentIdInt))
+                        {
+                            targetIndex = parentIdInt - 1; // 1ベースから0ベースのインデックスに変換
+                        }
+                        else
+                        {
+                            targetIndex = 0;
+                        }
+                        break;
 
                     case RelationshipStrategy.Custom:
                         // カスタム: 明示的に指定された値を使用
                         if (relationConfig.CustomMapping.ContainsKey(recordIndex))
                         {
-                            return relationConfig.CustomMapping[recordIndex].ToString();
+                            // カスタムマッピングの値をそのままフォーマットして返す
+                            return FormatForeignKeyValue(
+                                property,
+                                relationConfig.CustomMapping[recordIndex],
+                                property.TypeName,
+                                property.IsNullable);
                         }
+                        // マッピングがない場合はデフォルトインデックス
+                        targetIndex = 0;
+                        break;
+
+                    default:
+                        targetIndex = 0;
                         break;
                 }
+
+                // インデックスに基づいて外部キー値を生成（型に応じてフォーマット）
+                return GenerateForeignKeyByTypeAndIndex(
+                    property,
+                    property.TypeName,
+                    property.IsNullable,
+                    targetIndex,
+                    property.ForeignKeyTargetEntity);
             }
 
-            // デフォルト動作: 常に1を参照（最初のレコード）
-            return "1";
+            // デフォルト: 型に応じた最初のレコード参照
+            return GenerateForeignKeyByTypeAndIndex(
+                property,
+                property.TypeName,
+                property.IsNullable,
+                0,  // 最初のレコード
+                property.ForeignKeyTargetEntity);
+        }
+
+        /// <summary>
+        /// 型とインデックスに基づいて外部キー値を生成
+        /// </summary>
+        private string GenerateForeignKeyByTypeAndIndex(PropertyInfo property, string typeName, bool isNullable, int index, string targetEntity)
+        {
+            // Nullableの場合、基本型を取得
+            string baseTypeName = typeName;
+            if (isNullable && typeName == "Nullable" && !string.IsNullOrEmpty(property.UnderlyingTypeName))
+            {
+                baseTypeName = property.UnderlyingTypeName;
+            }
+
+            switch (baseTypeName)
+            {
+                case "Guid":
+                    // 決定論的なGUIDを生成（エンティティ名とインデックスから一意に決まる）
+                    return $"new Guid(\"{GenerateDeterministicGuid(targetEntity, index)}\")";
+
+                case "String":
+                    // 文字列型の主キー
+                    return $"\"{targetEntity}_{index + 1}\"";
+
+                case "Int64":
+                case "Long":
+                    // Long型の主キー (1-based index)
+                    return $"{index + 1}L";
+
+                case "Int16":
+                case "Short":
+                    // Short型の主キー
+                    return $"(short){index + 1}";
+
+                case "Byte":
+                    // バイト型の主キー（小さい値のみ対応）
+                    if (index < 255)
+                    {
+                        return $"(byte){index + 1}";
+                    }
+                    else
+                    {
+                        return "(byte)1"; // オーバーフロー回避
+                    }
+
+                case "Decimal":
+                    // Decimal型
+                    return $"{index + 1}m";
+
+                case "Double":
+                    // Double型
+                    return $"{index + 1}.0d";
+
+                case "Single":
+                case "Float":
+                    // Float型
+                    return $"{index + 1}.0f";
+
+                case "DateTime":
+                    // 基準日から日数を加算した日付
+                    return $"new DateTime(2023, 1, 1).AddDays({index})";
+
+                case "DateTimeOffset":
+                    // 基準日から日数を加算した日付
+                    return $"new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero).AddDays({index})";
+
+                case "Int32":
+                case "Int":
+                default:
+                    // 整数型（デフォルト）- 1-based index
+                    return $"{index + 1}";
+            }
+        }
+
+        /// <summary>
+        /// 外部キー値をフォーマット（カスタムマッピング用）
+        /// </summary>
+        private string FormatForeignKeyValue(PropertyInfo property, object value, string typeName, bool isNullable)
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            // Nullableの場合、基本型を取得
+            string baseTypeName = typeName;
+            if (isNullable && typeName == "Nullable" && !string.IsNullOrEmpty(property.UnderlyingTypeName))
+            {
+                baseTypeName = property.UnderlyingTypeName;
+            }
+
+            switch (baseTypeName)
+            {
+                case "Guid":
+                    // GUIDが文字列として格納されている可能性があるので対応
+                    if (value is Guid guidValue)
+                    {
+                        return $"new Guid(\"{guidValue}\")";
+                    }
+                    else if (Guid.TryParse(value.ToString(), out Guid parsedGuid))
+                    {
+                        return $"new Guid(\"{parsedGuid}\")";
+                    }
+                    // 変換できなければ新しいGUIDを生成
+                    return $"new Guid(\"{Guid.NewGuid()}\")";
+
+                case "String":
+                    return $"\"{value}\"";
+
+                case "Int64":
+                case "Long":
+                    if (long.TryParse(value.ToString(), out long longValue))
+                    {
+                        return $"{longValue}L";
+                    }
+                    return "1L";
+
+                case "Int16":
+                case "Short":
+                    if (short.TryParse(value.ToString(), out short shortValue))
+                    {
+                        return $"(short){shortValue}";
+                    }
+                    return "(short)1";
+
+                case "Byte":
+                    if (byte.TryParse(value.ToString(), out byte byteValue))
+                    {
+                        return $"(byte){byteValue}";
+                    }
+                    return "(byte)1";
+
+                case "Decimal":
+                    if (decimal.TryParse(value.ToString(), out decimal decimalValue))
+                    {
+                        return $"{decimalValue}m";
+                    }
+                    return "1m";
+
+                case "Double":
+                    if (double.TryParse(value.ToString(), out double doubleValue))
+                    {
+                        return $"{doubleValue}d";
+                    }
+                    return "1.0d";
+
+                case "Single":
+                case "Float":
+                    if (float.TryParse(value.ToString(), out float floatValue))
+                    {
+                        return $"{floatValue}f";
+                    }
+                    return "1.0f";
+
+                case "DateTime":
+                    if (DateTime.TryParse(value.ToString(), out DateTime dateTimeValue))
+                    {
+                        return $"new DateTime({dateTimeValue.Year}, {dateTimeValue.Month}, {dateTimeValue.Day}, {dateTimeValue.Hour}, {dateTimeValue.Minute}, {dateTimeValue.Second})";
+                    }
+                    return "new DateTime(2023, 1, 1)";
+
+                case "DateTimeOffset":
+                    if (DateTimeOffset.TryParse(value.ToString(), out DateTimeOffset dateTimeOffsetValue))
+                    {
+                        return $"new DateTimeOffset({dateTimeOffsetValue.Year}, {dateTimeOffsetValue.Month}, {dateTimeOffsetValue.Day}, {dateTimeOffsetValue.Hour}, {dateTimeOffsetValue.Minute}, {dateTimeOffsetValue.Second}, TimeSpan.Zero)";
+                    }
+                    return "new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero)";
+
+                case "Int32":
+                case "Int":
+                default:
+                    if (int.TryParse(value.ToString(), out int intValue))
+                    {
+                        return intValue.ToString();
+                    }
+                    return "1";
+            }
         }
 
         /// <summary>
