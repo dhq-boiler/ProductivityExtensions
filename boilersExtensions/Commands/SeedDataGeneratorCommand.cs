@@ -10,7 +10,6 @@ using boilersExtensions.Dialogs;
 using boilersExtensions.Models;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Views;
-using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using static System.Net.Mime.MediaTypeNames;
@@ -74,7 +73,7 @@ namespace boilersExtensions.Commands
                 Debug.WriteLine("SeedDataGeneratorCommand Execute called");
 
                 // アクティブなドキュメントの情報を取得
-                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                var dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
                 if (dte?.ActiveDocument == null)
                 {
                     ShowMessage("アクティブなドキュメントがありません。");
@@ -116,14 +115,14 @@ namespace boilersExtensions.Commands
         /// <summary>
         /// C#ファイルの処理
         /// </summary>
-        private static void HandleCSharpFile(Document document)
+        private static void HandleCSharpFile(EnvDTE.Document document)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
                 // TextDocumentのテキストを取得
-                var textDocument = document.Object("TextDocument") as TextDocument;
+                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
                 if (textDocument == null)
                 {
                     ShowMessage("テキストとして開けませんでした。");
@@ -198,14 +197,14 @@ namespace boilersExtensions.Commands
         /// <summary>
         /// JSONファイルの処理
         /// </summary>
-        private static void HandleJsonFile(Document document)
+        private static void HandleJsonFile(EnvDTE.Document document)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
                 // JSONファイルの内容を取得
-                var textDocument = document.Object("TextDocument") as TextDocument;
+                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
                 if (textDocument == null)
                 {
                     ShowMessage("JSONファイルをテキストとして開けませんでした。");
@@ -245,14 +244,14 @@ namespace boilersExtensions.Commands
         /// <summary>
         /// その他のファイル形式の処理
         /// </summary>
-        private static void HandleOtherFile(Document document, string extension)
+        private static void HandleOtherFile(EnvDTE.Document document, string extension)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
                 // ファイルの内容を取得
-                var textDocument = document.Object("TextDocument") as TextDocument;
+                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
                 if (textDocument == null)
                 {
                     ShowMessage("ファイルをテキストとして開けませんでした。");
@@ -353,7 +352,7 @@ namespace boilersExtensions.Commands
                 command.Visible = true;
 
                 // DTEオブジェクトを取得
-                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                var dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
 
                 // アクティブなドキュメントがある場合のみ有効化
                 if (dte?.ActiveDocument != null)

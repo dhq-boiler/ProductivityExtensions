@@ -444,7 +444,7 @@ namespace boilersExtensions.Utils
             string underlyingType = prop.UnderlyingTypeName ?? typeName;
 
             // 特定の型に基づいた値生成
-            if (typeName == "string" || underlyingType == "string")
+            if (typeName.ToLower() == "string" || underlyingType.ToLower() == "string")
             {
                 // 名前にTitle, Name, Emailなどが含まれる場合は特殊な値を生成
                 if (prop.Name.Contains("Title") || prop.Name.Contains("Name"))
@@ -460,27 +460,35 @@ namespace boilersExtensions.Utils
                 else
                     return $"$\"Item {{{index}}}\"";
             }
-            else if (typeName == "int" || underlyingType == "int" ||
-                     typeName == "long" || underlyingType == "long")
+            else if (typeName.ToLower() == "int" || underlyingType.ToLower() == "int" ||
+                     typeName.ToLower() == "int16" || underlyingType.ToLower() == "int16" ||
+                     typeName.ToLower() == "int32" || underlyingType.ToLower() == "int32" ||
+                     typeName.ToLower() == "int64" || underlyingType.ToLower() == "int64" ||
+                     typeName.ToLower() == "long" || underlyingType.ToLower() == "long")
             {
-                return $"{randomVarName}.Next(1, 1000)" + (typeName == "long" || underlyingType == "long" ? " * 100L" : "");
+                return $"{randomVarName}.Next(1, 1000)" + (typeName.ToLower() == "long" || underlyingType.ToLower() == "long" ? " * 100L" : "");
             }
-            else if (typeName == "double" || underlyingType == "double" ||
-                     typeName == "float" || underlyingType == "float" ||
-                     typeName == "decimal" || underlyingType == "decimal")
+            else if (typeName.ToLower() == "double" || underlyingType.ToLower() == "double" ||
+                     typeName.ToLower() == "float" || underlyingType.ToLower() == "float" ||
+                     typeName.ToLower() == "decimal" || underlyingType.ToLower() == "decimal")
             {
                 if (prop.Name.Contains("Percent"))
                     return $"Math.Round({randomVarName}.NextDouble() * 100, 2)";
                 else
                     return $"Math.Round({randomVarName}.NextDouble() * 1000, 2)";
             }
-            else if (typeName == "bool" || underlyingType == "bool")
+            else if (typeName.ToLower() == "bool" || underlyingType.ToLower() == "bool"
+                     || typeName.ToLower() == "boolean" || underlyingType.ToLower() == "Boolean")
             {
                 return $"{randomVarName}.Next(2) == 0";
             }
             else if (typeName == "DateTime" || underlyingType == "DateTime")
             {
                 return $"DateTime.Now.AddDays(-{randomVarName}.Next(365))";
+            }
+            else if (typeName == "TimeSpan" || underlyingType == "TimeSpan")
+            {
+                return $"TimeSpan.FromDays({randomVarName}.Next(365))";
             }
             else if (typeName == "Guid" || underlyingType == "Guid")
             {

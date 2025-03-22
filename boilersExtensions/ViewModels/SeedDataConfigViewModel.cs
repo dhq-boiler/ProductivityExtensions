@@ -9,9 +9,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Utils;
 using EnvDTE;
+using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using Project = Microsoft.CodeAnalysis.Project;
+using Solution = Microsoft.CodeAnalysis.Solution;
 
 namespace boilersExtensions.ViewModels
 {
@@ -93,7 +99,7 @@ namespace boilersExtensions.ViewModels
         };
 
         // 対象ドキュメント
-        private Document _targetDocument;
+        private EnvDTE.Document _targetDocument;
 
         #endregion
 
@@ -175,7 +181,7 @@ namespace boilersExtensions.ViewModels
         /// <summary>
         /// 対象ドキュメントを設定
         /// </summary>
-        public void SetTargetDocument(Document document, string documentType)
+        public void SetTargetDocument(EnvDTE.Document document, string documentType)
         {
             _targetDocument = document;
             TargetFileName.Value = Path.GetFileName(document.FullName);
@@ -353,7 +359,7 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
             if (textDocument == null) return;
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
@@ -398,7 +404,7 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
             if (textDocument == null) return;
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
@@ -484,7 +490,7 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
             if (textDocument == null) return;
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
@@ -558,7 +564,7 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
             if (textDocument == null) return;
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
@@ -704,7 +710,7 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
             if (textDocument == null) return;
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
@@ -903,16 +909,28 @@ namespace boilersExtensions.ViewModels
                     switch (SelectedDataFormat.Value)
                     {
                         case "C#クラス":
-                            // プロパティリストからタプルリストを作成
-                            var properties = Properties.Select(p =>
-                                (p.Type.Value, p.Name.Value)
-                            ).ToList();
+                            // アクティブなドキュメントをRoslynのDocumentに変換する
+                            var document = await GetRoslynDocumentFromActiveDocumentAsync(_targetDocument);
 
-                            // C#クラスにメソッドを挿入
+                            // EntityAnalyzerを使用してC#クラスを解析
+                            var analyzer = new Analyzers.EntityAnalyzer();
+                            var entity = await analyzer.AnalyzeEntitiesAsync(document);
+
+                            if (entity.All(x => x.Name != ClassName.Value))
+                            {
+                                MessageBox.Show(
+                                    $"アクティブドキュメントから {ClassName.Value} が検出できませんでした。",
+                                    "エラー",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Information);
+                                break;
+                            }
+
+                            // 解析されたPropertyInfoを使用する
                             result = await executor.InsertSeedMethodToCSharpClassAsync(
                                 _targetDocument,
                                 ClassName.Value,
-                                properties,
+                                entity.First(x => x.Name == ClassName.Value).Properties,  // 完全なPropertyInfoリスト
                                 DataCount.Value);
 
                             break;
@@ -1012,6 +1030,61 @@ namespace boilersExtensions.ViewModels
                     SetProcessing(false);
                 }
             });
+        }
+
+        private async Task<Microsoft.CodeAnalysis.Document> GetRoslynDocumentFromActiveDocumentAsync(EnvDTE.Document activeDocument)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            try
+            {
+                // ComponentModelサービスを取得
+                var componentModel = (await Package.GetServiceAsync(typeof(SComponentModel))) as IComponentModel;
+                var workspace = componentModel.GetService<VisualStudioWorkspace>();
+
+                // アクティブなドキュメントのパスを取得
+                string documentPath = activeDocument.FullName;
+
+                // ソリューション内のすべてのプロジェクトからドキュメントを検索
+                foreach (var _project in workspace.CurrentSolution.Projects)
+                {
+                    foreach (var document in _project.Documents)
+                    {
+                        if (string.Equals(document.FilePath, documentPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return document;
+                        }
+                    }
+                }
+
+                // ドキュメントが見つからない場合の処理
+                // 可能であればAdHocWorkspaceを使用して新しいドキュメントを作成
+                var textDocument = activeDocument.Object("TextDocument") as EnvDTE.TextDocument;
+                var text = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+
+                var adhocWorkspace = new AdhocWorkspace();
+                var projectInfo = ProjectInfo.Create(
+                    ProjectId.CreateNewId(),
+                    VersionStamp.Create(),
+                    "TempProject",
+                    "TempAssembly",
+                    LanguageNames.CSharp);
+
+                var project = adhocWorkspace.AddProject(projectInfo);
+
+                var documentInfo = DocumentInfo.Create(
+                    DocumentId.CreateNewId(project.Id),
+                    Path.GetFileName(documentPath),
+                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(text), VersionStamp.Create())),
+                    filePath: documentPath);
+
+                return adhocWorkspace.AddDocument(documentInfo);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error getting Roslyn Document: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
