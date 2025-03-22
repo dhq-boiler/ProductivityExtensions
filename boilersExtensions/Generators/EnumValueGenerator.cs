@@ -6,7 +6,7 @@ using boilersExtensions.Models;
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// Enum型プロパティの値を生成するクラス
+    /// Enum型プロパティの値を生成するクラス（改善版）
     /// </summary>
     public class EnumValueGenerator
     {
@@ -20,7 +20,7 @@ namespace boilersExtensions.Generators
         /// <param name="recordIndex">レコードのインデックス（0から始まる）</param>
         /// <param name="propConfig">プロパティ設定（指定されている場合）</param>
         /// <returns>生成されたEnum値（C#のリテラル形式）</returns>
-        public string GenerateEnumValue(PropertyInfo property, int recordIndex, PropertyConfigViewModel propConfig)
+        public string GenerateEnumValue(Models.PropertyInfo property, int recordIndex, PropertyConfigViewModel propConfig)
         {
             // プロパティがEnum型でない場合は空文字を返す
             if (!property.IsEnum || property.EnumValues.Count == 0)
@@ -68,7 +68,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// すべてのEnum値を順番に使用する戦略
         /// </summary>
-        private string GenerateUseAllValue(PropertyInfo property, int recordIndex)
+        private string GenerateUseAllValue(Models.PropertyInfo property, int recordIndex)
         {
             int valueIndex = recordIndex % property.EnumValues.Count;
             var enumValue = property.EnumValues[valueIndex];
@@ -78,7 +78,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// 特定のEnum値のみを使用する戦略
         /// </summary>
-        private string GenerateSpecificValue(PropertyInfo property, int recordIndex, EnumPropertyConfigViewModel config)
+        private string GenerateSpecificValue(Models.PropertyInfo property, int recordIndex, EnumPropertyConfigViewModel config)
         {
             // 選択された値がない場合は最初の値を使用
             if (config.SelectedValues == null || config.SelectedValues.Count == 0)
@@ -96,7 +96,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// ランダムなEnum値を使用する戦略
         /// </summary>
-        private string GenerateRandomValue(PropertyInfo property, int recordIndex, EnumPropertyConfigViewModel config)
+        private string GenerateRandomValue(Models.PropertyInfo property, int recordIndex, EnumPropertyConfigViewModel config)
         {
             // レコードごとに一貫したランダム値を使用するためにキャッシュを活用
             string cacheKey = $"{property.FullTypeName}_{recordIndex}";
@@ -144,7 +144,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// フラグEnum値を組み合わせて生成
         /// </summary>
-        private List<string> GenerateCombinedFlagsValue(PropertyInfo property, int valueCount)
+        private List<string> GenerateCombinedFlagsValue(Models.PropertyInfo property, int valueCount)
         {
             // 利用可能な値からランダムに選択
             var availableValues = property.EnumValues.ToList();
@@ -171,7 +171,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// カスタム割り当てに基づくEnum値を生成
         /// </summary>
-        private string GenerateCustomValue(PropertyInfo property, int recordIndex, EnumPropertyConfigViewModel config)
+        private string GenerateCustomValue(Models.PropertyInfo property, int recordIndex, EnumPropertyConfigViewModel config)
         {
             // カスタムマッピングが指定されている場合
             if (config.CustomMapping != null && config.CustomMapping.TryGetValue(recordIndex, out var customValue))

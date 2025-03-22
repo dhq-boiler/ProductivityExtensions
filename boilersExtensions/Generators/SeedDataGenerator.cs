@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using boilersExtensions.Models;
 using Microsoft.CodeAnalysis;
+using PropertyInfo = boilersExtensions.Models.PropertyInfo;
 
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// Entity Frameworkのエンティティに対するシードデータを生成するクラス
+    /// Entity Frameworkのエンティティに対するシードデータを生成するクラス（改善版）
     /// </summary>
     public class SeedDataGenerator
     {
@@ -42,22 +42,27 @@ namespace boilersExtensions.Generators
 
             var sb = new StringBuilder();
 
+            // ランダム変数の宣言を追加
+            sb.AppendLine("    // ランダム生成用のインスタンスを定義");
+            sb.AppendLine("    var random = new Random();");
+            sb.AppendLine();
+
             foreach (var entity in orderedEntities)
             {
                 // 設定で指定された数のシードデータを生成
                 var entityConfig = config.GetEntityConfig(entity.Name);
-                if (entityConfig == null || entityConfig.RecordCount <= 0)
+                if (entityConfig == null || !entityConfig.IsSelected || entityConfig.RecordCount <= 0)
                 {
                     continue;
                 }
 
-                sb.AppendLine($"// {entity.Name} エンティティのシードデータ");
-                sb.AppendLine($"modelBuilder.Entity<{entity.Name}>().HasData(");
+                sb.AppendLine($"    // {entity.Name} エンティティのシードデータ");
+                sb.AppendLine($"    modelBuilder.Entity<{entity.Name}>().HasData(");
 
                 for (int i = 0; i < entityConfig.RecordCount; i++)
                 {
-                    sb.AppendLine($"    new {entity.Name}");
-                    sb.AppendLine("    {");
+                    sb.AppendLine($"        new {entity.Name}");
+                    sb.AppendLine("        {");
 
                     // プロパティごとに値を生成
                     var propStrings = new List<string>();
@@ -75,20 +80,38 @@ namespace boilersExtensions.Generators
                             continue;
                         }
 
+                        // コレクションプロパティはスキップ
+                        if (prop.IsCollection)
+                        {
+                            continue;
+                        }
+
+                        // EqualityContract プロパティはスキップ (record型で自動生成される)
+                        if (prop.Name == "EqualityContract")
+                        {
+                            continue;
+                        }
+
+                        // 読み取り専用プロパティはスキップ
+                        if (prop.Symbol != null && prop.Symbol.SetMethod == null)
+                        {
+                            continue;
+                        }
+
                         // プロパティの値を生成
                         string propValue = GeneratePropertyValue(prop, i, entityConfig);
                         if (propValue != null)
                         {
-                            propStrings.Add($"        {prop.Name} = {propValue}");
+                            propStrings.Add($"            {prop.Name} = {propValue}");
                         }
                     }
 
                     sb.AppendLine(string.Join(",\r\n", propStrings));
 
-                    sb.AppendLine("    }" + (i < entityConfig.RecordCount - 1 ? "," : ""));
+                    sb.AppendLine("        }" + (i < entityConfig.RecordCount - 1 ? "," : ""));
                 }
 
-                sb.AppendLine(");");
+                sb.AppendLine("    );");
                 sb.AppendLine();
             }
 
@@ -98,10 +121,6 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// プロパティに対する値を生成します
         /// </summary>
-        /// <param name="property">プロパティ情報</param>
-        /// <param name="recordIndex">レコードのインデックス（0から始まる）</param>
-        /// <param name="entityConfig">エンティティの設定</param>
-        /// <returns>生成された値（C#のリテラル形式）</returns>
         private string GeneratePropertyValue(PropertyInfo property, int recordIndex, EntityConfigViewModel entityConfig)
         {
             // プロパティ固有の設定があれば取得

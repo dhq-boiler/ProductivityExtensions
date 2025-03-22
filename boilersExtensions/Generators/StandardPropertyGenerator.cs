@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 using boilersExtensions.Models;
 
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// 標準的なプロパティ型の値を生成するクラス
+    /// 標準的なプロパティ型の値を生成するクラス（改善版）
     /// </summary>
     public class StandardPropertyGenerator
     {
@@ -250,7 +249,7 @@ namespace boilersExtensions.Generators
                 return "PhoneNumber";
             }
 
-            if (propName.Contains("url") || propName.Contains("website") || propName.Contains("site"))
+            if (propName.Contains("url") || propName.Contains("uri") || propName.Contains("website") || propName.Contains("site"))
             {
                 return "Url";
             }
@@ -273,6 +272,11 @@ namespace boilersExtensions.Generators
             if (propName.Contains("description") || propName.Contains("content") || propName.Contains("text"))
             {
                 return "Lorem";
+            }
+
+            if (propName.Contains("file") || propName.Contains("key"))
+            {
+                return "Url";
             }
 
             return "Default";
@@ -347,7 +351,13 @@ namespace boilersExtensions.Generators
                 return "null";
             }
 
-            switch (typeName)
+            // Handle nullable types by checking for "Nullable" typeName
+            bool isNullable = typeName == "Nullable";
+
+            // For nullable types, use the actual type of the value
+            string effectiveTypeName = isNullable ? value.GetType().Name : typeName;
+
+            switch (effectiveTypeName)
             {
                 case "String":
                     // 特殊文字をエスケープ
@@ -366,7 +376,8 @@ namespace boilersExtensions.Generators
                     return $"new TimeSpan({ts.Days}, {ts.Hours}, {ts.Minutes}, {ts.Seconds})";
 
                 case "Guid":
-                    return $"new Guid(\"{value}\")";
+                    var guid = (Guid)value;
+                    return $"Guid.Parse(\"{guid.ToString()}\")";
 
                 case "Char":
                     return $"'{value}'";
