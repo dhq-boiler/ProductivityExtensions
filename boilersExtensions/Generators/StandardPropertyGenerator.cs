@@ -33,9 +33,28 @@ namespace boilersExtensions.Generators
         public string GenerateValue(PropertyInfo property, int recordIndex, PropertyConfigViewModel propConfig)
         {
             // プロパティ設定が指定されている場合はそれを優先
-            if (propConfig != null && propConfig.UseCustomStrategy)
+            if (propConfig != null)
             {
-                return propConfig.CustomValue;
+                // カスタム戦略の処理
+                if (propConfig.UseCustomStrategy)
+                {
+                    return propConfig.CustomValue;
+                }
+
+                // 固定値の処理
+                if (propConfig.HasFixedValues)
+                {
+                    int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                    string fixedValue = propConfig.FixedValues[fixedValueIndex];
+
+                    // 型に応じてフォーマット
+                    if (property.TypeName == "String" || property.TypeName.Contains("string"))
+                    {
+                        return $"\"{fixedValue}\"";
+                    }
+
+                    return fixedValue;
+                }
             }
 
             // キャッシュキーを生成

@@ -239,6 +239,29 @@ namespace boilersExtensions.Models
         /// プロパティの型名
         /// </summary>
         public string PropertyTypeName { get; set; }
+
+        /// <summary>
+        /// 固定値のリスト - 新しく追加
+        /// </summary>
+        public List<string> FixedValues { get; set; } = new List<string>();
+
+        /// <summary>
+        /// 固定値があるかどうか - 新しく追加
+        /// </summary>
+        public bool HasFixedValues => FixedValues != null && FixedValues.Count > 0;
+
+        /// <summary>
+        /// 固定値の表示用テキストを取得 - 新しく追加
+        /// </summary>
+        public string GetFixedValuesDisplayText()
+        {
+            if (!HasFixedValues)
+                return string.Empty;
+
+            return FixedValues.Count == 1
+                ? FixedValues[0]
+                : $"{FixedValues.Count}個の値...";
+        }
     }
 
     /// <summary>

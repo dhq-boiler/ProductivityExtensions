@@ -64,10 +64,14 @@
     <Compile Include="Converters\EntityPropertyConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
+    <Compile Include="Converters\PropertyConfigConverter.cs" />
+    <Compile Include="Converters\PropertyWithNameConverter.cs" />
     <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Generators\EnhancedSeedDataGenerator.cs" />
     <Compile Include="Generators\EnumValueGenerator.cs" />
+    <Compile Include="Generators\FixedValueCombinationGenerator.cs" />
     <Compile Include="Generators\RandomDataProvider.cs" />
     <Compile Include="Generators\SeedDataGenerator.cs" />
     <Compile Include="Generators\StandardPropertyGenerator.cs" />
@@ -114,6 +118,9 @@
     <Compile Include="ViewModels\SeedDataConfigViewModel.cs" />
     <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Views\FixedValuesDialog.xaml.cs">
+      <DependentUpon>FixedValuesDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\GuidSelectionDialog.xaml.cs">
       <DependentUpon>GuidSelectionDialog.xaml</DependentUpon>
     </Compile>
@@ -261,6 +268,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Controls\LoadingSpinner.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\FixedValuesDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

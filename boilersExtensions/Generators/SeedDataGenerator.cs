@@ -121,9 +121,9 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// プロパティに対する値を生成します
         /// </summary>
-        private string GeneratePropertyValue(PropertyInfo property, int recordIndex, EntityConfigViewModel entityConfig)
+        protected string GeneratePropertyValue(PropertyInfo property, int recordIndex, EntityConfigViewModel entityConfig)
         {
-            // プロパティ固有の設定があれば取得
+            // プロパティ固有の設定を取得
             var propConfig = entityConfig.GetPropertyConfig(property.Name);
 
             // 主キーの場合
@@ -179,6 +179,31 @@ namespace boilersExtensions.Generators
                 return _enumValueGenerator.GenerateEnumValue(property, recordIndex, propConfig);
             }
 
+            // プロパティ設定にカスタム戦略がある場合
+            if (propConfig != null)
+            {
+                // カスタム値が指定されている場合
+                if (propConfig.UseCustomStrategy)
+                {
+                    return propConfig.CustomValue;
+                }
+
+                // 固定値リストがある場合
+                if (propConfig.HasFixedValues)
+                {
+                    int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                    string fixedValue = propConfig.FixedValues[fixedValueIndex];
+
+                    // 型に応じてフォーマット
+                    if (property.TypeName == "String" || property.TypeName.Contains("string"))
+                    {
+                        return $"\"{fixedValue}\"";
+                    }
+
+                    return fixedValue;
+                }
+            }
+
             // 標準プロパティの場合
             return _standardPropertyGenerator.GenerateValue(property, recordIndex, propConfig);
         }
@@ -187,15 +212,30 @@ namespace boilersExtensions.Generators
         /// 外部キーの値を生成します（様々なデータ型に対応）
         /// </summary>
         private string GenerateForeignKeyValue(
-            PropertyInfo property,
-            int recordIndex,
-            EntityConfigViewModel entityConfig,
-            PropertyConfigViewModel propConfig)
+    PropertyInfo property,
+    int recordIndex,
+    EntityConfigViewModel entityConfig,
+    PropertyConfigViewModel propConfig)
         {
             // カスタム値が指定されている場合
             if (propConfig != null && propConfig.UseCustomStrategy)
             {
                 return propConfig.CustomValue;
+            }
+
+            // 固定値がある場合
+            if (propConfig != null && propConfig.HasFixedValues)
+            {
+                int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                string fixedValue = propConfig.FixedValues[fixedValueIndex];
+
+                // 型に応じてフォーマット
+                if (property.TypeName == "String" || property.TypeName.Contains("string"))
+                {
+                    return $"\"{fixedValue}\"";
+                }
+
+                return fixedValue;
             }
 
             // リレーションシップの設定があれば使用
@@ -468,7 +508,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// エンティティ間の依存関係を解決し、適切な順序で処理できるようにします
         /// </summary>
-        private List<EntityInfo> ResolveDependencyOrder(List<EntityInfo> entities)
+        protected List<EntityInfo> ResolveDependencyOrder(List<EntityInfo> entities)
         {
             var result = new List<EntityInfo>();
             var visited = new HashSet<string>();

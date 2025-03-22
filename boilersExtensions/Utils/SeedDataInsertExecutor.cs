@@ -94,7 +94,7 @@ namespace boilersExtensions.Utils
         /// <summary>
         /// 生成されたコードをドキュメントに挿入します
         /// </summary>
-        private async Task<bool> InsertGeneratedCodeToDocument(EnvDTE.Document document, string className, string generatedCode)
+        internal async Task<bool> InsertGeneratedCodeToDocument(EnvDTE.Document document, string className, string generatedCode)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 

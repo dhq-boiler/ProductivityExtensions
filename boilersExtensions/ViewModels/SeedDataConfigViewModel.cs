@@ -25,6 +25,8 @@ using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 using Document = EnvDTE.Document;
 using TextDocument = EnvDTE.TextDocument;
+using static boilersExtensions.Generators.FixedValueCombinationGenerator;
+using boilersExtensions.Generators;
 
 namespace boilersExtensions.ViewModels
 {
@@ -94,7 +96,8 @@ namespace boilersExtensions.ViewModels
         public ReactiveCommand RemoveRelationshipCommand { get; }
         public List<RelationshipType> RelationshipTypes { get; } = Enum.GetValues(typeof(RelationshipType))
             .Cast<RelationshipType>().ToList();
-
+        public ReactivePropertySlim<string> RecordCountInfoText { get; } = new ReactivePropertySlim<string>("10件");
+        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
 
         public List<string> EntityNames => Entities.Select(e => e.Name.Value).ToList();
 
@@ -142,6 +145,9 @@ namespace boilersExtensions.ViewModels
         {
             // プロパティの初期化
             Properties.Clear();
+
+            // エンティティリストを最初に空にする
+            Entities.Clear();
 
             // データ形式切り替え時の処理
             SelectedDataFormat.Subscribe(format =>
@@ -1302,11 +1308,19 @@ namespace boilersExtensions.ViewModels
             // プロパティリストをクリアして新しいプロパティを追加
             Properties.Clear();
 
+            // EntityViewModelが利用可能な場合は、そこにも設定を追加
+            if (SelectedEntity.Value != null)
+            {
+                SelectedEntity.Value.Properties.Clear();
+                SelectedEntity.Value.PropertyConfigs.Clear();
+            }
+
             foreach (System.Text.RegularExpressions.Match match in propertyMatches)
             {
                 var type = match.Groups[1].Value;
                 var name = match.Groups[2].Value;
 
+                // PropertyViewModelを作成
                 var property = new PropertyViewModel
                 {
                     Name = { Value = name },
@@ -1314,7 +1328,23 @@ namespace boilersExtensions.ViewModels
                     DataType = { Value = DetermineDataType(name, type) }
                 };
 
+                // 古いスタイルのUIの場合はPropertiesコレクションに追加
                 Properties.Add(property);
+
+                // EntityViewModelが利用可能な場合は、そこにもプロパティを追加
+                if (SelectedEntity.Value != null)
+                {
+                    SelectedEntity.Value.Properties.Add(property);
+
+                    // PropertyConfigViewModelも作成して追加
+                    var propConfig = new PropertyConfigViewModel
+                    {
+                        PropertyName = name,
+                        PropertyTypeName = type
+                    };
+
+                    SelectedEntity.Value.PropertyConfigs.Add(propConfig);
+                }
             }
         }
 
@@ -1805,7 +1835,7 @@ namespace boilersExtensions.ViewModels
                     UpdateProgress(0);
 
                     // プロパティリストが空の場合はエラー
-                    if (Properties.Count == 0 && Entities.Count == 0)
+                    if (SelectedEntity.Value == null || SelectedEntity.Value.Properties.Count == 0)
                     {
                         MessageBox.Show(
                             "プロパティ/エンティティが設定されていません。スキーマ読込または手動でプロパティ/エンティティを追加してください。",
@@ -1815,135 +1845,83 @@ namespace boilersExtensions.ViewModels
                         return;
                     }
 
-                    var result = false;
+                    // アクティブなドキュメントをRoslynのDocumentに変換する
+                    var document = await GetRoslynDocumentFromActiveDocumentAsync(_targetDocument);
 
-                    // データ件数が不正な場合は修正
-                    if (DataCount.Value <= 0)
+                    if (document == null)
                     {
-                        DataCount.Value = 10;
+                        MessageBox.Show(
+                            "ドキュメントの解析に失敗しました。",
+                            "エラー",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        return;
                     }
 
-                    // 複数エンティティのリレーショナルデータ生成
-                    if (Entities.Count > 1 && Entities.Any(e => e.Relationships.Count > 0))
+                    // EntityAnalyzerを使用してC#クラスを解析
+                    var analyzer = new Analyzers.EntityAnalyzer();
+                    var entityList = await analyzer.AnalyzeEntitiesAsync(document);
+
+                    if (entityList.Count == 0 || entityList.All(x => x.Name != ClassName.Value))
                     {
-                        // 改善されたSeedDataGeneratorを使用
-                        var seedGenerator = new Generators.SeedDataGenerator();
-
-                        // EntityInfoリストを作成
-                        var entityInfos = new List<EntityInfo>();
-
-                        foreach (var entity in Entities)
-                        {
-                            // DTEからファイルを開く
-                            var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
-                            var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, entity.FilePath.Value);
-
-                            var envDTEDocument = documentWindow?.Document;
-
-                            // アクティブなドキュメントをRoslynのDocumentに変換する
-                            var document = await GetRoslynDocumentFromActiveDocumentAsync(envDTEDocument);
-
-                            // EntityAnalyzerを使用してC#クラスを解析
-                            var analyzer = new Analyzers.EntityAnalyzer();
-
-                            try
-                            {
-                                // 現在選択されているエンティティを解析
-                                var entities = await analyzer.AnalyzeEntitiesAsync(document);
-                                entityInfos.AddRange(entities);
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"Error analyzing entities: {ex.Message}");
-                            }
-                        }
-
-                        // SeedDataConfig作成
-                        var config = new SeedDataConfig();
-
-                        // EntityConfigViewModelからEntityConfigに変換
-                        foreach (var entityViewModel in Entities.Where(e => e.IsSelected.Value))
-                        {
-                            var entityConfig = new EntityConfigViewModel
-                            {
-                                EntityName = entityViewModel.Name.Value,
-                                RecordCount = entityViewModel.RecordCount.Value,
-                                IsSelected = true
-                            };
-
-                            // プロパティ設定を追加
-                            foreach (var prop in entityViewModel.Properties)
-                            {
-                                var propConfig = new PropertyConfigViewModel
-                                {
-                                    PropertyName = prop.Name.Value,
-                                    PropertyTypeName = prop.Type.Value
-                                };
-
-                                entityConfig.PropertyConfigs.Add(propConfig);
-                            }
-
-                            // リレーションシップ設定を追加
-                            foreach (var rel in entityViewModel.Relationships)
-                            {
-                                var relConfig = new RelationshipConfigViewModel
-                                {
-                                    RelatedEntityName = rel.TargetEntityName.Value,
-                                    Strategy = ConvertRelationshipType(rel.RelationType.Value)
-                                };
-
-                                entityConfig.RelationshipConfigs.Add(relConfig);
-                            }
-
-                            config.UpdateEntityConfig(entityConfig);
-                        }
-
-                        // シードデータを生成
-                        var generatedCode = seedGenerator.GenerateSeedData(entityInfos, config);
-
-                        // 生成されたコードを挿入
-                        result = await InsertGeneratedCodeToDocument(_targetDocument, ClassName.Value, generatedCode);
+                        MessageBox.Show(
+                            $"アクティブドキュメントから {ClassName.Value} が検出できませんでした。",
+                            "エラー",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        return;
                     }
-                    else
+
+                    // EntityInfoからSeedDataConfigを作成
+                    var config = new SeedDataConfig();
+
+                    // 選択されているエンティティの設定を取得
+                    var entity = entityList.First(x => x.Name == ClassName.Value);
+                    var entityConfig = new EntityConfigViewModel
                     {
-                        // 単一エンティティの場合の既存のコード
-                        var executor = new SeedDataInsertExecutor(Package);
+                        EntityName = entity.Name,
+                        RecordCount = TotalRecordCount.Value,
+                        IsSelected = true
+                    };
 
-                        // 選択されたデータ形式に応じてデータ生成
-                        UpdateProgress(20, "データを整形中...");
+                    // プロパティ設定をコピー
+                    foreach (var prop in entity.Properties)
+                    {
+                        if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                            continue;
 
-                        switch (SelectedDataFormat.Value)
+                        // UIから該当するプロパティ設定を検索
+                        var uiPropConfig = SelectedEntity.Value.GetPropertyConfig(prop.Name);
+                        if (uiPropConfig != null)
                         {
-                            case "C#クラス":
-                                // アクティブなドキュメントをRoslynのDocumentに変換する
-                                var document = await GetRoslynDocumentFromActiveDocumentAsync(_targetDocument);
-
-                                // EntityAnalyzerを使用してC#クラスを解析
-                                var analyzer = new Analyzers.EntityAnalyzer();
-                                var entity = await analyzer.AnalyzeEntitiesAsync(document);
-
-                                if (entity.All(x => x.Name != ClassName.Value))
-                                {
-                                    MessageBox.Show(
-                                        $"アクティブドキュメントから {ClassName.Value} が検出できませんでした。",
-                                        "エラー",
-                                        MessageBoxButton.OK,
-                                        MessageBoxImage.Information);
-                                    break;
-                                }
-
-                                // 解析されたPropertyInfoを使用する
-                                result = await executor.InsertSeedMethodToCSharpClassAsync(
-                                    _targetDocument,
-                                    ClassName.Value,
-                                    entity.First(x => x.Name == ClassName.Value).Properties, // 完全なPropertyInfoリスト
-                                    DataCount.Value);
-
-                                break;
-
-                                // 他のデータ形式の処理（省略）...
+                            // 設定をコピー
+                            entityConfig.PropertyConfigs.Add(uiPropConfig);
+                        }
+                        else
+                        {
+                            // 新しい設定を作成
+                            entityConfig.PropertyConfigs.Add(new PropertyConfigViewModel
+                            {
+                                PropertyName = prop.Name,
+                                PropertyTypeName = prop.TypeName
+                            });
                         }
                     }
+
+                    // 設定を保存
+                    config.UpdateEntityConfig(entityConfig);
+
+                    UpdateProgress(50, "コード生成中...");
+
+                    // 拡張シードデータジェネレーターを使用
+                    var seedGenerator = new EnhancedSeedDataGenerator();
+                    var generatedCode = seedGenerator.GenerateSeedDataWithFixedValues(new List<EntityInfo> { entity }, config);
+
+                    UpdateProgress(80, "コードを挿入中...");
+
+                    // 生成したコードを挿入
+                    var executor = new SeedDataInsertExecutor(Package);
+                    bool result = await executor.InsertGeneratedCodeToDocument(_targetDocument, ClassName.Value, generatedCode);
 
                     UpdateProgress(100, "完了");
 
@@ -1951,7 +1929,7 @@ namespace boilersExtensions.ViewModels
                     if (result)
                     {
                         MessageBox.Show(
-                            $"{DataCount.Value}件のテストデータを生成しました。",
+                            $"{TotalRecordCount.Value}件のテストデータを生成しました。",
                             "完了",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
@@ -1971,10 +1949,6 @@ namespace boilersExtensions.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error generating seed data: {ex.Message}");
-                    Debug.WriteLine(ex.StackTrace);
-
-                    // エラーメッセージを表示
                     MessageBox.Show(
                         $"テストデータ生成中にエラーが発生しました: {ex.Message}",
                         "エラー",
@@ -2446,6 +2420,229 @@ namespace boilersExtensions.ViewModels
             sb.AppendLine($"</{RootElementName.Value}>");
         }
 
+        // SeedDataConfigViewModelに追加するメソッド
+
+        /// <summary>
+        /// 総レコード数を更新（固定値の組み合わせを考慮）
+        /// </summary>
+        public void UpdateTotalRecordCount()
+        {
+            int baseCount = DataCount.Value;
+            int totalCombinations = 1;
+
+            // 各プロパティの固定値の組み合わせ数を計算
+            foreach (var prop in Properties)
+            {
+                int valueCount = prop.FixedValues.Count;
+                if (valueCount > 0)
+                {
+                    totalCombinations *= valueCount;
+                }
+            }
+
+            // データ件数を更新（基本件数 × 固定値の組み合わせ数）
+            if (totalCombinations > 1)
+            {
+                DataCount.Value = baseCount * totalCombinations;
+            }
+
+            // プレビュー更新
+            UpdatePreview();
+        }
+
+        /// <summary>
+        /// 固定値を考慮してプロパティ値を生成します
+        /// </summary>
+        private string GeneratePropertyValueWithFixedValues(PropertyInfo property, int recordIndex, PropertyConfigViewModel propConfig)
+        {
+            // 固定値が設定されている場合
+            if (propConfig != null && propConfig.HasFixedValues)
+            {
+                // 固定値リストから適切な値を選択
+                int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                string fixedValue = propConfig.FixedValues[fixedValueIndex];
+
+                // 文字列型の場合は引用符を追加
+                if (property.TypeName == "String" || property.TypeName.Contains("string"))
+                {
+                    return $"\"{fixedValue}\"";
+                }
+
+                return fixedValue;
+            }
+
+            // 固定値がない場合は標準の値生成メソッドを使用
+            // 注: entityConfigを渡す必要があるため、この時点でGeneratePropertyValueを直接呼び出せない
+            // entityConfigが必要なため、呼び出し元で標準の生成ロジックを呼び出す必要がある
+            return null; // 固定値がないことを示す
+        }
+
+        /// <summary>
+        /// シードデータ生成メソッド（既存の生成メソッドを拡張して固定値対応）
+        /// </summary>
+        public async Task<string> GenerateSeedDataWithFixedValues(List<EntityInfo> entities, SeedDataConfig config)
+        {
+            var sb = new StringBuilder();
+
+            // 各エンティティに対して処理
+            foreach (var entity in entities)
+            {
+                var entityConfig = config.GetEntityConfig(entity.Name);
+                if (entityConfig == null || !entityConfig.IsSelected || entityConfig.RecordCount <= 0)
+                {
+                    continue;
+                }
+
+                sb.AppendLine($"    // {entity.Name} エンティティのシードデータ");
+                sb.AppendLine($"    modelBuilder.Entity<{entity.Name}>().HasData(");
+
+                // 固定値の組み合わせ配列を作成
+                var propertiesWithFixedValues = entity.Properties
+                    .Where(p => !p.ExcludeFromSeed && !p.IsNavigationProperty && !p.IsCollection)
+                    .Select(p => new
+                    {
+                        Property = p,
+                        Config = entityConfig.GetPropertyConfig(p.Name),
+                        HasFixedValues = entityConfig.GetPropertyConfig(p.Name)?.HasFixedValues ?? false
+                    })
+                    .Where(x => x.HasFixedValues)
+                    .ToList();
+
+                int totalRecords = entityConfig.RecordCount;
+
+                // レコード生成
+                for (int i = 0; i < totalRecords; i++)
+                {
+                    sb.AppendLine($"        new {entity.Name}");
+                    sb.AppendLine("        {");
+
+                    // プロパティごとに値を生成
+                    var propStrings = new List<string>();
+                    foreach (var prop in entity.Properties)
+                    {
+                        if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                        {
+                            continue;
+                        }
+
+                        // プロパティの設定を取得
+                        var propConfig = entityConfig.GetPropertyConfig(prop.Name);
+
+                        // 固定値対応のプロパティ値生成
+                        // プロパティの値を生成
+                        string propValue = GeneratePropertyValueWithFixedValues(prop, i, propConfig);
+                        if (propValue != null)
+                        {
+                            propStrings.Add($"            {prop.Name} = {propValue}");
+                        }
+                    }
+
+                    sb.AppendLine(string.Join(",\r\n", propStrings));
+                    sb.AppendLine("        }" + (i < totalRecords - 1 ? "," : ""));
+                }
+
+                sb.AppendLine("    );");
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 全プロパティの固定値の組み合わせ数を計算して表示を更新するメソッド
+        /// </summary>
+        internal void CalculateAndUpdateTotalRecordCount()
+        {
+            int baseCount = DataCount.Value;
+            int totalCombinations = CalculateTotalCombinations();
+
+            // 基本のレコード数と組み合わせ数を掛けて総レコード数を計算
+            int totalRecords = baseCount * Math.Max(1, totalCombinations);
+
+            // UIの表示を更新
+            if (totalCombinations > 1)
+            {
+                // 組み合わせ数がある場合は、その情報を表示
+                RecordCountInfoText.Value = $"{baseCount} × {totalCombinations} = {totalRecords}件";
+                TotalRecordCount.Value = totalRecords;
+            }
+            else
+            {
+                // 組み合わせがない場合は単純に件数を表示
+                RecordCountInfoText.Value = $"{baseCount}件";
+                TotalRecordCount.Value = baseCount;
+            }
+
+            // プレビュー更新
+            UpdatePreview();
+        }
+
+        /// <summary>
+        /// プロパティ名から固定値の表示テキストを取得するメソッド
+        /// </summary>
+        public string GetFixedValuesDisplayForProperty(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || SelectedEntity.Value == null)
+                return string.Empty;
+
+            var propConfig = SelectedEntity.Value.GetPropertyConfig(propertyName);
+            if (propConfig == null || !propConfig.HasFixedValues)
+                return string.Empty;
+
+            return propConfig.GetFixedValuesDisplayText();
+        }
+
+        /// <summary>
+        /// プロパティ名から固定値リストを取得するメソッド
+        /// </summary>
+        public List<string> GetFixedValuesForProperty(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || SelectedEntity.Value == null)
+                return new List<string>();
+
+            var propConfig = SelectedEntity.Value.GetPropertyConfig(propertyName);
+            if (propConfig == null || !propConfig.HasFixedValues)
+                return new List<string>();
+
+            return propConfig.FixedValues;
+        }
+
+        /// <summary>
+        /// 全プロパティの固定値の組み合わせ総数を計算
+        /// </summary>
+        private int CalculateTotalCombinations()
+        {
+            int combinations = 1;
+
+            // アクティブなエンティティの固定値を持つプロパティを検索
+            var entity = SelectedEntity.Value;
+            if (entity != null)
+            {
+                foreach (var prop in entity.Properties)
+                {
+                    int fixedValueCount = prop.FixedValues.Count;
+                    if (fixedValueCount > 0)
+                    {
+                        combinations *= fixedValueCount;
+                    }
+                }
+            }
+            else
+            {
+                // 古いUI（単一エンティティ）のための処理
+                foreach (var prop in Properties)
+                {
+                    int fixedValueCount = prop.FixedValues.Count;
+                    if (fixedValueCount > 0)
+                    {
+                        combinations *= fixedValueCount;
+                    }
+                }
+            }
+
+            return combinations;
+        }
+
         #region サンプル値生成メソッド
 
         /// <summary>
@@ -2814,12 +3011,36 @@ namespace boilersExtensions.ViewModels
         public ReactivePropertySlim<string> Type { get; } = new ReactivePropertySlim<string>();
         public ReactivePropertySlim<string> DataType { get; } = new ReactivePropertySlim<string>();
 
+        // 固定値リストを保持するプロパティを追加
+        public ReactiveCollection<string> FixedValues { get; } = new ReactiveCollection<string>();
+
+        // 固定値があるかどうかを示すプロパティ
+        public ReactivePropertySlim<bool> HasFixedValues { get; } = new ReactivePropertySlim<bool>(false);
+
         public PropertyViewModel()
         {
             // ReactivePropertyをDisposablesコレクションに追加
             Name.AddTo(Disposables);
             Type.AddTo(Disposables);
             DataType.AddTo(Disposables);
+            HasFixedValues.AddTo(Disposables);
+
+            // 固定値が追加/削除されたときにHasFixedValuesを更新
+            FixedValues.CollectionChanged += (sender, args) =>
+            {
+                HasFixedValues.Value = FixedValues.Count > 0;
+            };
+        }
+
+        // 固定値の文字列表現（表示用）
+        public string GetFixedValuesDisplayText()
+        {
+            if (FixedValues.Count == 0)
+                return string.Empty;
+
+            return FixedValues.Count == 1
+                ? FixedValues[0]
+                : $"{FixedValues.Count}個の値...";
         }
     }
 }

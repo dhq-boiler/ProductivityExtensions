@@ -21,6 +21,9 @@ namespace boilersExtensions.Models
         public ObservableCollection<PropertyViewModel> Properties { get; } = new ObservableCollection<PropertyViewModel>();
         public ObservableCollection<RelationshipViewModel> Relationships { get; } = new ObservableCollection<RelationshipViewModel>();
 
+        // プロパティ設定のコレクションを追加
+        public ObservableCollection<PropertyConfigViewModel> PropertyConfigs { get; } = new ObservableCollection<PropertyConfigViewModel>();
+
         public EntityViewModel()
         {
             // ReactivePropertyをDisposablesコレクションに追加
@@ -29,6 +32,33 @@ namespace boilersExtensions.Models
             RecordCount.AddTo(Disposables);
             IsSelected.AddTo(Disposables);
             FilePath.AddTo(Disposables);
+        }
+
+        /// <summary>
+        /// プロパティ名からPropertyConfigViewModelを取得します
+        /// </summary>
+        public PropertyConfigViewModel GetPropertyConfig(string propertyName)
+        {
+            // プロパティ設定コレクションから検索
+            var config = PropertyConfigs.FirstOrDefault(pc => pc.PropertyName == propertyName);
+
+            // 設定が見つからない場合は新しく作成
+            if (config == null)
+            {
+                var property = Properties.FirstOrDefault(p => p.Name.Value == propertyName);
+                if (property != null)
+                {
+                    config = new PropertyConfigViewModel
+                    {
+                        PropertyName = propertyName,
+                        PropertyTypeName = property.Type.Value
+                    };
+
+                    PropertyConfigs.Add(config);
+                }
+            }
+
+            return config;
         }
     }
 

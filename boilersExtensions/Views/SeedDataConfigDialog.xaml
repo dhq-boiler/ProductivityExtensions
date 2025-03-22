@@ -19,6 +19,8 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <converters:EntityPropertyConverter x:Key="EntityPropertyConverter" />
+        <converters:PropertyConfigConverter x:Key="PropertyConfigConverter" />
+        <converters:PropertyWithNameConverter x:Key="PropertyWithNameConverter" />
 
         <!--  ボタンスタイル  -->
         <Style TargetType="Button">
@@ -354,42 +356,38 @@
                                 Name="propertiesDataGrid"
                                 Margin="0,5"
                                 AutoGenerateColumns="False"
-                                ItemsSource="{Binding SelectedEntity.Value.Properties}">
+                                ItemsSource="{Binding SelectedEntity.Value.Properties}"
+                                SelectedItem="{Binding SelectedProperty.Value}">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn
                                         Width="*"
                                         Binding="{Binding Name.Value}"
-                                        Header="名前" />
+                                        Header="プロパティ名">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="White" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                     <DataGridTextColumn
                                         Width="120"
                                         Binding="{Binding Type.Value}"
-                                        Header="型" />
-
-                                    <DataGridTemplateColumn Width="150" Header="データタイプ">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Padding="5,2" Text="{Binding DataType.Value}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                        <DataGridTemplateColumn.CellEditingTemplate>
-                                            <DataTemplate>
-                                                <ComboBox
-                                                    ItemsSource="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                                    SelectedItem="{Binding DataType.Value, UpdateSourceTrigger=PropertyChanged}"
-                                                    Style="{StaticResource ImprovedDataTypeComboBox}" />
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellEditingTemplate>
-                                    </DataGridTemplateColumn>
-                                    <!--<DataGridComboBoxColumn
-                                        Width="150"
+                                        Header="型">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="White" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridComboBoxColumn
+                                        Width="120"
                                         Header="データタイプ"
-                                        ItemsSource="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
                                         SelectedItemBinding="{Binding DataType.Value}">
                                         <DataGridComboBoxColumn.ElementStyle>
-                                            <Style BasedOn="{StaticResource ImprovedDataTypeComboBox}" TargetType="ComboBox">
-                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                            <Style TargetType="ComboBox">
                                                 <Setter Property="Background" Value="#333333" />
                                                 <Setter Property="Foreground" Value="White" />
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                                 <Style.Resources>
                                                     <Style TargetType="ComboBoxItem">
                                                         <Setter Property="Background" Value="#333333" />
@@ -399,9 +397,9 @@
                                             </Style>
                                         </DataGridComboBoxColumn.ElementStyle>
                                         <DataGridComboBoxColumn.EditingElementStyle>
-                                            <Style BasedOn="{StaticResource ImprovedDataTypeComboBox}" TargetType="ComboBox">
-                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                            <Style TargetType="ComboBox">
                                                 <Setter Property="Foreground" Value="Black" />
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                                 <Style.Resources>
                                                     <Style TargetType="ComboBoxItem">
                                                         <Setter Property="Foreground" Value="Black" />
@@ -409,7 +407,36 @@
                                                 </Style.Resources>
                                             </Style>
                                         </DataGridComboBoxColumn.EditingElementStyle>
-                                    </DataGridComboBoxColumn>-->
+                                    </DataGridComboBoxColumn>
+                                    <!--  追加：固定値列  -->
+                                    <DataGridTemplateColumn Width="120" Header="固定値">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <!--
+                                                        データグリッドの行のPropertyViewModelから名前を取得し、
+                                                        親のEntityViewModelから該当するPropertyConfigViewModelを取得して表示する
+                                                    -->
+                                                    <TextBlock>
+                                                        <TextBlock.Text>
+                                                            <MultiBinding Converter="{StaticResource PropertyWithNameConverter}">
+                                                                <Binding Path="DataContext.SelectedEntity.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                                <Binding Path="Name.Value" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                    <Button
+                                                        Width="20"
+                                                        Height="20"
+                                                        Margin="2"
+                                                        HorizontalAlignment="Right"
+                                                        Click="EditFixedValuesButton_Click"
+                                                        Content="..."
+                                                        ToolTip="固定値を編集" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </GroupBox>
