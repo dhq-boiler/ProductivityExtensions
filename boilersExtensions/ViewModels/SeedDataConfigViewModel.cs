@@ -1845,24 +1845,46 @@ namespace boilersExtensions.ViewModels
                         return;
                     }
 
-                    // アクティブなドキュメントをRoslynのDocumentに変換する
-                    var document = await GetRoslynDocumentFromActiveDocumentAsync(_targetDocument);
+                    // EntityInfoリストを作成
+                    var entityInfos = new List<EntityInfo>();
 
-                    if (document == null)
+                    foreach (var _entity in Entities)
                     {
-                        MessageBox.Show(
-                            "ドキュメントの解析に失敗しました。",
-                            "エラー",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                        return;
+                        // DTEからファイルを開く
+                        var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
+                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, _entity.FilePath.Value);
+
+                        var envDTEDocument = documentWindow?.Document;
+
+                        // EntityAnalyzerを使用してC#クラスを解析
+                        var analyzer = new Analyzers.EntityAnalyzer();
+
+                        // アクティブなドキュメントをRoslynのDocumentに変換する
+                        var document = await GetRoslynDocumentFromActiveDocumentAsync(envDTEDocument);
+
+                        if (document == null)
+                        {
+                            MessageBox.Show(
+                                "ドキュメントの解析に失敗しました。",
+                                "エラー",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                            return;
+                        }
+
+                        try
+                        {
+                            // 現在選択されているエンティティを解析
+                            var entities = await analyzer.AnalyzeEntitiesAsync(document);
+                            entityInfos.AddRange(entities);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error analyzing entities: {ex.Message}");
+                        }
                     }
 
-                    // EntityAnalyzerを使用してC#クラスを解析
-                    var analyzer = new Analyzers.EntityAnalyzer();
-                    var entityList = await analyzer.AnalyzeEntitiesAsync(document);
-
-                    if (entityList.Count == 0 || entityList.All(x => x.Name != ClassName.Value))
+                    if (entityInfos.Count == 0 || entityInfos.All(x => x.Name != ClassName.Value))
                     {
                         MessageBox.Show(
                             $"アクティブドキュメントから {ClassName.Value} が検出できませんでした。",
@@ -1872,11 +1894,21 @@ namespace boilersExtensions.ViewModels
                         return;
                     }
 
+                    //if (entityInfos.Count == 0)
+                    //{
+                    //    MessageBox.Show(
+                    //        $"出力可能なエンティティクラスが見つかりませんでした。",
+                    //        "エラー",
+                    //        MessageBoxButton.OK,
+                    //        MessageBoxImage.Error);
+                    //    return;
+                    //}
+
                     // EntityInfoからSeedDataConfigを作成
                     var config = new SeedDataConfig();
 
                     // 選択されているエンティティの設定を取得
-                    var entity = entityList.First(x => x.Name == ClassName.Value);
+                    var entity = entityInfos.First(x => x.Name == ClassName.Value);
                     var entityConfig = new EntityConfigViewModel
                     {
                         EntityName = entity.Name,
@@ -1915,7 +1947,7 @@ namespace boilersExtensions.ViewModels
 
                     // 拡張シードデータジェネレーターを使用
                     var seedGenerator = new EnhancedSeedDataGenerator();
-                    var generatedCode = seedGenerator.GenerateSeedDataWithFixedValues(new List<EntityInfo> { entity }, config);
+                    var generatedCode = seedGenerator.GenerateSeedDataWithFixedValues(entityInfos, config);
 
                     UpdateProgress(80, "コードを挿入中...");
 

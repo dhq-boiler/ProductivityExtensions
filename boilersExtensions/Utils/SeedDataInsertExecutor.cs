@@ -173,7 +173,7 @@ namespace boilersExtensions.Utils
                 insertPoint.CharRight(column - 1); // 列に移動
 
                 // GenerateSeedDataメソッドを挿入
-                string methodCode = "\n\n    public static List<" + className + "> GenerateSeedData(ModelBuilder modelBuilder)\n    {\n" + generatedCode + "\n        return null;\n    }\n";
+                string methodCode = "\n\n    public static void GenerateSeedData(ModelBuilder modelBuilder)\n    {\n" + generatedCode + "\n    }\n";
                 insertPoint.Insert(methodCode);
 
                 return true;

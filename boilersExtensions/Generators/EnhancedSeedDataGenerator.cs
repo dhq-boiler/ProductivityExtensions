@@ -25,8 +25,8 @@ namespace boilersExtensions.Generators
             var sb = new StringBuilder();
 
             // ランダム変数の宣言を追加
-            sb.AppendLine("    // ランダム生成用のインスタンスを定義");
-            sb.AppendLine("    var random = new Random();");
+            sb.AppendLine("        // ランダム生成用のインスタンスを定義");
+            sb.AppendLine("        var random = new Random();");
             sb.AppendLine();
 
             foreach (var entity in orderedEntities)
@@ -38,8 +38,8 @@ namespace boilersExtensions.Generators
                     continue;
                 }
 
-                sb.AppendLine($"    // {entity.Name} エンティティのシードデータ");
-                sb.AppendLine($"    modelBuilder.Entity<{entity.Name}>().HasData(");
+                sb.AppendLine($"        // {entity.Name} エンティティのシードデータ");
+                sb.AppendLine($"        modelBuilder.Entity<{entity.Name}>().HasData(");
 
                 // 固定値を持つプロパティを収集
                 var propertiesWithFixedValues = new List<PropertyWithFixedValues>();
@@ -76,8 +76,8 @@ namespace boilersExtensions.Generators
                         for (int i = 0; i < baseRecordCount; i++)
                         {
                             int recordIndex = currentRecord++;
-                            sb.AppendLine($"        new {entity.Name}");
-                            sb.AppendLine("        {");
+                            sb.AppendLine($"            new {entity.Name}");
+                            sb.AppendLine("            {");
 
                             // プロパティごとに値を生成
                             var propStrings = new List<string>();
@@ -100,7 +100,25 @@ namespace boilersExtensions.Generators
                                     }
                                     else
                                     {
-                                        propValue = fixedValue;
+                                        switch (prop.TypeName)
+                                        {
+                                            case "Int32":
+                                            case "Int64":
+                                            case "Int16":
+                                                propValue = fixedValue.ToString();
+                                                break;
+                                            case "Guid":
+                                                // 決定論的なGUID生成（レコードごとに一意だが予測可能）
+                                                propValue = $"new Guid(\"{fixedValue}\")";
+                                                break;
+                                            case "String":
+                                                // 文字列型の主キーの場合
+                                                propValue = $"\"{fixedValue}\"";
+                                                break;
+                                            default:
+                                                propValue = fixedValue.ToString();
+                                                break;
+                                        }
                                     }
                                 }
                                 else
@@ -111,12 +129,12 @@ namespace boilersExtensions.Generators
 
                                 if (propValue != null)
                                 {
-                                    propStrings.Add($"            {prop.Name} = {propValue}");
+                                    propStrings.Add($"                {prop.Name} = {propValue}");
                                 }
                             }
 
                             sb.AppendLine(string.Join(",\r\n", propStrings));
-                            sb.AppendLine("        }" + (currentRecord < totalRecords ? "," : ""));
+                            sb.AppendLine("            }" + (currentRecord < totalRecords ? "," : ""));
                         }
                     }
                 }
@@ -125,8 +143,8 @@ namespace boilersExtensions.Generators
                     // 固定値の設定がない場合は通常のレコード生成
                     for (int i = 0; i < entityConfig.RecordCount; i++)
                     {
-                        sb.AppendLine($"        new {entity.Name}");
-                        sb.AppendLine("        {");
+                        sb.AppendLine($"            new {entity.Name}");
+                        sb.AppendLine("            {");
 
                         // プロパティごとに値を生成
                         var propStrings = new List<string>();
@@ -154,17 +172,16 @@ namespace boilersExtensions.Generators
                             string propValue = GeneratePropertyValue(prop, i, entityConfig);
                             if (propValue != null)
                             {
-                                propStrings.Add($"            {prop.Name} = {propValue}");
+                                propStrings.Add($"                {prop.Name} = {propValue}");
                             }
                         }
 
                         sb.AppendLine(string.Join(",\r\n", propStrings));
-                        sb.AppendLine("        }" + (i < entityConfig.RecordCount - 1 ? "," : ""));
+                        sb.AppendLine("            }" + (i < entityConfig.RecordCount - 1 ? "," : ""));
                     }
                 }
 
-                sb.AppendLine("    );");
-                sb.AppendLine();
+                sb.AppendLine("        );");
             }
 
             return sb.ToString();
