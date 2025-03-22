@@ -1725,6 +1725,13 @@ namespace boilersExtensions.ViewModels
         {
             var nameLower = name.ToLowerInvariant();
 
+            // GUID
+            if (nameLower.Contains("guid") || nameLower.Contains("uuid") ||
+                type == "Guid" || type.Contains("Unique"))
+            {
+                return "GUID";
+            }
+
             // ID系
             if (nameLower == "id" || nameLower.EndsWith("id"))
             {
@@ -1768,13 +1775,6 @@ namespace boilersExtensions.ViewModels
                 type == "bool" || type == "Boolean")
             {
                 return "ブール値";
-            }
-
-            // GUID
-            if (nameLower.Contains("guid") || nameLower.Contains("uuid") ||
-                type == "Guid" || type.Contains("Unique"))
-            {
-                return "GUID";
             }
 
             // 価格/金額
