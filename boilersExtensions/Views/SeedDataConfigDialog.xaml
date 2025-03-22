@@ -52,11 +52,16 @@
 
         <!--  コンボボックススタイル  -->
         <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#333333" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Foreground" Value="Black" />
             <Setter Property="BorderBrush" Value="#555555" />
             <Setter Property="Padding" Value="2" />
             <Setter Property="Margin" Value="2" />
+            <Style.Resources>
+                <!--  ドロップダウンアイテムのスタイル  -->
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="Foreground" Value="Black" />
+                </Style>
+            </Style.Resources>
         </Style>
 
         <!--  データグリッドスタイル  -->
@@ -102,6 +107,20 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="BorderBrush" Value="#555555" />
             <Setter Property="Margin" Value="5" />
+        </Style>
+
+        <!--  DatePickerスタイル  -->
+        <Style TargetType="DatePicker">
+            <Setter Property="Background" Value="#333333" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#555555" />
+            <Style.Resources>
+                <Style TargetType="DatePickerTextBox">
+                    <Setter Property="Background" Value="#333333" />
+                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                </Style>
+            </Style.Resources>
         </Style>
     </Window.Resources>
 
@@ -239,13 +258,23 @@
                                         <Setter Property="Background" Value="#333333" />
                                         <Setter Property="Foreground" Value="White" />
                                         <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                        <Style.Resources>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Background" Value="#333333" />
+                                                <Setter Property="Foreground" Value="White" />
+                                            </Style>
+                                        </Style.Resources>
                                     </Style>
                                 </DataGridComboBoxColumn.ElementStyle>
                                 <DataGridComboBoxColumn.EditingElementStyle>
                                     <Style TargetType="ComboBox">
-                                        <Setter Property="Background" Value="#333333" />
-                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="Foreground" Value="Black" />
                                         <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                        <Style.Resources>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Style>
+                                        </Style.Resources>
                                     </Style>
                                 </DataGridComboBoxColumn.EditingElementStyle>
                             </DataGridComboBoxColumn>
@@ -331,19 +360,11 @@
                             Text="日付範囲" />
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Width="50" Text="開始日:" />
-                            <DatePicker
-                                Margin="5,0"
-                                Background="#333333"
-                                Foreground="White"
-                                SelectedDate="{Binding StartDate.Value}" />
+                            <DatePicker Margin="5,0" SelectedDate="{Binding StartDate.Value}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Width="50" Text="終了日:" />
-                            <DatePicker
-                                Margin="5,0"
-                                Background="#333333"
-                                Foreground="White"
-                                SelectedDate="{Binding EndDate.Value}" />
+                            <DatePicker Margin="5,0" SelectedDate="{Binding EndDate.Value}" />
                         </StackPanel>
 
                         <TextBlock

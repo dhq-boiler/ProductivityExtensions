@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Documents;
+using boilersExtensions.Models;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -44,10 +45,9 @@ namespace boilersExtensions.Utils
         /// <param name="count">生成するデータ数</param>
         /// <returns>挿入の成否</returns>
         public async Task<bool> InsertSeedMethodToCSharpClassAsync(Document document, string className,
-            List<(string typeName, string propertyName)> properties, int count)
+                                                                    List<PropertyInfo> properties, int count)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
             try
             {
                 // ドキュメントオブジェクトをTextDocumentに変換
@@ -63,9 +63,8 @@ namespace boilersExtensions.Utils
                 var documentText = editPoint.GetText(textDocument.EndPoint);
 
                 // クラス定義を正規表現で検索
-                var classRegex = new Regex($@"class\s+{className}(?:\s*:\s*\w+(?:<.*>)?(?:\s*,\s*\w+(?:<.*>)?)*)??\s*\{{");
+                var classRegex = new Regex($@"(class|record)\s+{className}(?:\s*:\s*\w+(?:<.*>)?(?:\s*,\s*\w+(?:<.*>)?)*)??\s*\{{");
                 var classMatch = classRegex.Match(documentText);
-
                 if (!classMatch.Success)
                 {
                     Debug.WriteLine($"Class {className} not found");
@@ -79,7 +78,6 @@ namespace boilersExtensions.Utils
                 // 括弧の深さを追跡して正しい閉じ括弧を見つける
                 int depth = 1;
                 int closePos = -1;
-
                 for (int i = 0; i < remainingText.Length; i++)
                 {
                     if (remainingText[i] == '{') depth++;
@@ -100,20 +98,35 @@ namespace boilersExtensions.Utils
                     return false;
                 }
 
-                // クラスの閉じ括弧の位置
-                var insertPos = classStartPos + closePos;
-
                 // 挿入するシードメソッドを生成
                 var seedMethodContent = GenerateSeedMethodContent(className, properties, count);
 
-                // クラスの閉じ括弧の位置に対応する TextPoint を取得
-                var textPoint = textDocument.StartPoint.CreateEditPoint();
+                // 別の方法で挿入位置に移動 - 行と文字位置を使用
+                var insertPos = classStartPos + closePos;
 
-                // 挿入位置に移動
-                textPoint.MoveToAbsoluteOffset(insertPos);
+                // オフセットから行と列位置を計算
+                int line = 1;
+                int column = 1;
+                for (int i = 0; i < insertPos; i++)
+                {
+                    if (documentText[i] == '\n')
+                    {
+                        line++;
+                        column = 1;
+                    }
+                    else
+                    {
+                        column++;
+                    }
+                }
 
-                // TextPoint を使って EditPoint を作成し、メソッドを挿入
-                textPoint.Insert("\n\n" + seedMethodContent + "\n");
+                // 行と列位置を使用して移動
+                var insertPoint = textDocument.CreateEditPoint();
+                insertPoint.LineDown(line - 1);  // 行に移動
+                insertPoint.CharRight(column - 1); // 列に移動
+
+                // メソッドを挿入
+                insertPoint.Insert("\n\n" + seedMethodContent + "\n");
 
                 return true;
             }
@@ -328,50 +341,48 @@ namespace boilersExtensions.Utils
         /// <summary>
         /// C#クラスのシードメソッド内容を生成
         /// </summary>
-        private string GenerateSeedMethodContent(string className, List<(string typeName, string propertyName)> properties, int count)
+        private string GenerateSeedMethodContent(string className, List<PropertyInfo> properties, int count)
         {
             var sb = new StringBuilder();
 
-            // メソッド宣言
-            sb.AppendLine("    /// <summary>");
-            sb.AppendLine($"    /// {count}件のテストデータを生成");
-            sb.AppendLine("    /// </summary>");
-            sb.AppendLine($"    public static List<{className}> GenerateSeedData()");
+            // メソッドシグネチャの生成
+            sb.AppendLine($"/// <summary>");
+            sb.AppendLine($"/// {count}件のテストデータを生成");
+            sb.AppendLine($"/// </summary>");
+            sb.AppendLine($"public static List<{className}> GenerateSeedData()");
+            sb.AppendLine("{");
+            sb.AppendLine($"    var result = new List<{className}>();");
+            sb.AppendLine("    var random = new Random();");
+            sb.AppendLine($"    for (int i = 0; i < {count}; i++)");
             sb.AppendLine("    {");
-            sb.AppendLine($"        var result = new List<{className}>();");
-            sb.AppendLine("        var random = new Random();");
-            sb.AppendLine();
-
-            // データ生成ループ
-            sb.AppendLine($"        for (int i = 0; i < {count}; i++)");
+            sb.AppendLine($"        var item = new {className}");
             sb.AppendLine("        {");
-            sb.AppendLine($"            var item = new {className}");
-            sb.AppendLine("            {");
 
-            // 各プロパティのデータを生成
-            for (int i = 0; i < properties.Count; i++)
+            // 各プロパティに対して値を生成
+            foreach (var prop in properties)
             {
-                var (typeName, propertyName) = properties[i];
-                string value = GetRandomValueForType(typeName, propertyName);
-                sb.Append($"                {propertyName} = {value}");
-
-                // 最後のプロパティでない場合はカンマを追加
-                if (i < properties.Count - 1)
+                if (prop.IsNavigationProperty || prop.IsCollection)
                 {
-                    sb.AppendLine(",");
+                    // ナビゲーションプロパティやコレクションはスキップ
+                    continue;
                 }
-                else
+
+                // プロパティの値を生成
+                string value = GeneratePropertyValue(prop, "i", "random");
+                if (!string.IsNullOrEmpty(value))
                 {
-                    sb.AppendLine();
+                    sb.AppendLine($"            {prop.Name} = {value},");
                 }
             }
 
-            sb.AppendLine("            };");
-            sb.AppendLine("            result.Add(item);");
-            sb.AppendLine("        }");
+            // 末尾のカンマを取り除いて閉じる括弧を追加
+            sb.Length = sb.Length - 3; // 最後のカンマと改行を削除
             sb.AppendLine();
-            sb.AppendLine("        return result;");
+            sb.AppendLine("        };");
+            sb.AppendLine("        result.Add(item);");
             sb.AppendLine("    }");
+            sb.AppendLine("    return result;");
+            sb.AppendLine("}");
 
             return sb.ToString();
         }
@@ -421,6 +432,86 @@ namespace boilersExtensions.Utils
             sb.AppendLine("]");
 
             return sb.ToString();
+        }
+
+        private string GeneratePropertyValue(PropertyInfo prop, string index, string randomVarName)
+        {
+            // プロパティの型に基づいて値を生成
+            string typeName = prop.TypeName;
+
+            // Nullableチェック
+            bool isNullable = prop.IsNullable;
+            string underlyingType = prop.UnderlyingTypeName ?? typeName;
+
+            // 特定の型に基づいた値生成
+            if (typeName == "string" || underlyingType == "string")
+            {
+                // 名前にTitle, Name, Emailなどが含まれる場合は特殊な値を生成
+                if (prop.Name.Contains("Title") || prop.Name.Contains("Name"))
+                    return $"\"Name{{{index}}}\"";
+                else if (prop.Name.Contains("Email"))
+                    return $"$\"user{{{index}}}@example.com\"";
+                else if (prop.Name.Contains("Uri") || prop.Name.Contains("Url"))
+                    return $"$\"https://example.com/item{{{index}}}\"";
+                else if (prop.Name.Contains("Path") || prop.Name.Contains("Directory"))
+                    return $"$\"/path/to/item{{{index}}}\"";
+                else if (prop.Name.Contains("Key"))
+                    return $"$\"key{{{index}}}\"";
+                else
+                    return $"$\"Item {{{index}}}\"";
+            }
+            else if (typeName == "int" || underlyingType == "int" ||
+                     typeName == "long" || underlyingType == "long")
+            {
+                return $"{randomVarName}.Next(1, 1000)" + (typeName == "long" || underlyingType == "long" ? " * 100L" : "");
+            }
+            else if (typeName == "double" || underlyingType == "double" ||
+                     typeName == "float" || underlyingType == "float" ||
+                     typeName == "decimal" || underlyingType == "decimal")
+            {
+                if (prop.Name.Contains("Percent"))
+                    return $"Math.Round({randomVarName}.NextDouble() * 100, 2)";
+                else
+                    return $"Math.Round({randomVarName}.NextDouble() * 1000, 2)";
+            }
+            else if (typeName == "bool" || underlyingType == "bool")
+            {
+                return $"{randomVarName}.Next(2) == 0";
+            }
+            else if (typeName == "DateTime" || underlyingType == "DateTime")
+            {
+                return $"DateTime.Now.AddDays(-{randomVarName}.Next(365))";
+            }
+            else if (typeName == "Guid" || underlyingType == "Guid")
+            {
+                return "Guid.NewGuid()";
+            }
+            else if (prop.IsEnum)
+            {
+                string enumTypeName = typeName;
+
+                // 内部クラス/ネストされた列挙型の場合、正しい型名を生成
+                if (prop.Symbol != null && prop.Symbol.Type != null)
+                {
+                    enumTypeName = prop.Symbol.Type.ToDisplayString();
+                }
+
+                // クラス内に定義されたEnum型の場合、クラス名.Enum名の形式にする
+                if (prop.Name == "Status" && prop.TypeName == "VideoStatus")
+                {
+                    enumTypeName = "VideoStatus";
+                }
+
+                return $"({enumTypeName}){randomVarName}.Next(Enum.GetValues(typeof({enumTypeName})).Length)";
+            }
+
+            // サポートされていない型や判断できない型は値を生成しない
+            if (isNullable)
+            {
+                return "null";
+            }
+
+            return string.Empty;
         }
 
         /// <summary>

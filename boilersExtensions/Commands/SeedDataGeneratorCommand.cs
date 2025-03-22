@@ -4,12 +4,16 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using boilersExtensions.Dialogs;
+using boilersExtensions.Models;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Views;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using static System.Net.Mime.MediaTypeNames;
 using Task = System.Threading.Tasks.Task;
 
 namespace boilersExtensions.Commands
@@ -130,8 +134,8 @@ namespace boilersExtensions.Commands
                 var documentText = editPoint.GetText(textDocument.EndPoint);
 
                 // クラス構造を分析（簡易的な実装）
-                var classNamePattern = @"class\s+(\w+)";
-                var propertyPattern = @"(public|private|protected|internal)\s+(\w+)\s+(\w+)\s*\{";
+                var classNamePattern = @"(class|record)\s+(\w+)";
+                var propertyPattern = @"(public|private|protected|internal)(?:\s+virtual|\s+override|\s+new)?\s+([^\s{]+)\s+(\w+)\s*\{\s*get\s*;";
 
                 var classNames = System.Text.RegularExpressions.Regex.Matches(documentText, classNamePattern)
                     .Cast<System.Text.RegularExpressions.Match>()
@@ -140,11 +144,12 @@ namespace boilersExtensions.Commands
 
                 var properties = System.Text.RegularExpressions.Regex.Matches(documentText, propertyPattern)
                     .Cast<System.Text.RegularExpressions.Match>()
-                    .Select(m => new
+                    .Select(m => new PropertyInfo
                     {
-                        AccessLevel = m.Groups[1].Value,
-                        Type = m.Groups[2].Value,
-                        Name = m.Groups[3].Value
+                        Name = m.Groups[3].Value,
+                        TypeName = m.Groups[2].Value,
+                        FullTypeName = m.Groups[2].Value, // 完全修飾名は後で必要に応じて解析
+                        ColumnName = m.Groups[3].Value // デフォルトでプロパティ名と同じ
                     })
                     .ToList();
 
@@ -161,8 +166,27 @@ namespace boilersExtensions.Commands
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
 
-                // 本来はここでSeedDataGeneratorDialogを表示して設定を行う
-                // 将来的な拡張ポイント
+                // SeedDataConfigDialogを表示
+                var viewModel = new SeedDataConfigViewModel
+                {
+                    TargetFileName = { Value = document.FullName },
+                    TargetType = { Value = classNames.First() },
+                    Package = package
+                };
+
+                var window = new SeedDataConfigDialog
+                {
+                    DataContext = viewModel
+                };
+
+                // ViewModelの初期化
+                viewModel.OnDialogOpened(window);
+
+                // SetTargetDocumentメソッドを呼び出す - documentTypeには"csharp"を指定
+                viewModel.SetTargetDocument(document, "csharp");
+
+                // ダイアログを表示
+                window.ShowDialog();
             }
             catch (Exception ex)
             {
