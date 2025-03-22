@@ -177,8 +177,11 @@ namespace boilersExtensions.Analyzers
             // プロパティを抽出
             foreach (var member in typeSymbol.GetMembers().OfType<IPropertySymbol>())
             {
-                // 静的プロパティや自動実装でないプロパティはスキップ
-                if (member.IsStatic || !member.IsAutoProperty())
+                // 静的プロパティや自動実装でないプロパティ, publicでないプロパティ, setterがpublicでないプロパティはスキップ
+                if (member.IsStatic || !member.IsAutoProperty()
+                                    || member.DeclaredAccessibility != Accessibility.Public
+                                    || member.SetMethod is null
+                                    || member.SetMethod.DeclaredAccessibility != Accessibility.Public)
                 {
                     continue;
                 }
@@ -906,7 +909,7 @@ namespace boilersExtensions.Analyzers
         /// <summary>
         /// 型がナビゲーションプロパティかどうかを判定します
         /// </summary>
-        private bool IsNavigationProperty(ITypeSymbol propertySymbol)
+        public static bool IsNavigationProperty(ITypeSymbol propertySymbol)
         {
             // 仮想プロパティのみをナビゲーションプロパティとして扱う
             if (propertySymbol.IsVirtual)
@@ -929,10 +932,80 @@ namespace boilersExtensions.Analyzers
             return false;
         }
 
+        public static bool IsNavigationProperty(IPropertySymbol propertySymbol)
+        {
+            // 仮想プロパティのみをナビゲーションプロパティとして扱う
+            if (propertySymbol.IsVirtual)
+            {
+                // コレクション型の場合
+                if (IsCollectionType(propertySymbol))
+                {
+                    return true;
+                }
+
+                // クラス/インターフェース型で、システム型でない場合
+                if ((propertySymbol.Type.TypeKind == TypeKind.Class ||
+                     propertySymbol.Type.TypeKind == TypeKind.Interface) &&
+                    !IsSystemType(propertySymbol))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// 型がコレクション型かどうかを判定します
         /// </summary>
-        private bool IsCollectionType(ITypeSymbol type)
+        private static bool IsCollectionType(ITypeSymbol type)
+        {
+            if (type is INamedTypeSymbol namedType)
+            {
+                // ICollection<T>、IList<T>、List<T>などの実装または継承をチェック
+                if (namedType.TypeArguments.Length > 0)
+                {
+                    var originalDefinition = namedType.OriginalDefinition?.ToString();
+                    if (originalDefinition != null)
+                    {
+                        if (originalDefinition.StartsWith("System.Collections.Generic.ICollection<") ||
+                            originalDefinition.StartsWith("System.Collections.Generic.IList<") ||
+                            originalDefinition.StartsWith("System.Collections.Generic.List<") ||
+                            originalDefinition.StartsWith("System.Collections.Generic.IEnumerable<") ||
+                            originalDefinition.StartsWith("System.Collections.Generic.HashSet<") ||
+                            originalDefinition.StartsWith("System.Collections.ObjectModel.Collection<") ||
+                            originalDefinition.StartsWith("System.Collections.ObjectModel.ObservableCollection<"))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                // インターフェイスの実装をチェック
+                foreach (var intf in namedType.AllInterfaces)
+                {
+                    var interfaceName = intf.OriginalDefinition?.ToString();
+                    if (interfaceName != null)
+                    {
+                        if (interfaceName.StartsWith("System.Collections.Generic.ICollection<") ||
+                            interfaceName.StartsWith("System.Collections.Generic.IList<"))
+                        {
+                            return true;
+                        }
+
+                        if (interfaceName.StartsWith($"System.Collections.Generic.IEnumerable<{namedType.Name}>")
+                            || interfaceName.StartsWith($"System.Collections.Generic.IEnumerable<{namedType.ContainingNamespace}.{namedType.Name}>"))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsCollectionType(IPropertySymbol type)
         {
             if (type is INamedTypeSymbol namedType)
             {
@@ -995,7 +1068,7 @@ namespace boilersExtensions.Analyzers
         /// <summary>
         /// 型がシステム型かどうかを判定します
         /// </summary>
-        private bool IsSystemType(ITypeSymbol type)
+        private static bool IsSystemType(ITypeSymbol type)
         {
             if (type.ContainingNamespace?.ToString().StartsWith("System") == true)
             {
@@ -1004,6 +1077,50 @@ namespace boilersExtensions.Analyzers
 
             // プリミティブ型
             switch (type.SpecialType)
+            {
+                case SpecialType.System_Boolean:
+                case SpecialType.System_Byte:
+                case SpecialType.System_Char:
+                case SpecialType.System_DateTime:
+                case SpecialType.System_Decimal:
+                case SpecialType.System_Double:
+                case SpecialType.System_Int16:
+                case SpecialType.System_Int32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_Object:
+                case SpecialType.System_SByte:
+                case SpecialType.System_Single:
+                case SpecialType.System_String:
+                case SpecialType.System_UInt16:
+                case SpecialType.System_UInt32:
+                case SpecialType.System_UInt64:
+                    return true;
+            }
+
+            // よく使われるSystem型
+            var typeName = type.ToString();
+            if (typeName == "System.Guid" ||
+                typeName == "System.DateTimeOffset" ||
+                typeName == "System.TimeSpan" ||
+                typeName == "System.Uri" ||
+                typeName == "System.Drawing.Color" ||
+                typeName == "System.Net.IPAddress")
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsSystemType(IPropertySymbol type)
+        {
+            if (type.ContainingNamespace?.ToString().StartsWith("System") == true)
+            {
+                return true;
+            }
+
+            // プリミティブ型
+            switch (type.Type.SpecialType)
             {
                 case SpecialType.System_Boolean:
                 case SpecialType.System_Byte:

@@ -61,6 +61,7 @@
     <Compile Include="Controls\LoadingSpinner.xaml.cs">
       <DependentUpon>LoadingSpinner.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Converters\EntityPropertyConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
     <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
@@ -73,6 +74,7 @@
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
     <Compile Include="Models\EntityInfo.cs" />
+    <Compile Include="Models\EntityViewModel.cs" />
     <Compile Include="Models\PropertyInfo.cs" />
     <Compile Include="Models\RelationshipInfo.cs" />
     <Compile Include="Models\SeedDataConfig.cs" />

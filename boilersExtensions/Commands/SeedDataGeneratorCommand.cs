@@ -185,7 +185,7 @@ namespace boilersExtensions.Commands
                 viewModel.SetTargetDocument(document, "csharp");
 
                 // ダイアログを表示
-                window.ShowDialog();
+                window.Show();
             }
             catch (Exception ex)
             {

@@ -18,6 +18,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+        <converters:EntityPropertyConverter x:Key="EntityPropertyConverter" />
 
         <!--  ボタンスタイル  -->
         <Style TargetType="Button">
@@ -62,6 +63,19 @@
                     <Setter Property="Foreground" Value="Black" />
                 </Style>
             </Style.Resources>
+        </Style>
+
+        <!--  データタイプのコンボボックススタイル改善  -->
+        <Style x:Key="ImprovedDataTypeComboBox" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#AAAAAA" />
+            <Setter Property="Height" Value="22" />
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="#888888" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!--  データグリッドスタイル  -->
@@ -280,6 +294,250 @@
                             </DataGridComboBoxColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!--  エンティティとリレーションシップタブ  -->
+            <TabItem Header="エンティティ関連">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  エンティティリスト  -->
+                    <DockPanel Grid.Column="0">
+                        <StackPanel Margin="0,5" DockPanel.Dock="Top">
+                            <Button Command="{Binding LoadAdditionalEntityCommand}" Content="エンティティを追加" />
+                        </StackPanel>
+
+                        <ListBox ItemsSource="{Binding Entities}" SelectedItem="{Binding SelectedEntity.Value}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox VerticalAlignment="Center" IsChecked="{Binding IsSelected.Value}" />
+                                        <TextBlock Margin="5,0" Text="{Binding Name.Value}" />
+                                        <TextBlock
+                                            FontSize="11"
+                                            Foreground="Gray"
+                                            Text="{Binding RecordCount.Value, StringFormat='({0}件)'}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <!--  選択されたエンティティの詳細  -->
+                    <Grid Grid.Column="1" Margin="10,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!--  エンティティ情報  -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock FontWeight="Bold" Text="{Binding SelectedEntity.Value.Name.Value, StringFormat='エンティティ: {0}'}" />
+                            <StackPanel Margin="0,5" Orientation="Horizontal">
+                                <TextBlock Text="生成レコード数:" />
+                                <TextBox
+                                    Width="60"
+                                    Margin="5,0"
+                                    Text="{Binding SelectedEntity.Value.RecordCount.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!--  プロパティリスト  -->
+                        <GroupBox Grid.Row="1" Header="プロパティ">
+                            <DataGrid
+                                Name="propertiesDataGrid"
+                                Margin="0,5"
+                                AutoGenerateColumns="False"
+                                ItemsSource="{Binding SelectedEntity.Value.Properties}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn
+                                        Width="*"
+                                        Binding="{Binding Name.Value}"
+                                        Header="名前" />
+                                    <DataGridTextColumn
+                                        Width="120"
+                                        Binding="{Binding Type.Value}"
+                                        Header="型" />
+
+                                    <DataGridTemplateColumn Width="150" Header="データタイプ">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Padding="5,2" Text="{Binding DataType.Value}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox
+                                                    ItemsSource="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                    SelectedItem="{Binding DataType.Value, UpdateSourceTrigger=PropertyChanged}"
+                                                    Style="{StaticResource ImprovedDataTypeComboBox}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <!--<DataGridComboBoxColumn
+                                        Width="150"
+                                        Header="データタイプ"
+                                        ItemsSource="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                        SelectedItemBinding="{Binding DataType.Value}">
+                                        <DataGridComboBoxColumn.ElementStyle>
+                                            <Style BasedOn="{StaticResource ImprovedDataTypeComboBox}" TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                                <Setter Property="Background" Value="#333333" />
+                                                <Setter Property="Foreground" Value="White" />
+                                                <Style.Resources>
+                                                    <Style TargetType="ComboBoxItem">
+                                                        <Setter Property="Background" Value="#333333" />
+                                                        <Setter Property="Foreground" Value="White" />
+                                                    </Style>
+                                                </Style.Resources>
+                                            </Style>
+                                        </DataGridComboBoxColumn.ElementStyle>
+                                        <DataGridComboBoxColumn.EditingElementStyle>
+                                            <Style BasedOn="{StaticResource ImprovedDataTypeComboBox}" TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                                <Style.Resources>
+                                                    <Style TargetType="ComboBoxItem">
+                                                        <Setter Property="Foreground" Value="Black" />
+                                                    </Style>
+                                                </Style.Resources>
+                                            </Style>
+                                        </DataGridComboBoxColumn.EditingElementStyle>
+                                    </DataGridComboBoxColumn>-->
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+
+                        <!--  リレーションシップヘッダー  -->
+                        <StackPanel
+                            Grid.Row="2"
+                            Margin="0,10,0,5"
+                            Orientation="Horizontal">
+                            <TextBlock FontWeight="Bold" Text="リレーションシップ" />
+                            <Button
+                                Margin="10,0"
+                                Command="{Binding AddRelationshipCommand}"
+                                Content="追加" />
+                            <Button Command="{Binding RemoveRelationshipCommand}" Content="削除" />
+                        </StackPanel>
+
+                        <!--  リレーションシップリスト  -->
+                        <DataGrid
+                            Name="relationshipsDataGrid"
+                            Grid.Row="3"
+                            AutoGenerateColumns="False"
+                            ItemsSource="{Binding SelectedEntity.Value.Relationships}"
+                            SelectedItem="{Binding SelectedRelationship.Value}">
+                            <DataGrid.Columns>
+                                <!--  ソースエンティティ（コンボボックスに変更）  -->
+                                <DataGridTemplateColumn Width="120" Header="ソースエンティティ">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Padding="5,2" Text="{Binding SourceEntityName.Value}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox
+                                                ItemsSource="{Binding DataContext.EntityNames, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                SelectedItem="{Binding SourceEntityName.Value, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource ImprovedDataTypeComboBox}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!--  ソースプロパティ（コンボボックスに変更）  -->
+                                <DataGridTemplateColumn Width="120" Header="ソースプロパティ">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Padding="5,2" Text="{Binding SourceProperty.Value}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <!--  ItemsSourceのためのトリック：親のDataContextと現在のアイテムを組み合わせる  -->
+                                            <ComboBox Style="{StaticResource ImprovedDataTypeComboBox}">
+                                                <ComboBox.ItemsSource>
+                                                    <MultiBinding Converter="{StaticResource EntityPropertyConverter}">
+                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                        <Binding Path="SourceEntityName.Value" />
+                                                    </MultiBinding>
+                                                </ComboBox.ItemsSource>
+                                                <ComboBox.SelectedItem>
+                                                    <Binding Path="SourceProperty.Value" UpdateSourceTrigger="PropertyChanged" />
+                                                </ComboBox.SelectedItem>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!--  関連タイプ  -->
+                                <DataGridTemplateColumn Width="120" Header="関連タイプ">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Padding="5,2" Text="{Binding RelationType.Value}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox
+                                                ItemsSource="{Binding DataContext.RelationshipTypes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                SelectedItem="{Binding RelationType.Value, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource ImprovedDataTypeComboBox}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!--  ターゲットエンティティ（コンボボックスに変更）  -->
+                                <DataGridTemplateColumn Width="120" Header="ターゲットエンティティ">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Padding="5,2" Text="{Binding TargetEntityName.Value}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox
+                                                ItemsSource="{Binding DataContext.EntityNames, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                SelectedItem="{Binding TargetEntityName.Value, UpdateSourceTrigger=PropertyChanged}"
+                                                Style="{StaticResource ImprovedDataTypeComboBox}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!--  ターゲットプロパティ（コンボボックスに変更）  -->
+                                <DataGridTemplateColumn Width="120" Header="ターゲットプロパティ">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Padding="5,2" Text="{Binding TargetProperty.Value}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <!--  ItemsSourceのためのトリック：親のDataContextと現在のアイテムを組み合わせる  -->
+                                            <ComboBox Style="{StaticResource ImprovedDataTypeComboBox}">
+                                                <ComboBox.ItemsSource>
+                                                    <MultiBinding Converter="{StaticResource EntityPropertyConverter}">
+                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                        <Binding Path="TargetEntityName.Value" />
+                                                    </MultiBinding>
+                                                </ComboBox.ItemsSource>
+                                                <ComboBox.SelectedItem>
+                                                    <Binding Path="TargetProperty.Value" UpdateSourceTrigger="PropertyChanged" />
+                                                </ComboBox.SelectedItem>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
                 </Grid>
             </TabItem>
 
