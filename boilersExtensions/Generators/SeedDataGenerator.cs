@@ -211,7 +211,7 @@ namespace boilersExtensions.Generators
         /// <summary>
         /// 外部キーの値を生成します（様々なデータ型に対応）
         /// </summary>
-        private string GenerateForeignKeyValue(
+        protected string GenerateForeignKeyValue(
     PropertyInfo property,
     int recordIndex,
     EntityConfigViewModel entityConfig,
