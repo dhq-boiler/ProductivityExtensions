@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="boilersExtensions.e678fe69-e61b-429d-ab8e-83d2b8fe516c" Version="1.5.2" Language="ja-JP" Publisher="dhq_boiler" />
+        <Identity Id="boilersExtensions.e678fe69-e61b-429d-ab8e-83d2b8fe516c" Version="1.6" Language="ja-JP" Publisher="dhq_boiler" />
         <DisplayName>boilersExtensions</DisplayName>
         <Description>This is an extension that includes features to further enrich your development work with Visual Studio 2022.</Description>
         <License>Resources\LICENSE.md</License>
@@ -25,5 +25,6 @@
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
         <Asset Type="Microsoft.VisualStudio.Services.Content.License" Path="Resources\LICENSE.md" />
         <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="System.Memory.dll" AssemblyName="System.Memory, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
     </Assets>
 </PackageManifest>

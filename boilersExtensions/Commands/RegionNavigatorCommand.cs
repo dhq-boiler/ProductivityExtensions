@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using EnvDTE;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -10,13 +11,12 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
-using Microsoft.VisualStudio.Shell.Interop;
 using Package = Microsoft.VisualStudio.Shell.Package;
 
 namespace boilersExtensions.Commands
 {
     /// <summary>
-    /// #region と #endregion 間を移動するコマンド
+    ///     #region と #endregion 間を移動するコマンド
     /// </summary>
     internal sealed class RegionNavigatorCommand : OleMenuCommand
     {
@@ -26,18 +26,16 @@ namespace boilersExtensions.Commands
         private static OleMenuCommand menuItem;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
-        private RegionNavigatorCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private RegionNavigatorCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         public static RegionNavigatorCommand Instance { get; private set; }
         private static IAsyncServiceProvider ServiceProvider => package;
 
         /// <summary>
-        /// 初期化
+        ///     初期化
         /// </summary>
         public static async Task InitializeAsync(AsyncPackage package)
         {
@@ -53,15 +51,12 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// コマンドを実行
+        ///     コマンドを実行
         /// </summary>
-        public void Invoke()
-        {
-            Execute(this, EventArgs.Empty);
-        }
+        public void Invoke() => Execute(this, EventArgs.Empty);
 
         /// <summary>
-        /// コマンド実行時の処理
+        ///     コマンド実行時の処理
         /// </summary>
         private static void Execute(object sender, EventArgs e)
         {
@@ -121,7 +116,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// #region 行から対応する #endregion 行にジャンプ
+        ///     #region 行から対応する #endregion 行にジャンプ
         /// </summary>
         private static void JumpToMatchingEndRegion(IWpfTextView textView, ITextSnapshotLine currentLine)
         {
@@ -163,7 +158,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// #endregion 行から対応する #region 行にジャンプ
+        ///     #endregion 行から対応する #region 行にジャンプ
         /// </summary>
         private static void JumpToMatchingStartRegion(IWpfTextView textView, ITextSnapshotLine currentLine)
         {
@@ -205,7 +200,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 最も近い #region または #endregion を探して移動
+        ///     最も近い #region または #endregion を探して移動
         /// </summary>
         private static void FindAndJumpToNearestRegion(IWpfTextView textView, ITextSnapshotLine currentLine)
         {
@@ -247,7 +242,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 指定された行にカーソルを移動
+        ///     指定された行にカーソルを移動
         /// </summary>
         private static void MoveCaretToLine(IWpfTextView textView, int lineNumber)
         {
@@ -283,7 +278,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 行を一時的にハイライト
+        ///     行を一時的にハイライト
         /// </summary>
         private static void HighlightLine(IWpfTextView textView, ITextSnapshotLine line)
         {
@@ -295,8 +290,8 @@ namespace boilersExtensions.Commands
                     false);
 
                 // 500ミリ秒後に選択を解除
-                System.Windows.Threading.DispatcherTimer dispatcherTimer =
-                    new System.Windows.Threading.DispatcherTimer();
+                var dispatcherTimer =
+                    new DispatcherTimer();
                 dispatcherTimer.Interval = TimeSpan.FromMilliseconds(500);
                 dispatcherTimer.Tick += (s, e) =>
                 {
@@ -312,23 +307,17 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// #region で始まるかチェック
+        ///     #region で始まるかチェック
         /// </summary>
-        private static bool IsRegionStart(string line)
-        {
-            return Regex.IsMatch(line.TrimStart(), @"^#\s*region\b");
-        }
+        private static bool IsRegionStart(string line) => Regex.IsMatch(line.TrimStart(), @"^#\s*region\b");
 
         /// <summary>
-        /// #endregion で始まるかチェック
+        ///     #endregion で始まるかチェック
         /// </summary>
-        private static bool IsRegionEnd(string line)
-        {
-            return Regex.IsMatch(line.TrimStart(), @"^#\s*endregion\b");
-        }
+        private static bool IsRegionEnd(string line) => Regex.IsMatch(line.TrimStart(), @"^#\s*endregion\b");
 
         /// <summary>
-        /// コマンドの有効/無効状態を更新
+        ///     コマンドの有効/無効状態を更新
         /// </summary>
         private static void BeforeQueryStatus(object sender, EventArgs e)
         {
@@ -337,7 +326,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsRegionNavigatorEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsRegionNavigatorEnabled;
 
                 if (!featureEnabled)
                 {
@@ -359,7 +348,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// 現在のテキストビューを取得
+        ///     現在のテキストビューを取得
         /// </summary>
         private static IWpfTextView GetCurrentTextView()
         {
@@ -375,7 +364,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// メッセージを表示
+        ///     メッセージを表示
         /// </summary>
         private static void ShowMessage(string message)
         {

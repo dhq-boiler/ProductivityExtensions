@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Utils;
 using boilersExtensions.Views;
 using EnvDTE;
-using LibGit2Sharp;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -22,11 +21,12 @@ using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.TextManager.Interop;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using ZLinq;
 using Document = Microsoft.CodeAnalysis.Document;
+using Project = Microsoft.CodeAnalysis.Project;
 using Solution = Microsoft.CodeAnalysis.Solution;
 using TextDocument = EnvDTE.TextDocument;
 using TextSpan = Microsoft.CodeAnalysis.Text.TextSpan;
@@ -40,14 +40,14 @@ namespace boilersExtensions.ViewModels
     internal class TypeHierarchyDialogViewModel : BindableBase, IDisposable
     {
         private readonly CompositeDisposable _compositeDisposable = new CompositeDisposable();
+        private int _adjustedAddedBytes;
         private IVsWindowFrame _diffWindowFrame;
         private Document _document;
         private string _extractedCSharpCode;
-        private int _adjustedAddedBytes;
-        private Dictionary<int, int> _mapping;
 
         // 完全な型スパン情報
         private TextSpan _fullTypeSpan;
+        private Dictionary<int, int> _mapping;
 
         // 置換対象の情報
         private ITypeSymbol _originalTypeSymbol;
@@ -274,7 +274,8 @@ namespace boilersExtensions.ViewModels
         }
 
         public async Task InitializeRazorAsync(ITypeSymbol typeSymbol, Document document, int position,
-            string razorFilePath, string csharpCode, TextSpan fullTypeSpan, Dictionary<int, int> mapping, int adjustedAddedBytes)
+            string razorFilePath, string csharpCode, TextSpan fullTypeSpan, Dictionary<int, int> mapping,
+            int adjustedAddedBytes)
         {
             try
             {
@@ -396,15 +397,16 @@ namespace boilersExtensions.ViewModels
                 {
                     // Razorファイル用の型候補取得処理
                     // コンパイレーションから直接型候補を取得する
-                    var candidates = await GetRazorTypeReplacementCandidatesAsync(
-                        _originalTypeSymbol,
-                        ShowBaseTypes.Value,
-                        ShowDerivedTypes.Value,
-                        ShowRelatedTypes.Value,
-                        ShowUseSpecialTypes.Value);
+                    var candidates = (await GetRazorTypeReplacementCandidatesAsync(
+                            _originalTypeSymbol,
+                            ShowBaseTypes.Value,
+                            ShowDerivedTypes.Value,
+                            ShowRelatedTypes.Value,
+                            ShowUseSpecialTypes.Value))
+                        .AsValueEnumerable();
 
                     // 候補を設定
-                    TypeCandidates.Value = candidates;
+                    TypeCandidates.Value = candidates.ToList();
 
                     // 現在の型を選択状態にする
                     SelectedType.Value =
@@ -413,16 +415,17 @@ namespace boilersExtensions.ViewModels
                 else if (_document != null)
                 {
                     // 通常のC#ファイル用の既存処理
-                    var candidates = await TypeHierarchyAnalyzer.GetTypeReplacementCandidatesAsync(
-                        _originalTypeSymbol,
-                        _document,
-                        ShowBaseTypes.Value,
-                        ShowDerivedTypes.Value,
-                        ShowRelatedTypes.Value,
-                        ShowUseSpecialTypes.Value);
+                    var candidates = (await TypeHierarchyAnalyzer.GetTypeReplacementCandidatesAsync(
+                            _originalTypeSymbol,
+                            _document,
+                            ShowBaseTypes.Value,
+                            ShowDerivedTypes.Value,
+                            ShowRelatedTypes.Value,
+                            ShowUseSpecialTypes.Value))
+                        .AsValueEnumerable();
 
                     // 候補を設定
-                    TypeCandidates.Value = candidates;
+                    TypeCandidates.Value = candidates.ToList();
 
                     // 現在の型を選択状態にする
                     SelectedType.Value =
@@ -467,9 +470,11 @@ namespace boilersExtensions.ViewModels
                 {
                     // ワークスペースからファイルに関連するプロジェクトを検索
                     var project = workspace.CurrentSolution.Projects
-                        .FirstOrDefault(p => p.Documents.Any(d =>
-                            string.Equals(d.FilePath, _razorFilePath, StringComparison.OrdinalIgnoreCase) ||
-                            d.FilePath.Contains(Path.GetFileName(_razorFilePath))));
+                        .AsValueEnumerable()
+                        .FirstOrDefault(p => p.Documents
+                            .AsValueEnumerable().Any(d =>
+                                string.Equals(d.FilePath, _razorFilePath, StringComparison.OrdinalIgnoreCase) ||
+                                d.FilePath.Contains(Path.GetFileName(_razorFilePath))));
 
                     if (project != null)
                     {
@@ -521,8 +526,9 @@ namespace boilersExtensions.ViewModels
                             }
 
                             // アセンブリ内のすべての型をチェック
-                            foreach (var assembly in compilation.References.Select(r =>
-                                         compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol))
+                            foreach (var assembly in compilation.References
+                                         .AsValueEnumerable().Select(r =>
+                                             compilation.GetAssemblyOrModuleSymbol(r) as IAssemblySymbol).ToList())
                             {
                                 if (assembly == null)
                                 {
@@ -573,12 +579,14 @@ namespace boilersExtensions.ViewModels
                                         targetName = "I" + baseName.Replace(pair.Key, pair.Value);
                                     }
 
-                                    var matchingTypes = allTypes.Where(t =>
-                                        t.Name == targetName &&
-                                        t.TypeKind == TypeKind.Interface &&
-                                        !candidates.Any(c => c.FullName == t.ToDisplayString()));
+                                    var matchingTypes = allTypes
+                                        .AsValueEnumerable().Where(t =>
+                                            t.Name == targetName &&
+                                            t.TypeKind == TypeKind.Interface &&
+                                            !candidates
+                                                .AsValueEnumerable().Any(c => c.FullName == t.ToDisplayString()));
 
-                                    foreach (var type in matchingTypes)
+                                    foreach (var type in matchingTypes.ToList())
                                     {
                                         candidates.Add(TypeHierarchyAnalyzer.CreateTypeHierarchyInfo(type,
                                             showUseSpecialTypes, originalType));
@@ -623,8 +631,9 @@ namespace boilersExtensions.ViewModels
                     try
                     {
                         // 既に開いているか確認
-                        EnvDTE.Document activeDoc = dte.ActiveDocument;
-                        if (activeDoc != null && string.Equals(activeDoc.FullName, _razorFilePath, StringComparison.OrdinalIgnoreCase))
+                        var activeDoc = dte.ActiveDocument;
+                        if (activeDoc != null && string.Equals(activeDoc.FullName, _razorFilePath,
+                                StringComparison.OrdinalIgnoreCase))
                         {
                             openedDoc = activeDoc;
                         }
@@ -650,14 +659,15 @@ namespace boilersExtensions.ViewModels
                         if (textDoc != null)
                         {
                             // 新しい型名を取得
-                            var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, _originalTypeSymbol.Name);
+                            var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName,
+                                _originalTypeSymbol.Name);
                             var originalTypeName = _originalTypeSymbol.Name;
 
                             // カーソル位置またはスパン情報が存在する場合
                             if (_fullTypeSpan.Start >= 0 || _position > 0)
                             {
                                 // 目標の行番号を取得
-                                int targetLine = 0;
+                                var targetLine = 0;
 
                                 if (_position > 0)
                                 {
@@ -669,7 +679,7 @@ namespace boilersExtensions.ViewModels
                                 else if (_extractedCSharpCode != null)
                                 {
                                     // C#コード内での位置から行番号を推定
-                                    int offset = _fullTypeSpan.Start;
+                                    var offset = _fullTypeSpan.Start;
                                     targetLine = GetLineNumberFromPosition(_extractedCSharpCode, offset);
                                 }
 
@@ -681,7 +691,7 @@ namespace boilersExtensions.ViewModels
 
                                     // 行内で型名を検索
                                     var lineText = editPoint.GetLines(editPoint.Line, editPoint.Line + 1);
-                                    int inLinePos = lineText.IndexOf(originalTypeName);
+                                    var inLinePos = lineText.IndexOf(originalTypeName);
 
                                     if (inLinePos >= 0)
                                     {
@@ -720,7 +730,7 @@ namespace boilersExtensions.ViewModels
                                 var lineText = selection.Text;
 
                                 // カーソル行内で型名を検索
-                                int inLinePos = lineText.IndexOf(originalTypeName);
+                                var inLinePos = lineText.IndexOf(originalTypeName);
                                 if (inLinePos >= 0)
                                 {
                                     // UndoContextを開始
@@ -876,7 +886,7 @@ namespace boilersExtensions.ViewModels
 
                 // ソーステキストを行に分割して特定の行を検索
                 var lines = razorContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
-                int targetLine = -1;
+                var targetLine = -1;
 
                 // 位置情報から行番号を推定
                 if (_position > 0)
@@ -887,16 +897,16 @@ namespace boilersExtensions.ViewModels
                 if (targetLine > 0 && targetLine <= lines.Length)
                 {
                     // 対象の行のテキスト
-                    string lineText = lines[targetLine - 1];
+                    var lineText = lines[targetLine - 1];
 
                     // 行内で型名を検索
-                    int inLinePos = lineText.IndexOf(originalTypeName);
+                    var inLinePos = lineText.IndexOf(originalTypeName);
                     if (inLinePos >= 0)
                     {
                         // 行内の型名を置換
                         lines[targetLine - 1] = lineText.Substring(0, inLinePos) +
-                                               newTypeName +
-                                               lineText.Substring(inLinePos + originalTypeName.Length);
+                                                newTypeName +
+                                                lineText.Substring(inLinePos + originalTypeName.Length);
 
                         // ファイルに書き戻す
                         File.WriteAllLines(_razorFilePath, lines);
@@ -959,9 +969,13 @@ namespace boilersExtensions.ViewModels
 
                     // ジェネリック部分を抽出 (例: System.Collections.Generic.List<int> -> System.Collections.Generic.List と <int>)
                     var baseTypeName = fullName.Substring(0, genericStart);
-                    var typeParams = fullName.Substring(genericStart); // <int> 部分
-                    var originalTypeParams = originalGenericStart != -1 ? originalTypeText.Substring(originalGenericStart) // <int> 部分
-                            : $"<{OriginalTypeName}>"; //元の型自身が型パラメーターになる 
+                    var typeParams = fullName.Substring(genericStart)
+                        .AsValueEnumerable(); // <int> 部分
+                    var originalTypeParams = originalGenericStart != -1
+                        ? originalTypeText.Substring(originalGenericStart)
+                            .AsValueEnumerable() // <int> 部分
+                        : $"<{OriginalTypeName}>"
+                            .AsValueEnumerable(); //元の型自身が型パラメーターになる 
 
                     // 型パラメーターの数が異なる場合は元の型名をそのまま返す
                     if (typeParams.Count(x => x == ',') != originalTypeParams.Count(x => x == ','))
@@ -1028,6 +1042,7 @@ namespace boilersExtensions.ViewModels
 
                 // 既存のusing文をチェック
                 var existingUsings = syntaxRoot.DescendantNodes()
+                    .AsValueEnumerable()
                     .OfType<UsingDirectiveSyntax>()
                     .Select(u => u.Name.ToString())
                     .ToList();
@@ -1044,7 +1059,8 @@ namespace boilersExtensions.ViewModels
                     .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
 
                 // 既存のusing文の後に追加
-                var firstUsing = syntaxRoot.DescendantNodes().OfType<UsingDirectiveSyntax>().FirstOrDefault();
+                var firstUsing = syntaxRoot.DescendantNodes()
+                    .AsValueEnumerable().OfType<UsingDirectiveSyntax>().FirstOrDefault();
                 if (firstUsing != null)
                 {
                     syntaxRoot = syntaxRoot.InsertNodesAfter(
@@ -1055,7 +1071,8 @@ namespace boilersExtensions.ViewModels
                 {
                     // usingがない場合は先頭に追加
                     syntaxRoot = syntaxRoot.InsertNodesBefore(
-                        syntaxRoot.DescendantNodes().First(),
+                        syntaxRoot.DescendantNodes()
+                            .AsValueEnumerable().First(),
                         new[] { newUsing });
                 }
 
@@ -1086,20 +1103,20 @@ namespace boilersExtensions.ViewModels
                 string newCode;
 
                 // Razorファイルの場合
-                bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
-                                   (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                    _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
+                var isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                                  (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                   _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
                 if (isRazorFile && _document == null)
                 {
                     // Razorファイルの内容を直接読み込む
                     originalCode = File.ReadAllText(_razorFilePath);
-                    string originalTypeName = _originalTypeSymbol.Name;
-                    string newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeName);
+                    var originalTypeName = _originalTypeSymbol.Name;
+                    var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeName);
 
                     // ソーステキストを行に分割
                     var lines = originalCode.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
-                    int targetLine = -1;
+                    var targetLine = -1;
 
                     // 位置情報から行番号を推定
                     if (_position > 0)
@@ -1118,10 +1135,10 @@ namespace boilersExtensions.ViewModels
                         Debug.WriteLine($"Targeting line {targetLine} for preview");
 
                         // 対象の行のテキスト
-                        string lineText = lines[targetLine - 1];
+                        var lineText = lines[targetLine - 1];
 
                         // 行内で型名を検索
-                        int inLinePos = lineText.IndexOf(originalTypeName);
+                        var inLinePos = lineText.IndexOf(originalTypeName);
                         if (inLinePos >= 0)
                         {
                             // 変更後のテキストを作成（対象行のみ変更）
@@ -1130,8 +1147,8 @@ namespace boilersExtensions.ViewModels
 
                             // 行の中の型名を置換
                             modifiedLines[targetLine - 1] = lineText.Substring(0, inLinePos) +
-                                                          newTypeName +
-                                                          lineText.Substring(inLinePos + originalTypeName.Length);
+                                                            newTypeName +
+                                                            lineText.Substring(inLinePos + originalTypeName.Length);
 
                             // 変更後のコードを作成
                             newCode = string.Join(Environment.NewLine, modifiedLines);
@@ -1140,8 +1157,8 @@ namespace boilersExtensions.ViewModels
                             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                             var diffViewer = new DiffViewer();
                             _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true,
-                                                                "型変更のプレビュー",
-                                                                $"行 {targetLine} の型名を置換します");
+                                "型変更のプレビュー",
+                                $"行 {targetLine} の型名を置換します");
 
                             IsProcessing.Value = false;
                             ProcessingStatus.Value = "準備完了";
@@ -1159,7 +1176,7 @@ namespace boilersExtensions.ViewModels
                     if (result == MessageBoxResult.Yes)
                     {
                         // 通常の検索置換でプレビュー
-                        int position = originalCode.IndexOf(originalTypeName);
+                        var position = originalCode.IndexOf(originalTypeName);
                         if (position >= 0)
                         {
                             newCode = originalCode.Substring(0, position) +
@@ -1170,8 +1187,8 @@ namespace boilersExtensions.ViewModels
                             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                             var diffViewer = new DiffViewer();
                             _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true,
-                                                                "型変更のプレビュー",
-                                                                "最初に見つかった型名を置換します");
+                                "型変更のプレビュー",
+                                "最初に見つかった型名を置換します");
                         }
                         else
                         {
@@ -1220,8 +1237,8 @@ namespace boilersExtensions.ViewModels
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var commonDiffViewer = new DiffViewer();
                 _diffWindowFrame = commonDiffViewer.ShowDiff(originalCode, newCode, true,
-                                                          "型変更のプレビュー",
-                                                          "型変更を適用するか検討してください");
+                    "型変更のプレビュー",
+                    "型変更を適用するか検討してください");
             }
             catch (Exception ex)
             {
@@ -1242,16 +1259,20 @@ namespace boilersExtensions.ViewModels
         private int GetLineNumberFromPosition(string text, int position)
         {
             if (string.IsNullOrEmpty(text) || position < 0)
+            {
                 return -1;
+            }
 
             // 安全のため、位置が文字列の長さを超えないように調整
             position = Math.Min(position, text.Length - 1);
 
-            int line = 1;
-            for (int i = 0; i < position; i++)
+            var line = 1;
+            for (var i = 0; i < position; i++)
             {
                 if (i < text.Length && text[i] == '\n')
+                {
                     line++;
+                }
             }
 
             return line;
@@ -1299,9 +1320,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // Razorファイルの場合
-                bool isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
-                                   (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
-                                    _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
+                var isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
+                                  (_razorFilePath.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) ||
+                                   _razorFilePath.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase));
 
                 if (isRazorFile && _document == null)
                 {
@@ -1319,6 +1340,7 @@ namespace boilersExtensions.ViewModels
 
                     // 変数/パラメータ宣言ノードを探す
                     var parameterNode = nodeAtPosition.AncestorsAndSelf()
+                        .AsValueEnumerable()
                         .OfType<ParameterSyntax>()
                         .FirstOrDefault();
 
@@ -1326,6 +1348,7 @@ namespace boilersExtensions.ViewModels
                     if (parameterNode == null)
                     {
                         var variableNode = nodeAtPosition.AncestorsAndSelf()
+                            .AsValueEnumerable()
                             .OfType<VariableDeclaratorSyntax>()
                             .FirstOrDefault();
 
@@ -1343,7 +1366,7 @@ namespace boilersExtensions.ViewModels
                     else
                     {
                         // パラメータのシンボルを取得
-                        var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode) as IParameterSymbol;
+                        var parameterSymbol = semanticModel.GetDeclaredSymbol(parameterNode);
                         if (parameterSymbol != null)
                         {
                             await ShowImpactForSymbol(parameterSymbol);
@@ -1383,7 +1406,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// Razorファイルの影響分析を行います
+        ///     Razorファイルの影響分析を行います
         /// </summary>
         private async Task AnalyzeRazorFileImpact()
         {
@@ -1393,15 +1416,16 @@ namespace boilersExtensions.ViewModels
                 if (_mapping != null)
                 {
                     Debug.WriteLine($"マッピング情報のエントリ数: {_mapping.Count}");
-                    foreach (var entry in _mapping.Take(10))
+                    foreach (var entry in _mapping
+                                 .AsValueEnumerable().Take(10).ToList())
                     {
                         Debug.WriteLine($"生成コード行 {entry.Key} -> Razor行 {entry.Value}");
                     }
                 }
 
                 // 型名を正確に取得
-                string originalTypeName = _originalTypeSymbol.Name;
-                string newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeName);
+                var originalTypeName = _originalTypeSymbol.Name;
+                var newTypeName = GetSimplifiedTypeName(SelectedType.Value.DisplayName, originalTypeName);
 
                 // 影響分析のための参照リストを準備
                 var impactList = new List<TypeReferenceInfo>();
@@ -1464,18 +1488,19 @@ namespace boilersExtensions.ViewModels
 
 
         // Razorファイルから直接参照を収集するヘルパーメソッド
-        private async Task CollectDirectRazorReferences(string razorFilePath, string typeName, List<TypeReferenceInfo> references)
+        private async Task CollectDirectRazorReferences(string razorFilePath, string typeName,
+            List<TypeReferenceInfo> references)
         {
             try
             {
                 // Razorファイルの内容を読み込む
-                string razorContent = File.ReadAllText(razorFilePath);
-                string[] lines = razorContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
+                var razorContent = File.ReadAllText(razorFilePath);
+                var lines = razorContent.Split(new[] { Environment.NewLine, "\n" }, StringSplitOptions.None);
 
                 // 1. 標準的なC#タグでの型参照
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     if (line.Contains($"@{typeName}") ||
                         line.Contains($"<{typeName}") ||
@@ -1485,8 +1510,8 @@ namespace boilersExtensions.ViewModels
                         {
                             FilePath = razorFilePath,
                             FileName = Path.GetFileName(razorFilePath),
-                            LineNumber = i + 1,  // 行番号は1ベース
-                            RazorLineNumber = i + 1,  // Razorファイルなので同じ
+                            LineNumber = i + 1, // 行番号は1ベース
+                            RazorLineNumber = i + 1, // Razorファイルなので同じ
                             Column = line.IndexOf(typeName) + 1,
                             Text = line.Trim(),
                             ReferenceType = "Razorファイルでの直接参照"
@@ -1495,9 +1520,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 2. コンポーネント属性でのバインド
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     // コンポーネント属性でのバインド (@bind, @bind-Value など)
                     if (line.Contains("@bind") && line.Contains(typeName))
@@ -1516,9 +1541,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 3. Injectディレクティブでの型参照
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     if (line.Contains("@inject") && line.Contains(typeName))
                     {
@@ -1536,13 +1561,13 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 4. @code ブロック内での型参照
-                bool inCodeBlock = false;
-                int codeBlockStartLine = 0;
-                int braceCount = 0;
+                var inCodeBlock = false;
+                var codeBlockStartLine = 0;
+                var braceCount = 0;
 
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     // @code ブロックの開始を検出
                     if (line.Contains("@code") && line.Contains("{"))
@@ -1584,9 +1609,9 @@ namespace boilersExtensions.ViewModels
 
                 // 5. @functions ブロック内での型参照 (レガシーRazor構文)
                 inCodeBlock = false;
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     // @functions ブロックの開始を検出
                     if (line.Contains("@functions") && line.Contains("{"))
@@ -1626,17 +1651,17 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 6. インラインC#式での参照 (@(expression))
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
-                    int expressionStart = line.IndexOf("@(");
+                    var expressionStart = line.IndexOf("@(");
                     while (expressionStart >= 0)
                     {
-                        int expressionEnd = FindMatchingParenthesis(line, expressionStart + 1);
+                        var expressionEnd = FindMatchingParenthesis(line, expressionStart + 1);
                         if (expressionEnd > expressionStart)
                         {
-                            string expression = line.Substring(expressionStart + 2, expressionEnd - expressionStart - 2);
+                            var expression = line.Substring(expressionStart + 2, expressionEnd - expressionStart - 2);
                             if (expression.Contains(typeName))
                             {
                                 references.Add(new TypeReferenceInfo
@@ -1661,15 +1686,15 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 7. コンポーネント参照でのタイプパラメータ
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     // <Component TItem="TypeName"> パターン
-                    var typeParamPattern = new System.Text.RegularExpressions.Regex($@"T\w+=\""{typeName}\""");
+                    var typeParamPattern = new Regex($@"T\w+=\""{typeName}\""");
                     var matches = typeParamPattern.Matches(line);
 
-                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    foreach (Match match in matches)
                     {
                         references.Add(new TypeReferenceInfo
                         {
@@ -1685,9 +1710,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 8. @inherits ディレクティブでの型参照
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     if (line.Contains("@inherits") && line.Contains(typeName))
                     {
@@ -1705,9 +1730,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 9. @implements ディレクティブでの型参照
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     if (line.Contains("@implements") && line.Contains(typeName))
                     {
@@ -1725,9 +1750,9 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 10. @typeparam ディレクティブでの型制約
-                for (int i = 0; i < lines.Length; i++)
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    string line = lines[i];
+                    var line = lines[i];
 
                     if (line.Contains("@typeparam") && line.Contains("where") && line.Contains(typeName))
                     {
@@ -1752,13 +1777,14 @@ namespace boilersExtensions.ViewModels
 
         private static int CountOccurrences(string text, char character)
         {
-            return text.Count(c => c == character);
+            return text
+                .AsValueEnumerable().Count(c => c == character);
         }
 
         private static int FindMatchingParenthesis(string text, int openIndex)
         {
-            int depth = 0;
-            for (int i = openIndex; i < text.Length; i++)
+            var depth = 0;
+            for (var i = openIndex; i < text.Length; i++)
             {
                 if (text[i] == '(')
                 {
@@ -1773,53 +1799,66 @@ namespace boilersExtensions.ViewModels
                     }
                 }
             }
+
             return -1; // 対応する閉じ括弧がない
         }
 
         /// <summary>
-        /// Razorファイルが属するプロジェクトを特定するための改良メソッド
+        ///     Razorファイルが属するプロジェクトを特定するための改良メソッド
         /// </summary>
-        private Microsoft.CodeAnalysis.Project FindProjectForRazorFile(string razorFilePath, VisualStudioWorkspace workspace)
+        private Project FindProjectForRazorFile(string razorFilePath, VisualStudioWorkspace workspace)
         {
             try
             {
                 // 1. 完全なパスマッチで検索
                 var exactMatchProject = workspace.CurrentSolution.Projects
-                    .FirstOrDefault(p => p.Documents.Any(d =>
-                        string.Equals(d.FilePath, razorFilePath, StringComparison.OrdinalIgnoreCase)));
+                    .AsValueEnumerable()
+                    .FirstOrDefault(p => p.Documents
+                        .AsValueEnumerable().Any(d =>
+                            string.Equals(d.FilePath, razorFilePath, StringComparison.OrdinalIgnoreCase)));
 
                 if (exactMatchProject != null)
+                {
                     return exactMatchProject;
+                }
 
                 // 2. ファイル名でマッチを試行
-                string fileName = Path.GetFileName(razorFilePath);
+                var fileName = Path.GetFileName(razorFilePath);
                 var fileNameMatchProject = workspace.CurrentSolution.Projects
-                    .FirstOrDefault(p => p.Documents.Any(d =>
-                        d.FilePath != null &&
-                        string.Equals(Path.GetFileName(d.FilePath), fileName, StringComparison.OrdinalIgnoreCase)));
+                    .AsValueEnumerable()
+                    .FirstOrDefault(p => p.Documents
+                        .AsValueEnumerable().Any(d =>
+                            d.FilePath != null &&
+                            string.Equals(Path.GetFileName(d.FilePath), fileName, StringComparison.OrdinalIgnoreCase)));
 
                 if (fileNameMatchProject != null)
+                {
                     return fileNameMatchProject;
+                }
 
                 // 3. DTEを使用してプロジェクト情報を取得
                 var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
                 if (dte != null && dte.Solution != null)
                 {
                     // アクティブなプロジェクトを取得
-                    Array activeSolutionProjects = dte.ActiveSolutionProjects as Array;
+                    var activeSolutionProjects = dte.ActiveSolutionProjects as Array;
                     if (activeSolutionProjects != null && activeSolutionProjects.Length > 0)
                     {
-                        var activeProject = activeSolutionProjects.GetValue(0) as Microsoft.CodeAnalysis.Project;
+                        var activeProject = activeSolutionProjects.GetValue(0) as Project;
                         if (activeProject != null)
                         {
-                            string projectName = activeProject.Name;
+                            var projectName = activeProject.Name;
 
                             // ワークスペースから同じ名前のプロジェクトを探す
                             var activeRoslynProject = workspace.CurrentSolution.Projects
-                                .FirstOrDefault(p => string.Equals(p.Name, projectName, StringComparison.OrdinalIgnoreCase));
+                                .AsValueEnumerable()
+                                .FirstOrDefault(p =>
+                                    string.Equals(p.Name, projectName, StringComparison.OrdinalIgnoreCase));
 
                             if (activeRoslynProject != null)
+                            {
                                 return activeRoslynProject;
+                            }
                         }
                     }
 
@@ -1833,10 +1872,14 @@ namespace boilersExtensions.ViewModels
                             {
                                 // 該当するプロジェクトが見つかったらワークスペースから対応するプロジェクトを探す
                                 var matchingRoslynProject = workspace.CurrentSolution.Projects
-                                    .FirstOrDefault(p => string.Equals(p.Name, dteProject.Name, StringComparison.OrdinalIgnoreCase));
+                                    .AsValueEnumerable()
+                                    .FirstOrDefault(p =>
+                                        string.Equals(p.Name, dteProject.Name, StringComparison.OrdinalIgnoreCase));
 
                                 if (matchingRoslynProject != null)
+                                {
                                     return matchingRoslynProject;
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -1847,30 +1890,40 @@ namespace boilersExtensions.ViewModels
                 }
 
                 // 4. ファイルパスから最も可能性の高いプロジェクトを推測
-                string razorDir = Path.GetDirectoryName(razorFilePath);
+                var razorDir = Path.GetDirectoryName(razorFilePath);
 
                 // ディレクトリ名と一致するプロジェクトを検索
-                string directoryName = new DirectoryInfo(razorDir).Name;
+                var directoryName = new DirectoryInfo(razorDir).Name;
                 var dirNameMatchProject = workspace.CurrentSolution.Projects
+                    .AsValueEnumerable()
                     .FirstOrDefault(p => p.Name.Contains(directoryName) || directoryName.Contains(p.Name));
 
                 if (dirNameMatchProject != null)
+                {
                     return dirNameMatchProject;
+                }
 
                 // 5. 最後の手段: すべてのBlazorプロジェクトから選択
                 var blazorProjects = workspace.CurrentSolution.Projects
-                    .Where(p => p.Documents.Any(d =>
-                        d.FilePath != null &&
-                        (d.FilePath.EndsWith(".razor") || d.FilePath.EndsWith(".cshtml"))))
+                    .AsValueEnumerable()
+                    .Where(p => p.Documents
+                        .AsValueEnumerable().Any(d =>
+                            d.FilePath != null &&
+                            (d.FilePath.EndsWith(".razor") || d.FilePath.EndsWith(".cshtml"))))
                     .ToList();
 
                 // Blazorプロジェクトが1つだけなら、それを返す
                 if (blazorProjects.Count == 1)
+                {
                     return blazorProjects[0];
+                }
 
                 // 複数ある場合は名前でソートして最初のものを返す
                 if (blazorProjects.Count > 1)
-                    return blazorProjects.OrderBy(p => p.Name).First();
+                {
+                    return blazorProjects
+                        .AsValueEnumerable().OrderBy(p => p.Name).First();
+                }
 
                 // プロジェクトが見つからなかった場合はnullを返す
                 return null;
@@ -1883,14 +1936,16 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// DTEプロジェクト内でファイルを再帰的に検索する
+        ///     DTEプロジェクト内でファイルを再帰的に検索する
         /// </summary>
         private bool IsFileInDTEProject(EnvDTE.Project project, string filePath)
         {
             try
             {
                 if (project.ProjectItems == null)
+                {
                     return false;
+                }
 
                 foreach (ProjectItem item in project.ProjectItems)
                 {
@@ -1899,7 +1954,7 @@ namespace boilersExtensions.ViewModels
                     {
                         try
                         {
-                            string itemPath = item.FileNames[0];
+                            var itemPath = item.FileNames[0];
                             if (string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
                             {
                                 return true;
@@ -1940,7 +1995,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// ProjectItems内でファイルを再帰的に検索する
+        ///     ProjectItems内でファイルを再帰的に検索する
         /// </summary>
         private bool IsFileInProjectItems(ProjectItems items, string filePath)
         {
@@ -1951,7 +2006,7 @@ namespace boilersExtensions.ViewModels
                 {
                     try
                     {
-                        string itemPath = item.FileNames[0];
+                        var itemPath = item.FileNames[0];
                         if (string.Equals(itemPath, filePath, StringComparison.OrdinalIgnoreCase))
                         {
                             return true;
@@ -1986,9 +2041,9 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// すべてのプロジェクトを対象に型参照を検索
+        ///     すべてのプロジェクトを対象に型参照を検索
         /// </summary>
-        private async Task AnalyzeTypeReferencesInAllProjects(ITypeSymbol typeSymbol, List<Microsoft.CodeAnalysis.Project> projects)
+        private async Task AnalyzeTypeReferencesInAllProjects(ITypeSymbol typeSymbol, List<Project> projects)
         {
             try
             {
@@ -1999,6 +2054,7 @@ namespace boilersExtensions.ViewModels
                 {
                     // Razorファイルに関連するコードファイルを検索
                     var generatedDocs = project.Documents
+                        .AsValueEnumerable()
                         .Where(d => d.FilePath != null && (
                             d.FilePath.Contains(".razor.g.cs") ||
                             d.FilePath.Contains(".cshtml.g.cs") ||
@@ -2008,11 +2064,14 @@ namespace boilersExtensions.ViewModels
 
                     // 通常のコードファイルも検索対象に含める
                     var csharpDocs = project.Documents
+                        .AsValueEnumerable()
                         .Where(d => d.FilePath != null && d.FilePath.EndsWith(".cs") &&
-                               !generatedDocs.Any(gd => gd.FilePath == d.FilePath))
+                                    !generatedDocs
+                                        .AsValueEnumerable().Any(gd => gd.FilePath == d.FilePath))
                         .ToList();
 
-                    var allDocs = generatedDocs.Concat(csharpDocs).ToList();
+                    var allDocs = generatedDocs
+                        .AsValueEnumerable().Concat(csharpDocs).ToList();
 
                     foreach (var doc in allDocs)
                     {
@@ -2023,10 +2082,13 @@ namespace boilersExtensions.ViewModels
                             var semanticModel = await doc.GetSemanticModelAsync();
 
                             if (root == null || semanticModel == null)
+                            {
                                 continue;
+                            }
 
                             // 型名の文字列検索（簡易的なアプローチ）
                             var typeNameNodes = root.DescendantNodes()
+                                .AsValueEnumerable()
                                 .OfType<IdentifierNameSyntax>()
                                 .Where(n => n.Identifier.Text == typeSymbol.Name)
                                 .ToList();
@@ -2052,6 +2114,7 @@ namespace boilersExtensions.ViewModels
 
                             // より厳密な型参照の検索
                             var typeNodes = root.DescendantNodes()
+                                .AsValueEnumerable()
                                 .OfType<TypeSyntax>()
                                 .ToList();
 
@@ -2069,7 +2132,7 @@ namespace boilersExtensions.ViewModels
                                     var lineSpan = text.Lines[linePosition.Line].Span;
                                     var referenceText = text.ToString(lineSpan).Trim();
 
-                                    string referenceType = "型の参照";
+                                    var referenceType = "型の参照";
 
                                     // 参照種別の詳細を取得
                                     var parent = typeNode.Parent;
@@ -2111,12 +2174,15 @@ namespace boilersExtensions.ViewModels
 
                 // 重複を削除
                 impactList = impactList
+                    .AsValueEnumerable()
                     .GroupBy(i => new { i.FilePath, i.LineNumber, i.Text })
-                    .Select(g => g.First())
+                    .Select(g => g
+                        .AsValueEnumerable().First())
                     .ToList();
 
                 // ソート：生成コードではないファイル優先、そして行番号順
                 impactList = impactList
+                    .AsValueEnumerable()
                     .OrderBy(r => r.FilePath.Contains(".g.cs")) // 生成コードではないファイルを優先
                     .ThenBy(r => r.FileName)
                     .ThenBy(r => r.LineNumber)
@@ -2165,9 +2231,9 @@ namespace boilersExtensions.ViewModels
         }
 
         private async Task CollectAllTypeReferences(
-    ITypeSymbol typeSymbol,
-    List<TypeReferenceInfo> impactList,
-    List<PotentialIssue> potentialIssues)
+            ITypeSymbol typeSymbol,
+            List<TypeReferenceInfo> impactList,
+            List<PotentialIssue> potentialIssues)
         {
             try
             {
@@ -2194,6 +2260,7 @@ namespace boilersExtensions.ViewModels
 
                 // プロジェクト内の C# コードを含む生成ファイルを特定
                 var generatedDocuments = razorProject.Documents
+                    .AsValueEnumerable()
                     .Where(d => d.FilePath != null && (
                         d.FilePath.Contains(".razor.g.cs") ||
                         d.FilePath.Contains(".cshtml.g.cs") ||
@@ -2211,18 +2278,22 @@ namespace boilersExtensions.ViewModels
                         var semanticModel = await doc.GetSemanticModelAsync();
 
                         if (root == null || semanticModel == null)
+                        {
                             continue;
+                        }
 
                         // 型参照（TypeSyntax）を検索
                         var typeReferences = root.DescendantNodes()
+                            .AsValueEnumerable()
                             .OfType<TypeSyntax>()
-                            .Where(ts => {
+                            .Where(ts =>
+                            {
                                 var symbolInfo = semanticModel.GetSymbolInfo(ts);
                                 return symbolInfo.Symbol != null &&
                                        SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, typeSymbol);
                             });
 
-                        foreach (var typeRef in typeReferences)
+                        foreach (var typeRef in typeReferences.ToList())
                         {
                             var linePosition = text.Lines.GetLinePosition(typeRef.Span.Start);
                             var refLine = linePosition.Line + 1;
@@ -2259,9 +2330,10 @@ namespace boilersExtensions.ViewModels
                             }
 
                             // 重複を避けるために追加
-                            if (!impactList.Any(r =>
-                                r.FilePath == referenceInfo.FilePath &&
-                                r.LineNumber == referenceInfo.LineNumber))
+                            if (!impactList
+                                    .AsValueEnumerable().Any(r =>
+                                        r.FilePath == referenceInfo.FilePath &&
+                                        r.LineNumber == referenceInfo.LineNumber))
                             {
                                 impactList.Add(referenceInfo);
                             }
@@ -2269,14 +2341,16 @@ namespace boilersExtensions.ViewModels
 
                         // メンバーアクセス（プロパティやメソッド呼び出し）の参照も検索
                         var memberAccesses = root.DescendantNodes()
+                            .AsValueEnumerable()
                             .OfType<MemberAccessExpressionSyntax>()
-                            .Where(ma => {
+                            .Where(ma =>
+                            {
                                 var expressionType = semanticModel.GetTypeInfo(ma.Expression).Type;
                                 return expressionType != null &&
                                        SymbolEqualityComparer.Default.Equals(expressionType, typeSymbol);
                             });
 
-                        foreach (var memberAccess in memberAccesses)
+                        foreach (var memberAccess in memberAccesses.ToList())
                         {
                             var linePosition = text.Lines.GetLinePosition(memberAccess.Span.Start);
                             var refLine = linePosition.Line + 1;
@@ -2295,9 +2369,10 @@ namespace boilersExtensions.ViewModels
                             };
 
                             // 重複を避けるために追加
-                            if (!impactList.Any(r =>
-                                r.FilePath == referenceInfo.FilePath &&
-                                r.LineNumber == referenceInfo.LineNumber))
+                            if (!impactList
+                                    .AsValueEnumerable().Any(r =>
+                                        r.FilePath == referenceInfo.FilePath &&
+                                        r.LineNumber == referenceInfo.LineNumber))
                             {
                                 impactList.Add(referenceInfo);
                             }
@@ -2332,10 +2407,15 @@ namespace boilersExtensions.ViewModels
                                         potentialIssues.Add(new PotentialIssue
                                         {
                                             FilePath = RazorFileUtility.GetOriginalFilePath(doc.FilePath),
-                                            FileName = Path.GetFileName(RazorFileUtility.GetOriginalFilePath(doc.FilePath)),
+                                            FileName =
+                                                Path.GetFileName(
+                                                    RazorFileUtility.GetOriginalFilePath(doc.FilePath)),
                                             LineNumber = refLine,
-                                            RazorLineNumber = _mapping != null ?
-                                                RazorMappingHelper.MapToRazorLine(_mapping, _extractedCSharpCode, refLine) : 0,
+                                            RazorLineNumber =
+                                                _mapping != null
+                                                    ? RazorMappingHelper.MapToRazorLine(_mapping,
+                                                        _extractedCSharpCode, refLine)
+                                                    : 0,
                                             IssueType = issue.IssueType,
                                             Description = issue.Description,
                                             SuggestedFix = issue.SuggestedFix,
@@ -2354,9 +2434,9 @@ namespace boilersExtensions.ViewModels
 
                 // 結果をソート
                 impactList.Sort((a, b) =>
-                    string.Compare(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase) != 0 ?
-                    string.Compare(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase) :
-                    a.LineNumber.CompareTo(b.LineNumber));
+                    string.Compare(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase) != 0
+                        ? string.Compare(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase)
+                        : a.LineNumber.CompareTo(b.LineNumber));
             }
             catch (Exception ex)
             {
@@ -2365,12 +2445,12 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// コンパイレーションから型シンボルを検索します
+        ///     コンパイレーションから型シンボルを検索します
         /// </summary>
         private INamedTypeSymbol FindTypeSymbolInCompilation(string fullTypeName, Compilation compilation)
         {
             // ジェネリック型の場合は型引数を取り除く
-            string nonGenericName = fullTypeName;
+            var nonGenericName = fullTypeName;
             if (fullTypeName.Contains("<"))
             {
                 nonGenericName = fullTypeName.Substring(0, fullTypeName.IndexOf("<"));
@@ -2385,15 +2465,18 @@ namespace boilersExtensions.ViewModels
 
             // 名前で検索（名前空間を考慮）
             var candidateSymbols = compilation.GetSymbolsWithName(
-                name => name.EndsWith(Path.GetFileName(nonGenericName)),
-                SymbolFilter.Type
-            ).OfType<INamedTypeSymbol>();
+                    name => name.EndsWith(Path.GetFileName(nonGenericName)),
+                    SymbolFilter.Type
+                )
+                .AsValueEnumerable().OfType<INamedTypeSymbol>();
 
             // 最適な候補を返す（完全一致優先）
-            foreach (var candidate in candidateSymbols)
+            foreach (var candidate in candidateSymbols.ToList())
             {
                 if (candidate.ToDisplayString() == fullTypeName)
+                {
                     return candidate;
+                }
             }
 
             // 完全一致がなければ、部分一致の最初の候補を返す
@@ -2401,7 +2484,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 2つの型の互換性をチェックし、潜在的な問題を返します
+        ///     2つの型の互換性をチェックし、潜在的な問題を返します
         /// </summary>
         private List<CompatibilityIssue> CheckTypeCompatibility(ITypeSymbol originalType, ITypeSymbol newType)
         {
@@ -2413,7 +2496,8 @@ namespace boilersExtensions.ViewModels
                 issues.Add(new CompatibilityIssue
                 {
                     IssueType = "型の種類の不一致",
-                    Description = $"元の型 '{originalType.Name}' は {originalType.TypeKind} ですが、新しい型 '{newType.Name}' は {newType.TypeKind} です。",
+                    Description =
+                        $"元の型 '{originalType.Name}' は {originalType.TypeKind} ですが、新しい型 '{newType.Name}' は {newType.TypeKind} です。",
                     SuggestedFix = "型の種類が一致するように設計を見直してください。"
                 });
             }
@@ -2421,7 +2505,7 @@ namespace boilersExtensions.ViewModels
             // クラスの場合は継承関係をチェック
             if (originalType.TypeKind == TypeKind.Class && newType.TypeKind == TypeKind.Class)
             {
-                bool isCompatible = false;
+                var isCompatible = false;
                 var baseType = newType;
 
                 while (baseType != null)
@@ -2431,6 +2515,7 @@ namespace boilersExtensions.ViewModels
                         isCompatible = true;
                         break;
                     }
+
                     baseType = baseType.BaseType;
                 }
 
@@ -2448,8 +2533,9 @@ namespace boilersExtensions.ViewModels
             // インターフェースの実装をチェック
             if (originalType.TypeKind == TypeKind.Interface)
             {
-                bool implementsInterface = newType.AllInterfaces.Any(i =>
-                    SymbolEqualityComparer.Default.Equals(i, originalType));
+                var implementsInterface = newType.AllInterfaces
+                    .AsValueEnumerable().Any(i =>
+                        SymbolEqualityComparer.Default.Equals(i, originalType));
 
                 if (!implementsInterface && !SymbolEqualityComparer.Default.Equals(originalType, newType))
                 {
@@ -2467,14 +2553,16 @@ namespace boilersExtensions.ViewModels
             var newMembers = GetTypeMembers(newType);
 
             // メソッドの互換性チェック
-            var originalMethods = originalMembers.OfType<IMethodSymbol>()
+            var originalMethods = originalMembers
+                .AsValueEnumerable().OfType<IMethodSymbol>()
                 .Where(m => !m.IsImplicitlyDeclared && m.MethodKind != MethodKind.Constructor)
                 .ToList();
 
             foreach (var originalMethod in originalMethods)
             {
                 // オーバーロードを含めて一致するメソッドを検索
-                var matchingMethods = newMembers.OfType<IMethodSymbol>()
+                var matchingMethods = newMembers
+                    .AsValueEnumerable().OfType<IMethodSymbol>()
                     .Where(m => m.Name == originalMethod.Name && m.MethodKind != MethodKind.Constructor)
                     .ToList();
 
@@ -2491,11 +2579,13 @@ namespace boilersExtensions.ViewModels
                 else
                 {
                     // シグネチャの互換性をチェック
-                    bool hasCompatibleOverload = matchingMethods.Any(m => AreMethodSignaturesCompatible(originalMethod, m));
+                    var hasCompatibleOverload = matchingMethods
+                        .AsValueEnumerable().Any(m => AreMethodSignaturesCompatible(originalMethod, m));
 
                     if (!hasCompatibleOverload)
                     {
-                        var paramList = string.Join(", ", originalMethod.Parameters.Select(p => $"{p.Type.Name} {p.Name}"));
+                        var paramList = string.Join(", ", originalMethod.Parameters
+                            .AsValueEnumerable().Select(p => $"{p.Type.Name} {p.Name}"));
                         issues.Add(new CompatibilityIssue
                         {
                             IssueType = "メソッドシグネチャの不一致",
@@ -2508,13 +2598,15 @@ namespace boilersExtensions.ViewModels
             }
 
             // プロパティの互換性チェック
-            var originalProperties = originalMembers.OfType<IPropertySymbol>()
+            var originalProperties = originalMembers
+                .AsValueEnumerable().OfType<IPropertySymbol>()
                 .Where(p => !p.IsImplicitlyDeclared)
                 .ToList();
 
             foreach (var originalProperty in originalProperties)
             {
-                var matchingProperty = newMembers.OfType<IPropertySymbol>()
+                var matchingProperty = newMembers
+                    .AsValueEnumerable().OfType<IPropertySymbol>()
                     .FirstOrDefault(p => p.Name == originalProperty.Name);
 
                 if (matchingProperty == null)
@@ -2532,7 +2624,8 @@ namespace boilersExtensions.ViewModels
                     issues.Add(new CompatibilityIssue
                     {
                         IssueType = "プロパティ型の不一致",
-                        Description = $"プロパティ '{originalProperty.Name}' の型が元の型では '{originalProperty.Type.Name}' ですが、新しい型では '{matchingProperty.Type.Name}' です。",
+                        Description =
+                            $"プロパティ '{originalProperty.Name}' の型が元の型では '{originalProperty.Type.Name}' ですが、新しい型では '{matchingProperty.Type.Name}' です。",
                         SuggestedFix = "型変換ロジックを追加するか、代替のプロパティを検討してください。",
                         Member = originalProperty.Name
                     });
@@ -2540,13 +2633,15 @@ namespace boilersExtensions.ViewModels
             }
 
             // イベントの互換性チェック
-            var originalEvents = originalMembers.OfType<IEventSymbol>()
+            var originalEvents = originalMembers
+                .AsValueEnumerable().OfType<IEventSymbol>()
                 .Where(e => !e.IsImplicitlyDeclared)
                 .ToList();
 
             foreach (var originalEvent in originalEvents)
             {
-                var matchingEvent = newMembers.OfType<IEventSymbol>()
+                var matchingEvent = newMembers
+                    .AsValueEnumerable().OfType<IEventSymbol>()
                     .FirstOrDefault(e => e.Name == originalEvent.Name);
 
                 if (matchingEvent == null)
@@ -2564,7 +2659,8 @@ namespace boilersExtensions.ViewModels
                     issues.Add(new CompatibilityIssue
                     {
                         IssueType = "イベント型の不一致",
-                        Description = $"イベント '{originalEvent.Name}' の型が元の型では '{originalEvent.Type.Name}' ですが、新しい型では '{matchingEvent.Type.Name}' です。",
+                        Description =
+                            $"イベント '{originalEvent.Name}' の型が元の型では '{originalEvent.Type.Name}' ですが、新しい型では '{matchingEvent.Type.Name}' です。",
                         SuggestedFix = "アダプターまたはラッパーを実装して、イベントハンドラーの互換性を確保してください。",
                         Member = originalEvent.Name
                     });
@@ -2573,12 +2669,14 @@ namespace boilersExtensions.ViewModels
 
             // より一般的な固有メンバーのチェック
             var originalSpecificMembers = originalMembers
+                .AsValueEnumerable()
                 .Where(m => !m.IsImplicitlyDeclared &&
-                            !newMembers.Any(nm => nm.Name == m.Name))
+                            !newMembers
+                                .AsValueEnumerable().Any(nm => nm.Name == m.Name))
                 .ToList();
 
             // 解析対象のコードを取得
-            string codeToAnalyze = _extractedCSharpCode ?? string.Empty;
+            var codeToAnalyze = _extractedCSharpCode ?? string.Empty;
 
             foreach (var specificMember in originalSpecificMembers)
             {
@@ -2587,8 +2685,8 @@ namespace boilersExtensions.ViewModels
                     specificMember.DeclaredAccessibility == Accessibility.Internal)
                 {
                     // 実際にそのメンバーが使用されているかどうかをチェック
-                    bool isUsed = codeToAnalyze.Contains($".{specificMember.Name}") ||
-                                  codeToAnalyze.Contains($"{originalType.Name}.{specificMember.Name}");
+                    var isUsed = codeToAnalyze.Contains($".{specificMember.Name}") ||
+                                 codeToAnalyze.Contains($"{originalType.Name}.{specificMember.Name}");
 
                     if (isUsed)
                     {
@@ -2607,7 +2705,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 互換性の問題に関連するノードを検索
+        ///     互換性の問題に関連するノードを検索
         /// </summary>
         private List<SyntaxNode> FindNodesRelatedToCompatibilityIssue(
             SyntaxNode root,
@@ -2622,8 +2720,10 @@ namespace boilersExtensions.ViewModels
             {
                 // メソッド呼び出しを検索
                 var methodCalls = root.DescendantNodes()
+                    .AsValueEnumerable()
                     .OfType<InvocationExpressionSyntax>()
-                    .Where(i => {
+                    .Where(i =>
+                    {
                         if (i.Expression is MemberAccessExpressionSyntax memberAccess)
                         {
                             // 型.メソッド() の形式の呼び出し
@@ -2645,6 +2745,7 @@ namespace boilersExtensions.ViewModels
                                        methodSymbol.ContainingType.ToString() == originalType.ToString();
                             }
                         }
+
                         return false;
                     })
                     .ToList();
@@ -2653,20 +2754,27 @@ namespace boilersExtensions.ViewModels
 
                 // プロパティアクセスを検索
                 var propertyAccesses = root.DescendantNodes()
+                    .AsValueEnumerable()
                     .OfType<MemberAccessExpressionSyntax>()
                     .Where(m =>
                     {
                         var issueMember = issue.Member;
                         if (issueMember.StartsWith("get_"))
+                        {
                             issueMember = issueMember.Remove(0, 4);
+                        }
                         else if (issueMember.StartsWith("set_"))
+                        {
                             issueMember = issueMember.Remove(0, 4);
+                        }
+
                         if (m.Name.Identifier.Text == issueMember)
                         {
                             var expressionType = semanticModel.GetTypeInfo(m.Expression).Type;
                             return expressionType != null &&
                                    expressionType.ToString() == originalType.ToString();
                         }
+
                         return false;
                     })
                     .ToList();
@@ -2675,8 +2783,10 @@ namespace boilersExtensions.ViewModels
 
                 // イベント参照を検索
                 var eventReferences = root.DescendantNodes()
+                    .AsValueEnumerable()
                     .OfType<AssignmentExpressionSyntax>()
-                    .Where(a => {
+                    .Where(a =>
+                    {
                         if (a.Left is MemberAccessExpressionSyntax memberAccess &&
                             memberAccess.Name.Identifier.Text == issue.Member)
                         {
@@ -2684,6 +2794,7 @@ namespace boilersExtensions.ViewModels
                             return expressionType != null &&
                                    expressionType.ToString() == originalType.ToString();
                         }
+
                         return false;
                     })
                     .ToList();
@@ -2694,8 +2805,10 @@ namespace boilersExtensions.ViewModels
             {
                 // 特定のメンバーが指定されていない場合、型の参照全般を検索
                 var typeReferences = root.DescendantNodes()
+                    .AsValueEnumerable()
                     .OfType<TypeSyntax>()
-                    .Where(t => {
+                    .Where(t =>
+                    {
                         var symbolInfo = semanticModel.GetSymbolInfo(t);
                         return symbolInfo.Symbol != null &&
                                symbolInfo.Symbol.ToString() == originalType.ToString();
@@ -2709,7 +2822,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 互換性の問題を表すクラス
+        ///     互換性の問題を表すクラス
         /// </summary>
         private class CompatibilityIssue
         {
@@ -2720,9 +2833,9 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 型シンボルに対する影響分析（プロジェクト指定版）
+        ///     型シンボルに対する影響分析（プロジェクト指定版）
         /// </summary>
-        private async Task ShowImpactForSymbolInProject(ISymbol symbol, Microsoft.CodeAnalysis.Project project)
+        private async Task ShowImpactForSymbolInProject(ISymbol symbol, Project project)
         {
             try
             {
@@ -2731,7 +2844,9 @@ namespace boilersExtensions.ViewModels
 
                 // Razorファイルの場合は生成コードも検索
                 var generatedDocs = project.Solution.Projects
-                    .SelectMany(p => p.Documents)
+                    .AsValueEnumerable()
+                    .SelectMany(p => p.Documents
+                        .AsValueEnumerable())
                     .Where(d => d.FilePath != null && (
                         d.FilePath.Contains(".razor.g.cs") ||
                         d.FilePath.Contains(".cshtml.g.cs") ||
@@ -2741,11 +2856,14 @@ namespace boilersExtensions.ViewModels
 
                 // 通常のコードファイルも検索対象に含める
                 var csharpDocs = project.Documents
+                    .AsValueEnumerable()
                     .Where(d => d.FilePath != null && d.FilePath.EndsWith(".cs") &&
-                           !generatedDocs.Any(gd => gd.FilePath == d.FilePath))
+                                !generatedDocs
+                                    .AsValueEnumerable().Any(gd => gd.FilePath == d.FilePath))
                     .ToList();
 
-                var allDocs = generatedDocs.Concat(csharpDocs).ToList();
+                var allDocs = generatedDocs
+                    .AsValueEnumerable().Concat(csharpDocs).ToList();
 
                 foreach (var doc in allDocs)
                 {
@@ -2755,8 +2873,10 @@ namespace boilersExtensions.ViewModels
 
                     // 型名の出現を検索
                     var typeNodes = root.DescendantNodes()
+                        .AsValueEnumerable()
                         .OfType<TypeSyntax>()
-                        .Where(t => {
+                        .Where(t =>
+                        {
                             var symbolInfo = semanticModel.GetSymbolInfo(t);
                             return symbolInfo.Symbol != null &&
                                    SymbolEqualityComparer.Default.Equals(symbolInfo.Symbol, symbol);
@@ -2771,7 +2891,7 @@ namespace boilersExtensions.ViewModels
                         var lineSpan = text.Lines[linePosition.Line].Span;
                         var referenceText = text.ToString(lineSpan).Trim();
 
-                        string referenceType = "型の参照";
+                        var referenceType = "型の参照";
 
                         // 参照種別の詳細を取得
                         var parent = typeNode.Parent;
@@ -2811,6 +2931,7 @@ namespace boilersExtensions.ViewModels
 
                 // ソート：生成コードではないファイル優先、そして行番号順
                 impactList = impactList
+                    .AsValueEnumerable()
                     .OrderBy(r => r.FilePath.Contains(".g.cs")) // 生成コードではないファイルを優先
                     .ThenBy(r => r.FileName)
                     .ThenBy(r => r.LineNumber)
@@ -2862,19 +2983,22 @@ namespace boilersExtensions.ViewModels
                     // メソッド内での参照かどうかを判定
                     var semanticModel = await location.Document.GetSemanticModelAsync();
                     var node = (await sourceTree.GetRootAsync()).FindNode(location.Location.SourceSpan);
-                    var containingMethod = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+                    var containingMethod = node.Ancestors()
+                        .AsValueEnumerable().OfType<MethodDeclarationSyntax>().FirstOrDefault();
                     var methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
 
                     // 行のコードテキストを取得
                     var lineText = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line);
 
                     // Razorファイルの行番号をマッピング（コード内容も使用）
-                    int razorLine = await RazorMappingHelper.FindRazorLineByCode(_mapping, _extractedCSharpCode, line, lineText, location.Document);
+                    var razorLine = await RazorMappingHelper.FindRazorLineByCode(_mapping, _extractedCSharpCode, line,
+                        lineText, location.Document);
 
                     var referenceInfo = new TypeReferenceInfo
                     {
                         FilePath = RazorFileUtility.GetOriginalFilePath(location.Document.FilePath),
-                        FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(location.Document.FilePath)),
+                        FileName =
+                            RazorFileUtility.GetOriginalFilePath(Path.GetFileName(location.Document.FilePath)),
                         LineNumber = line,
                         RazorLineNumber = razorLine,
                         Column = lineSpan.StartLinePosition.Character + 1,
@@ -2942,12 +3066,14 @@ namespace boilersExtensions.ViewModels
             var newMembers = GetTypeMembers(newTypeSymbol);
 
             // 欠落しているメソッドのチェック
-            foreach (var member in originalMembers.Where(m => m.Kind == SymbolKind.Method))
+            foreach (var member in originalMembers
+                         .AsValueEnumerable().Where(m => m.Kind == SymbolKind.Method).ToList())
             {
                 var method = (IMethodSymbol)member;
 
                 // 同名の新しいメソッドを検索
                 var correspondingMethods = newMembers
+                    .AsValueEnumerable()
                     .Where(m => m.Kind == SymbolKind.Method && m.Name == method.Name)
                     .Cast<IMethodSymbol>()
                     .ToList();
@@ -2998,12 +3124,14 @@ namespace boilersExtensions.ViewModels
             }
 
             // プロパティの不一致をチェック
-            foreach (var member in originalMembers.Where(m => m.Kind == SymbolKind.Property))
+            foreach (var member in originalMembers
+                         .AsValueEnumerable().Where(m => m.Kind == SymbolKind.Property).ToList())
             {
                 var property = (IPropertySymbol)member;
 
                 // 同名の新しいプロパティを検索
                 var correspondingProperty = newMembers
+                    .AsValueEnumerable()
                     .Where(m => m.Kind == SymbolKind.Property && m.Name == property.Name)
                     .Cast<IPropertySymbol>()
                     .FirstOrDefault();
@@ -3037,12 +3165,14 @@ namespace boilersExtensions.ViewModels
             }
 
             // イベントの不一致をチェック
-            foreach (var member in originalMembers.Where(m => m.Kind == SymbolKind.Event))
+            foreach (var member in originalMembers
+                         .AsValueEnumerable().Where(m => m.Kind == SymbolKind.Event).ToList())
             {
                 var eventSymbol = (IEventSymbol)member;
 
                 // 同名の新しいイベントを検索
                 var correspondingEvent = newMembers
+                    .AsValueEnumerable()
                     .Where(m => m.Kind == SymbolKind.Event && m.Name == eventSymbol.Name)
                     .Cast<IEventSymbol>()
                     .FirstOrDefault();
@@ -3097,8 +3227,9 @@ namespace boilersExtensions.ViewModels
         private IMethodSymbol FindBestMatchingOverload(IMethodSymbol originalMethod, List<IMethodSymbol> overloads)
         {
             // 戻り値の型が一致するものを優先
-            var sameReturnType = overloads.Where(o =>
-                SymbolEqualityComparer.Default.Equals(o.ReturnType, originalMethod.ReturnType)).ToList();
+            var sameReturnType = overloads
+                .AsValueEnumerable().Where(o =>
+                    SymbolEqualityComparer.Default.Equals(o.ReturnType, originalMethod.ReturnType)).ToList();
 
             if (sameReturnType.Count > 0)
             {
@@ -3106,7 +3237,8 @@ namespace boilersExtensions.ViewModels
             }
 
             // パラメータ数が同じものを優先
-            var sameParamCount = overloads.Where(o => o.Parameters.Length == originalMethod.Parameters.Length).ToList();
+            var sameParamCount = overloads
+                .AsValueEnumerable().Where(o => o.Parameters.Length == originalMethod.Parameters.Length).ToList();
 
             if (sameParamCount.Count > 0)
             {
@@ -3114,7 +3246,9 @@ namespace boilersExtensions.ViewModels
             }
 
             // パラメータ数が最も近いものを選択
-            return overloads.OrderBy(o => Math.Abs(o.Parameters.Length - originalMethod.Parameters.Length)).First();
+            return overloads
+                .AsValueEnumerable().OrderBy(o => Math.Abs(o.Parameters.Length - originalMethod.Parameters.Length))
+                .First();
         }
 
         /// <summary>
@@ -3127,10 +3261,10 @@ namespace boilersExtensions.ViewModels
             var filePath = location.Document.FilePath;
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {
@@ -3163,12 +3297,14 @@ namespace boilersExtensions.ViewModels
 
             // 元の型のすべてのイベントを取得
             var originalEvents = originalType.GetMembers()
+                .AsValueEnumerable()
                 .Where(m => m.Kind == SymbolKind.Event)
                 .Cast<IEventSymbol>()
                 .ToList();
 
             // 新しい型のすべてのイベントを取得
             var newEvents = newType.GetMembers()
+                .AsValueEnumerable()
                 .Where(m => m.Kind == SymbolKind.Event)
                 .Cast<IEventSymbol>()
                 .ToList();
@@ -3177,7 +3313,8 @@ namespace boilersExtensions.ViewModels
             foreach (var originalEvent in originalEvents)
             {
                 // 新しい型に同名のイベントがあるか確認
-                var correspondingEvent = newEvents.FirstOrDefault(e => e.Name == originalEvent.Name);
+                var correspondingEvent = newEvents
+                    .AsValueEnumerable().FirstOrDefault(e => e.Name == originalEvent.Name);
 
                 if (correspondingEvent == null)
                 {
@@ -3188,7 +3325,8 @@ namespace boilersExtensions.ViewModels
                     var references = await SymbolFinder.FindReferencesAsync(originalEvent, solution);
                     foreach (var reference in references)
                     {
-                        issues.Add($"  - 参照箇所: {reference.Definition.Name}, {reference.Locations.Count()}箇所");
+                        issues.Add(
+                            $"  - 参照箇所: {reference.Definition.Name}, {reference.Locations.AsValueEnumerable().Count()}箇所");
                     }
                 }
                 else
@@ -3272,10 +3410,10 @@ namespace boilersExtensions.ViewModels
             var filePath = location.Document.FilePath;
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {
@@ -3306,10 +3444,10 @@ namespace boilersExtensions.ViewModels
             var filePath = location.Document.FilePath;
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {
@@ -3371,7 +3509,8 @@ namespace boilersExtensions.ViewModels
                     var typeParams = typeName.Substring(startIdx + 1, endIdx - startIdx - 1);
 
                     // カンマの数をカウントして型パラメータの数を計算
-                    var paramCount = typeParams.Count(c => c == ',') + 1;
+                    var paramCount = typeParams
+                        .AsValueEnumerable().Count(c => c == ',') + 1;
 
                     return $"{baseName}`{paramCount}";
                 }
@@ -3407,7 +3546,8 @@ namespace boilersExtensions.ViewModels
             var typeArgsString = fullTypeName.Substring(genericStart + 1, genericEnd - genericStart - 1);
 
             // 型引数を分割（複数の場合はカンマで区切られている）
-            var typeArgNames = typeArgsString.Split(',').Select(arg => arg.Trim()).ToArray();
+            var typeArgNames = typeArgsString.Split(',')
+                .AsValueEnumerable().Select(arg => arg.Trim()).ToArray();
 
             // 正しいメタデータ名を取得
             var metadataTypeName = baseTypeName;
@@ -3474,10 +3614,10 @@ namespace boilersExtensions.ViewModels
             var filePath = location.Document.FilePath;
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {
@@ -3526,12 +3666,13 @@ namespace boilersExtensions.ViewModels
             }
 
             // メンバーをフィルタリング（特殊なメンバーを除外）
-            return members.Where(m =>
-                !m.IsImplicitlyDeclared &&
-                m.DeclaredAccessibility != Accessibility.Private &&
-                !m.IsStatic &&
-                m.Name != ".ctor" && // コンストラクタを除外
-                !m.Name.StartsWith("op_")); // 演算子オーバーロードを除外
+            return members
+                .AsValueEnumerable().Where(m =>
+                    !m.IsImplicitlyDeclared &&
+                    m.DeclaredAccessibility != Accessibility.Private &&
+                    !m.IsStatic &&
+                    m.Name != ".ctor" && // コンストラクタを除外
+                    !m.Name.StartsWith("op_")).ToList(); // 演算子オーバーロードを除外
         }
 
         /// <summary>
@@ -3601,8 +3742,9 @@ namespace boilersExtensions.ViewModels
             // インターフェース実装のチェック
             if (originalType.TypeKind == TypeKind.Interface)
             {
-                return newType.AllInterfaces.Any(i =>
-                    i.Equals(originalType, SymbolEqualityComparer.Default));
+                return newType.AllInterfaces
+                    .AsValueEnumerable().Any(i =>
+                        i.Equals(originalType, SymbolEqualityComparer.Default));
             }
 
             return false;
@@ -3707,10 +3849,10 @@ namespace boilersExtensions.ViewModels
             }
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {
@@ -3775,10 +3917,10 @@ namespace boilersExtensions.ViewModels
             var filePath = location.Document.FilePath;
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {
@@ -3809,10 +3951,10 @@ namespace boilersExtensions.ViewModels
             var filePath = location.Document.FilePath;
 
             // 生成コードの行番号
-            int generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
+            var generatedCodeLine = lineSpan.StartLinePosition.Line + 1;
 
             // Razorファイルの行番号計算
-            int razorLine = generatedCodeLine;
+            var razorLine = generatedCodeLine;
 
             if (_mapping != null && _extractedCSharpCode != null)
             {

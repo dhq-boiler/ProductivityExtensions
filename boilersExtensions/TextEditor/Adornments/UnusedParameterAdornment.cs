@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,6 +15,7 @@ using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
+using ZLinq;
 
 namespace boilersExtensions.TextEditor.Adornments
 {
@@ -224,14 +224,18 @@ namespace boilersExtensions.TextEditor.Adornments
                         var semanticModel = compilation.GetSemanticModel(tree);
 
                         // 通常のメソッド定義を取得
-                        var methodDeclarations = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+                        var methodDeclarations = root.DescendantNodes().AsValueEnumerable()
+                            .OfType<MethodDeclarationSyntax>().ToList();
 
                         // Top-Level Statements（グローバルステートメント）を取得
-                        var globalStatements = root.DescendantNodes().OfType<GlobalStatementSyntax>().ToList();
+                        var globalStatements = root.DescendantNodes().AsValueEnumerable()
+                            .OfType<GlobalStatementSyntax>().ToList();
 
                         // グローバルステートメントの中のローカル関数を取得
-                        var localFunctions = globalStatements
-                            .SelectMany(gs => gs.DescendantNodes().OfType<LocalFunctionStatementSyntax>()).ToList();
+                        var localFunctions = globalStatements.AsValueEnumerable()
+                            .SelectMany(gs =>
+                                gs.DescendantNodes().AsValueEnumerable().OfType<LocalFunctionStatementSyntax>())
+                            .ToList();
 
                         // 分析結果をキャプチャ
                         var unusedParams = new List<TextSpan>();
@@ -245,13 +249,13 @@ namespace boilersExtensions.TextEditor.Adornments
                                 var parameterSymbol = semanticModel.GetDeclaredSymbol(parameter);
                                 if (parameterSymbol != null)
                                 {
-                                    var references = method.DescendantNodes()
+                                    var references = method.DescendantNodes().AsValueEnumerable()
                                         .OfType<IdentifierNameSyntax>()
                                         .Where(id =>
                                             semanticModel.GetSymbolInfo(id).Symbol?.Equals(parameterSymbol) == true)
                                         .ToList();
 
-                                    if (!references.Any())
+                                    if (!references.AsValueEnumerable().Any())
                                     {
                                         // 引数全体のスパンを追加 (型名+引数名)
                                         unusedParams.Add(parameter.Span);
@@ -270,13 +274,13 @@ namespace boilersExtensions.TextEditor.Adornments
                                 if (parameterSymbol != null)
                                 {
                                     var nodes = localFunction.DescendantNodes();
-                                    var references = nodes
+                                    var references = nodes.AsValueEnumerable()
                                         .OfType<IdentifierNameSyntax>()
                                         .Where(id =>
                                             semanticModel.GetSymbolInfo(id).Symbol?.Equals(parameterSymbol) == true)
                                         .ToList();
 
-                                    if (!references.Any())
+                                    if (!references.AsValueEnumerable().Any())
                                     {
                                         // 引数全体のスパンを追加 (型名+引数名)
                                         unusedParams.Add(parameter.Span);

@@ -134,7 +134,13 @@
 					<ButtonText>ソリューションエクスプローラーで表示</ButtonText>
 				</Strings>
 			</Button>
-			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="cmdExtensionsSettings" priority="0x0100" type="Button">
+			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="SeedDataGeneratorCommandId" priority="0x0100" type="Button">
+				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup" />
+				<Strings>
+					<ButtonText>Seed Generator for EFCore</ButtonText>
+				</Strings>
+			</Button>
+			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="cmdExtensionsSettings" priority="0x0200" type="Button">
 				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup"/>
 				<Strings>
 					<ButtonText>設定</ButtonText>
@@ -203,6 +209,7 @@
 			<IDSymbol name="BoilersExtensionsMenu" value="0x1000"/>
 			<IDSymbol name="BoilersExtensionsMenuGroup" value="0x1020"/>
 			<IDSymbol name="cmdExtensionsSettings" value="0x0100"/>
+			<IDSymbol name="SeedDataGeneratorCommandId" value="0x0200" />
 		</GuidSymbol>
 
 		<GuidSymbol name="guidImages" value="{416a15f9-10b8-48e4-8e5d-ff89a80e026c}" >

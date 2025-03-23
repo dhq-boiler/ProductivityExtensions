@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using boilersExtensions.DialogPages;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -7,12 +8,12 @@ using Microsoft.VisualStudio.Shell.Interop;
 namespace boilersExtensions
 {
     /// <summary>
-    /// boilersExtensionsの設定を管理するユーティリティクラス
+    ///     boilersExtensionsの設定を管理するユーティリティクラス
     /// </summary>
     public static class BoilersExtensionsSettings
     {
         /// <summary>
-        /// 型階層機能が有効かどうか
+        ///     型階層機能が有効かどうか
         /// </summary>
         public static bool IsTypeHierarchyEnabled
         {
@@ -20,7 +21,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableTypeHierarchy", true);
+                    return GetOptionPageProperty("EnableTypeHierarchy", true);
                 }
                 catch (Exception ex)
                 {
@@ -31,7 +32,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// リージョンナビゲータが有効かどうか
+        ///     リージョンナビゲータが有効かどうか
         /// </summary>
         public static bool IsRegionNavigatorEnabled
         {
@@ -39,7 +40,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableRegionNavigator", true);
+                    return GetOptionPageProperty("EnableRegionNavigator", true);
                 }
                 catch (Exception ex)
                 {
@@ -50,7 +51,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// ソリューションエクスプローラー同期機能が有効かどうか
+        ///     ソリューションエクスプローラー同期機能が有効かどうか
         /// </summary>
         public static bool IsSyncToSolutionExplorerEnabled
         {
@@ -58,7 +59,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableSyncToSolutionExplorer", true);
+                    return GetOptionPageProperty("EnableSyncToSolutionExplorer", true);
                 }
                 catch (Exception ex)
                 {
@@ -69,7 +70,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// GitHubリンクナビゲーション機能が有効かどうか
+        ///     GitHubリンクナビゲーション機能が有効かどうか
         /// </summary>
         public static bool IsNavigateGitHubLinesEnabled
         {
@@ -77,7 +78,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableNavigateGitHubLines", true);
+                    return GetOptionPageProperty("EnableNavigateGitHubLines", true);
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +89,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// プロジェクトリネーム機能が有効かどうか
+        ///     プロジェクトリネーム機能が有効かどうか
         /// </summary>
         public static bool IsRenameProjectEnabled
         {
@@ -96,7 +97,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableRenameProject", true);
+                    return GetOptionPageProperty("EnableRenameProject", true);
                 }
                 catch (Exception ex)
                 {
@@ -107,7 +108,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// ソリューションリネーム機能が有効かどうか
+        ///     ソリューションリネーム機能が有効かどうか
         /// </summary>
         public static bool IsRenameSolutionEnabled
         {
@@ -115,7 +116,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableRenameSolution", true);
+                    return GetOptionPageProperty("EnableRenameSolution", true);
                 }
                 catch (Exception ex)
                 {
@@ -126,7 +127,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// GUID更新機能が有効かどうか
+        ///     GUID更新機能が有効かどうか
         /// </summary>
         public static bool IsUpdateGuidEnabled
         {
@@ -134,7 +135,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableUpdateGuid", true);
+                    return GetOptionPageProperty("EnableUpdateGuid", true);
                 }
                 catch (Exception ex)
                 {
@@ -145,7 +146,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// GUID一括更新機能が有効かどうか
+        ///     GUID一括更新機能が有効かどうか
         /// </summary>
         public static bool IsBatchUpdateGuidEnabled
         {
@@ -153,7 +154,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableBatchUpdateGuid", true);
+                    return GetOptionPageProperty("EnableBatchUpdateGuid", true);
                 }
                 catch (Exception ex)
                 {
@@ -164,7 +165,26 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// オプションページからプロパティを取得
+        ///     テストデータ生成機能が有効かどうか
+        /// </summary>
+        public static bool IsSeedDataGeneratorEnabled
+        {
+            get
+            {
+                try
+                {
+                    return GetOptionPageProperty("EnableSeedDataGenerator", true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error reading SeedDataGenerator setting: {ex.Message}");
+                    return true; // デフォルトで有効
+                }
+            }
+        }
+
+        /// <summary>
+        ///     オプションページからプロパティを取得
         /// </summary>
         private static T GetOptionPageProperty<T>(string propertyName, T defaultValue)
         {
@@ -172,7 +192,7 @@ namespace boilersExtensions
             {
                 ThreadHelper.ThrowIfNotOnUIThread();
 
-                var package = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
+                var package = Package.GetGlobalService(typeof(SVsShell)) as IVsShell;
                 if (package == null)
                 {
                     Debug.WriteLine("Failed to get SVsShell service");
@@ -186,7 +206,9 @@ namespace boilersExtensions
                     return defaultValue;
                 }
 
-                var optionPage = BoilersExtensionsSettingsCommand.Instance?.Package.GetDialogPage(typeof(BoilersExtensionsOptionPage)) as BoilersExtensionsOptionPage;
+                var optionPage =
+                    BoilersExtensionsSettingsCommand.Instance?.Package.GetDialogPage(
+                        typeof(BoilersExtensionsOptionPage)) as BoilersExtensionsOptionPage;
                 if (optionPage == null)
                 {
                     Debug.WriteLine("Failed to get BoilersExtensionsOptionPage");
@@ -210,14 +232,14 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// オプションページからプロパティを取得（非同期版）
+        ///     オプションページからプロパティを取得（非同期版）
         /// </summary>
-        public static async System.Threading.Tasks.Task<T> GetOptionPagePropertyAsync<T>(string propertyName, T defaultValue)
+        public static async Task<T> GetOptionPagePropertyAsync<T>(string propertyName, T defaultValue)
         {
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                return GetOptionPageProperty<T>(propertyName, defaultValue);
+                return GetOptionPageProperty(propertyName, defaultValue);
             }
             catch (Exception ex)
             {

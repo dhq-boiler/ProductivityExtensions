@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using boilersExtensions.TextEditor.SuggestedActions;
@@ -10,6 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
+using ZLinq;
 
 namespace boilersExtensions.TextEditor.SuggestedActionsSources
 {
@@ -89,7 +89,7 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
             var semanticModel = document.GetSemanticModelAsync().Result;
             var diagnostics = semanticModel.GetDiagnostics(new TextSpan(selectedSpan.Span.Start,
                 selectedSpan.Span.End - selectedSpan.Span.Start));
-            if (diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error))
+            if (diagnostics.AsValueEnumerable().Any(d => d.Severity == DiagnosticSeverity.Error))
             {
                 return null;
             }
@@ -163,7 +163,7 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
         private bool IsPartialControlFlow(SyntaxNode node)
         {
             // if文、for文、while文などの制御構造の一部だけが選択されていないかチェック
-            var controlFlowParent = node.Ancestors().FirstOrDefault(n =>
+            var controlFlowParent = node.Ancestors().AsValueEnumerable().FirstOrDefault(n =>
                 n is IfStatementSyntax ||
                 n is ForStatementSyntax ||
                 n is WhileStatementSyntax ||
@@ -181,20 +181,20 @@ namespace boilersExtensions.TextEditor.SuggestedActionsSources
 
         private bool ContainsReturnStatement(SyntaxNode node)
         {
-            return node.DescendantNodes()
+            return node.DescendantNodes().AsValueEnumerable()
                 .OfType<ReturnStatementSyntax>()
                 .Any();
         }
 
         private bool IsLastReturnStatement(SyntaxNode node)
         {
-            var method = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+            var method = node.Ancestors().AsValueEnumerable().OfType<MethodDeclarationSyntax>().FirstOrDefault();
             if (method == null)
             {
                 return false;
             }
 
-            var lastReturn = method.DescendantNodes()
+            var lastReturn = method.DescendantNodes().AsValueEnumerable()
                 .OfType<ReturnStatementSyntax>()
                 .LastOrDefault();
 

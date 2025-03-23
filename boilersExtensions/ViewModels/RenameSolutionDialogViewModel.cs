@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reflection;
@@ -14,6 +13,7 @@ using Microsoft.VisualStudio.Shell;
 using Prism.Mvvm;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using ZLinq;
 using MessageBox = System.Windows.MessageBox;
 using Process = System.Diagnostics.Process;
 using Window = System.Windows.Window;
@@ -113,13 +113,16 @@ namespace boilersExtensions.ViewModels
                 args.AddRange(vsPath);
                 var regex =
                     new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
-                if (regex.IsMatch(args.Last()))
+                if (regex.IsMatch(args
+                        .AsValueEnumerable().Last()))
                 {
-                    args.Remove(args.Last());
+                    args.Remove(args
+                        .AsValueEnumerable().Last());
                 }
 
                 args.Add(newSolutionPath);
-                var arguments = args.Skip(1);
+                var arguments = args
+                    .AsValueEnumerable().Skip(1);
                 var argumentsStr = string.Join(" ", arguments);
 
                 // 拡張機能のインストールパスを取得
@@ -163,13 +166,16 @@ namespace boilersExtensions.ViewModels
                 args.AddRange(vsPath);
                 var regex =
                     new Regex(@"^[a-zA-Z]:\\([\p{L}a-zA-Z0-9_ \-]+\\)*[\p{L}a-zA-Z0-9_ \-]+(\.[\p{L}a-zA-Z0-9_]+)?$");
-                if (regex.IsMatch(args.Last()))
+                if (regex.IsMatch(args
+                        .AsValueEnumerable().Last()))
                 {
-                    args.Remove(args.Last());
+                    args.Remove(args
+                        .AsValueEnumerable().Last());
                 }
 
                 args.Add(newSolutionPath);
-                var arguments = args.Skip(1);
+                var arguments = args
+                    .AsValueEnumerable().Skip(1);
                 var argumentsStr = string.Join(" ", arguments);
 
                 // 拡張機能のインストールパスを取得

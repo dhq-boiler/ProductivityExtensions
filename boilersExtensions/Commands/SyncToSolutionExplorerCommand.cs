@@ -2,16 +2,14 @@
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
 namespace boilersExtensions.Commands
 {
     /// <summary>
-    /// ソリューションエクスプローラーで現在のファイルを選択するコマンド
+    ///     ソリューションエクスプローラーで現在のファイルを選択するコマンド
     /// </summary>
     internal sealed class SyncToSolutionExplorerCommand : OleMenuCommand
     {
@@ -21,18 +19,16 @@ namespace boilersExtensions.Commands
         private static OleMenuCommand menuItem;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
-        private SyncToSolutionExplorerCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private SyncToSolutionExplorerCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         public static SyncToSolutionExplorerCommand Instance { get; private set; }
         private static IAsyncServiceProvider ServiceProvider => package;
 
         /// <summary>
-        /// 初期化
+        ///     初期化
         /// </summary>
         public static async Task InitializeAsync(AsyncPackage package)
         {
@@ -48,7 +44,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// コマンド実行時の処理
+        ///     コマンド実行時の処理
         /// </summary>
         private static void Execute(object sender, EventArgs e)
         {
@@ -66,7 +62,7 @@ namespace boilersExtensions.Commands
                 Debug.WriteLine("SyncToSolutionExplorerCommand Execute called");
 
                 // DTEオブジェクトを取得
-                var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                 if (dte == null)
                 {
                     Debug.WriteLine("DTE service not available");
@@ -104,7 +100,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// ソリューションエクスプローラーでファイルを選択・表示する
+        ///     ソリューションエクスプローラーでファイルを選択・表示する
         /// </summary>
         private static void SelectFileInSolutionExplorer(DTE dte, string filePath)
         {
@@ -116,15 +112,15 @@ namespace boilersExtensions.Commands
                 try
                 {
                     // 複数のコマンドを試して、どれかが動作するようにする
-                    string[] commandsToTry = new[]
+                    var commandsToTry = new[]
                     {
-                        "SolutionExplorer.SyncWithActiveDocument",     // VS2019/2022での標準コマンド
-                        "View.TrackDocumentInSolutionExplorer",        // よく使われるコマンド
-                        "View.SynchronizeClassView",                   // 別の関連コマンド
+                        "SolutionExplorer.SyncWithActiveDocument", // VS2019/2022での標準コマンド
+                        "View.TrackDocumentInSolutionExplorer", // よく使われるコマンド
+                        "View.SynchronizeClassView", // 別の関連コマンド
                         "SolutionExplorer.SynchronizeWithActiveDocument" // 別の表記
                     };
 
-                    foreach (string commandName in commandsToTry)
+                    foreach (var commandName in commandsToTry)
                     {
                         try
                         {
@@ -139,7 +135,6 @@ namespace boilersExtensions.Commands
                         {
                             Debug.WriteLine($"Error executing {commandName}: {specificCmdEx.Message}");
                             // 次のコマンドを試す
-                            continue;
                         }
                     }
 
@@ -159,7 +154,7 @@ namespace boilersExtensions.Commands
                     Window solutionExplorer = null;
                     try
                     {
-                        solutionExplorer = dte.Windows.Item(EnvDTE.Constants.vsWindowKindSolutionExplorer);
+                        solutionExplorer = dte.Windows.Item(Constants.vsWindowKindSolutionExplorer);
                     }
                     catch (Exception ex)
                     {
@@ -212,7 +207,6 @@ namespace boilersExtensions.Commands
                                     // DTE コマンドを使用して選択（SolutionExplorer.SyncWithActiveDocument）
                                     dte.ExecuteCommand("SolutionExplorer.SyncWithActiveDocument");
                                     Debug.WriteLine("Executed SolutionExplorer.SyncWithActiveDocument command");
-                                    return;
                                 }
                                 catch (Exception cmdEx)
                                 {
@@ -238,10 +232,9 @@ namespace boilersExtensions.Commands
             }
         }
 
-        
 
         /// <summary>
-        /// コマンドの有効/無効状態を更新
+        ///     コマンドの有効/無効状態を更新
         /// </summary>
         private static new void BeforeQueryStatus(object sender, EventArgs e)
         {
@@ -250,7 +243,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled;
 
                 if (!featureEnabled)
                 {
@@ -264,7 +257,7 @@ namespace boilersExtensions.Commands
                 command.Visible = true;
 
                 // DTEオブジェクトを取得
-                var dte = (DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
                 // アクティブなドキュメントがある場合のみ有効化
                 command.Enabled = dte?.ActiveDocument != null;

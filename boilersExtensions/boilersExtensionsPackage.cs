@@ -6,7 +6,6 @@ using boilersExtensions.Commands;
 using boilersExtensions.DialogPages;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using stdole;
 using Task = System.Threading.Tasks.Task;
 
 namespace boilersExtensions
@@ -61,6 +60,7 @@ namespace boilersExtensions
             await TypeHierarchyCommand.InitializeAsync(this);
             await RegionNavigatorCommand.InitializeAsync(this);
             await SyncToSolutionExplorerCommand.InitializeAsync(this);
+            await SeedDataGeneratorCommand.InitializeAsync(this);
 
             // 手動で拡張機能を初期化
             Debug.WriteLine("Initializing RegionNavigator extensions manually");

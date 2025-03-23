@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -14,6 +13,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
 using Microsoft.VisualStudio.TextManager.Interop;
+using ZLinq;
 using TextSpan = Microsoft.CodeAnalysis.Text.TextSpan;
 
 namespace boilersExtensions.TextEditor.QuickInfoSources
@@ -158,8 +158,8 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
             persistFileFormat.GetCurFile(out var filePath, out _);
 
             // Find the document in the workspace using the file path
-            var documents = _workspace.CurrentSolution.Projects
-                .SelectMany(p => p.Documents)
+            var documents = _workspace.CurrentSolution.Projects.AsValueEnumerable()
+                .SelectMany(p => p.Documents.AsValueEnumerable())
                 .Where(d => d.FilePath == filePath);
 
             return documents.FirstOrDefault();
@@ -178,7 +178,8 @@ namespace boilersExtensions.TextEditor.QuickInfoSources
                 // Find all references to the parameter within the method
                 var references = await SymbolFinder.FindReferencesAsync(parameterSymbol,
                     document.Project.Solution, cancellationToken);
-                var referenceCount = references.SelectMany(r => r.Locations).Count();
+                var referenceCount = references.AsValueEnumerable().SelectMany(r => r.Locations.AsValueEnumerable())
+                    .Count();
 
                 if (referenceCount == 0)
                 {

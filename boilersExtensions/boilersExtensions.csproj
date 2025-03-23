@@ -47,11 +47,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Analyzers\EntityAnalyzer.cs" />
     <Compile Include="BoilersExtensionsSettings.cs" />
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
+    <Compile Include="Commands\SeedDataGeneratorCommand.cs" />
     <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
     <Compile Include="Commands\TypeHierarchyCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
@@ -59,13 +61,28 @@
     <Compile Include="Controls\LoadingSpinner.xaml.cs">
       <DependentUpon>LoadingSpinner.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Converters\EntityPropertyConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
+    <Compile Include="Converters\PropertyConfigConverter.cs" />
+    <Compile Include="Converters\PropertyWithNameConverter.cs" />
     <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Generators\EnhancedRelationalSeedDataGenerator.cs" />
+    <Compile Include="Generators\EnhancedSeedDataGenerator.cs" />
+    <Compile Include="Generators\EnumValueGenerator.cs" />
+    <Compile Include="Generators\FixedValueCombinationGenerator.cs" />
+    <Compile Include="Generators\RandomDataProvider.cs" />
+    <Compile Include="Generators\SeedDataGenerator.cs" />
+    <Compile Include="Generators\StandardPropertyGenerator.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
+    <Compile Include="Models\EntityInfo.cs" />
+    <Compile Include="Models\EntityViewModel.cs" />
+    <Compile Include="Models\PropertyInfo.cs" />
+    <Compile Include="Models\RelationshipInfo.cs" />
+    <Compile Include="Models\SeedDataConfig.cs" />
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\RegionNavigatorExtensionFactory.cs" />
     <Compile Include="TextEditor\Extensions\SolutionExplorerSynchronizerFactory.cs" />
@@ -76,6 +93,7 @@
     <Compile Include="Utils\IssueGroupViewModel.cs" />
     <Compile Include="Utils\RazorFileUtility.cs" />
     <Compile Include="Utils\RazorMappingHelper.cs" />
+    <Compile Include="Utils\SeedDataInsertExecutor.cs" />
     <Compile Include="Utils\TypeHIerarchyAnalyzer.cs" />
     <Compile Include="TextEditor\Providers\ExtractMethodSuggestedActionsSourceProvider.cs" />
     <Compile Include="TextEditor\Providers\UnusedParameterQuickInfoSourceProvider.cs" />
@@ -98,7 +116,12 @@
     <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
     <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
+    <Compile Include="ViewModels\SeedDataConfigViewModel.cs" />
     <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Views\FixedValuesDialog.xaml.cs">
+      <DependentUpon>FixedValuesDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\GuidSelectionDialog.xaml.cs">
       <DependentUpon>GuidSelectionDialog.xaml</DependentUpon>
     </Compile>
@@ -112,12 +135,19 @@
       <DependentUpon>RenameProjectDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\RenameProjectDialogViewModel.cs" />
+    <Compile Include="Views\SeedDataConfigDialog.xaml.cs">
+      <DependentUpon>SeedDataConfigDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\TypeHierarchyDialog.xaml.cs">
       <DependentUpon>TypeHierarchyDialog.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Batches\BE001.bat">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="System.Memory.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <None Include="source.extension.vsixmanifest">
@@ -194,6 +224,12 @@
     <PackageReference Include="ReactiveProperty">
       <Version>9.6.0</Version>
     </PackageReference>
+    <PackageReference Include="System.Memory">
+      <Version>4.6.2</Version>
+    </PackageReference>
+    <PackageReference Include="ZLinq">
+      <Version>0.5.0</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="VSCT\boilersExtensionsPackage.vsct">
@@ -236,6 +272,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\FixedValuesDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\GuidSelectionDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -249,6 +289,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\RenameProjectDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SeedDataConfigDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

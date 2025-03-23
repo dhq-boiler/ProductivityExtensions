@@ -29,10 +29,8 @@ namespace boilersExtensions.Commands
 
         private static OleMenuCommand menuItem;
 
-        private UpdateGuidCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private UpdateGuidCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         /// <summary>
         ///     Gets the instance of the command.
@@ -163,7 +161,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsSyncToSolutionExplorerEnabled;
 
                 if (!featureEnabled)
                 {

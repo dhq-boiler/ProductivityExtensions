@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using boilersExtensions.Utils;
 using boilersExtensions.ViewModels;
@@ -18,6 +17,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.TextManager.Interop;
+using ZLinq;
 using Document = Microsoft.CodeAnalysis.Document;
 using Package = Microsoft.VisualStudio.Shell.Package;
 using TextSpan = Microsoft.CodeAnalysis.Text.TextSpan;
@@ -37,10 +37,8 @@ namespace boilersExtensions.Commands
         /// <summary>
         ///     コンストラクタ
         /// </summary>
-        private TypeHierarchyCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private TypeHierarchyCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         public static TypeHierarchyCommand Instance { get; private set; }
         private static IAsyncServiceProvider ServiceProvider => package;
@@ -105,7 +103,8 @@ namespace boilersExtensions.Commands
                     try
                     {
                         // カーソル位置の型シンボルを取得
-                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, code, codeToRazorMapping, adjustedAddedBytes) =
+                        var (typeSymbol, parentNode, fullTypeSpan, baseTypeSpan, code, codeToRazorMapping,
+                                adjustedAddedBytes) =
                             await TypeHierarchyAnalyzer.GetTypeSymbolAtPositionAsync(
                                 document, selectedSpan.Value.Start.Position);
 
@@ -206,7 +205,8 @@ namespace boilersExtensions.Commands
 
                         // ダイアログを表示（完全な型スパン情報も追加）
                         ShowTypeHierarchyDialog(typeSymbol, document, selectedSpan.Value.Start.Position,
-                            replacementSpan, textView.TextBuffer, fullTypeSpan, code, codeToRazorMapping, adjustedAddedBytes);
+                            replacementSpan, textView.TextBuffer, fullTypeSpan, code, codeToRazorMapping,
+                            adjustedAddedBytes);
                     }
                     catch (Exception ex)
                     {
@@ -260,7 +260,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsTypeHierarchyEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsTypeHierarchyEnabled;
 
                 if (!featureEnabled)
                 {
@@ -371,7 +371,8 @@ namespace boilersExtensions.Commands
             Debug.WriteLine($"Active document path: {documentPath}");
 
             // まず、正確なパスマッチを試みる
-            var documents = workspace.CurrentSolution.Projects.SelectMany(p => p.Documents);
+            var documents = workspace.CurrentSolution.Projects.AsValueEnumerable()
+                .SelectMany(p => p.Documents.AsValueEnumerable());
             var exactMatch = documents.FirstOrDefault(d =>
                 string.Equals(d.FilePath, documentPath, StringComparison.OrdinalIgnoreCase));
 
