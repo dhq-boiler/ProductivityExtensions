@@ -69,6 +69,7 @@
     <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Generators\EnhancedRelationalSeedDataGenerator.cs" />
     <Compile Include="Generators\EnhancedSeedDataGenerator.cs" />
     <Compile Include="Generators\EnumValueGenerator.cs" />
     <Compile Include="Generators\FixedValueCombinationGenerator.cs" />

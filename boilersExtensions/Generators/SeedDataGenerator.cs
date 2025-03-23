@@ -51,7 +51,7 @@ namespace boilersExtensions.Generators
             {
                 // 設定で指定された数のシードデータを生成
                 var entityConfig = config.GetEntityConfig(entity.Name);
-                if (entityConfig == null || !entityConfig.IsSelected || entityConfig.RecordCount <= 0)
+                if (entityConfig == null || !entityConfig.IsSelected.Value || entityConfig.RecordCount.Value <= 0)
                 {
                     continue;
                 }
@@ -59,7 +59,7 @@ namespace boilersExtensions.Generators
                 sb.AppendLine($"    // {entity.Name} エンティティのシードデータ");
                 sb.AppendLine($"    modelBuilder.Entity<{entity.Name}>().HasData(");
 
-                for (int i = 0; i < entityConfig.RecordCount; i++)
+                for (int i = 0; i < entityConfig.RecordCount.Value; i++)
                 {
                     sb.AppendLine($"        new {entity.Name}");
                     sb.AppendLine("        {");
@@ -108,7 +108,7 @@ namespace boilersExtensions.Generators
 
                     sb.AppendLine(string.Join(",\r\n", propStrings));
 
-                    sb.AppendLine("        }" + (i < entityConfig.RecordCount - 1 ? "," : ""));
+                    sb.AppendLine("        }" + (i < entityConfig.RecordCount.Value - 1 ? "," : ""));
                 }
 
                 sb.AppendLine("    );");

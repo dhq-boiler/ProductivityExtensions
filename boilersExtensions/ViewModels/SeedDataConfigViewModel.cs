@@ -31,7 +31,7 @@ using boilersExtensions.Generators;
 namespace boilersExtensions.ViewModels
 {
     /// <summary>
-    /// シードデータ設定ダイアログのViewModel
+    /// シードデータ設定ダイアログのViewModel（改修版）
     /// </summary>
     public class SeedDataConfigViewModel : ViewModelBase
     {
@@ -45,8 +45,36 @@ namespace boilersExtensions.ViewModels
         public ReactivePropertySlim<int> DataCount { get; } = new ReactivePropertySlim<int>(10);
 
         // プロパティ一覧
-        public ObservableCollection<PropertyViewModel> Properties { get; } = new ObservableCollection<PropertyViewModel>();
-        public ReactivePropertySlim<PropertyViewModel> SelectedProperty { get; } = new ReactivePropertySlim<PropertyViewModel>();
+        public ObservableCollection<PropertyViewModel> Properties { get; } =
+            new ObservableCollection<PropertyViewModel>();
+
+        public ReactivePropertySlim<PropertyViewModel> SelectedProperty { get; } =
+            new ReactivePropertySlim<PropertyViewModel>();
+
+        // エンティティ関連
+        public ObservableCollection<EntityViewModel> Entities { get; } = new ObservableCollection<EntityViewModel>();
+
+        public ReactivePropertySlim<EntityViewModel> SelectedEntity { get; } =
+            new ReactivePropertySlim<EntityViewModel>();
+
+        public ReactivePropertySlim<RelationshipViewModel> SelectedRelationship { get; } =
+            new ReactivePropertySlim<RelationshipViewModel>();
+
+        public List<string> EntityNames => Entities.Select(e => e.Name.Value).ToList();
+
+        public List<RelationshipType> RelationshipTypes { get; } =
+            Enum.GetValues(typeof(RelationshipType)).Cast<RelationshipType>().ToList();
+
+        public ReactivePropertySlim<string> RecordCountInfoText { get; } = new ReactivePropertySlim<string>("10件");
+        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
+
+        // エンティティ依存関係
+        public ReactivePropertySlim<bool> ShowRelationshipVisualization { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> AutoDetectRelationships { get; } = new ReactivePropertySlim<bool>(true);
+
+        // UI表示用コレクション
+        public ObservableCollection<EntityRelationshipInfo> EntityRelationships { get; } =
+            new ObservableCollection<EntityRelationshipInfo>();
 
         // データ形式関連
         public List<string> DataFormats { get; } = new List<string>
@@ -57,6 +85,7 @@ namespace boilersExtensions.ViewModels
             "SQL INSERT文",
             "XML形式"
         };
+
         public ReactivePropertySlim<string> SelectedDataFormat { get; } = new ReactivePropertySlim<string>("C#クラス");
 
         // 各形式の設定
@@ -83,23 +112,15 @@ namespace boilersExtensions.ViewModels
         public ReactivePropertySlim<bool> UseRandomValues { get; } = new ReactivePropertySlim<bool>(true);
         public ReactivePropertySlim<bool> AutoGenerateIds { get; } = new ReactivePropertySlim<bool>(true);
         public ReactivePropertySlim<bool> IncludeNullValues { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<DateTime?> StartDate { get; } = new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(-1));
-        public ReactivePropertySlim<DateTime?> EndDate { get; } = new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(1));
+
+        public ReactivePropertySlim<DateTime?> StartDate { get; } =
+            new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(-1));
+
+        public ReactivePropertySlim<DateTime?> EndDate { get; } =
+            new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(1));
+
         public ReactivePropertySlim<string> MinNumericValue { get; } = new ReactivePropertySlim<string>("1");
         public ReactivePropertySlim<string> MaxNumericValue { get; } = new ReactivePropertySlim<string>("100");
-
-        public ObservableCollection<EntityViewModel> Entities { get; } = new ObservableCollection<EntityViewModel>();
-        public ReactivePropertySlim<EntityViewModel> SelectedEntity { get; } = new ReactivePropertySlim<EntityViewModel>();
-        public ReactiveCommand LoadAdditionalEntityCommand { get; }
-        public ReactivePropertySlim<RelationshipViewModel> SelectedRelationship { get; } = new ReactivePropertySlim<RelationshipViewModel>();
-        public ReactiveCommand AddRelationshipCommand { get; }
-        public ReactiveCommand RemoveRelationshipCommand { get; }
-        public List<RelationshipType> RelationshipTypes { get; } = Enum.GetValues(typeof(RelationshipType))
-            .Cast<RelationshipType>().ToList();
-        public ReactivePropertySlim<string> RecordCountInfoText { get; } = new ReactivePropertySlim<string>("10件");
-        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
-
-        public List<string> EntityNames => Entities.Select(e => e.Name.Value).ToList();
 
         // プレビュー
         public ReactivePropertySlim<string> PreviewText { get; } = new ReactivePropertySlim<string>();
@@ -135,6 +156,11 @@ namespace boilersExtensions.ViewModels
         public ReactiveCommand LoadSchemaCommand { get; }
         public ReactiveCommand GenerateSeedDataCommand { get; }
         public ReactiveCommand CancelCommand { get; }
+        public ReactiveCommand LoadAdditionalEntityCommand { get; }
+        public ReactiveCommand AddRelationshipCommand { get; }
+        public ReactiveCommand RemoveRelationshipCommand { get; }
+        public ReactiveCommand DetectRelationshipsCommand { get; }
+        public ReactiveCommand UpdateRecordCountsCommand { get; }
 
         #endregion
 
@@ -162,8 +188,26 @@ namespace boilersExtensions.ViewModels
                 UpdatePreview();
             }).AddTo(Disposables);
 
+            // エンティティ選択変更時の処理
+            SelectedEntity.Subscribe(entity =>
+            {
+                if (entity != null)
+                {
+                    // エンティティの親子関係を表示するために情報を更新
+                    UpdateEntityRelationshipInfo();
+                }
+
+                // プレビュー更新
+                UpdatePreview();
+            }).AddTo(Disposables);
+
             // プロパティ変更時のプレビュー更新
-            DataCount.Subscribe(_ => UpdatePreview()).AddTo(Disposables);
+            DataCount.Subscribe(_ =>
+            {
+                UpdateEntityRecordCounts();
+                UpdatePreview();
+            }).AddTo(Disposables);
+
             ClassName.Subscribe(_ => UpdatePreview()).AddTo(Disposables);
             TableName.Subscribe(_ => UpdatePreview()).AddTo(Disposables);
             RootElementName.Subscribe(_ => UpdatePreview()).AddTo(Disposables);
@@ -206,951 +250,22 @@ namespace boilersExtensions.ViewModels
                 .WithSubscribe(RemoveRelationship)
                 .AddTo(Disposables);
 
+            DetectRelationshipsCommand = new ReactiveCommand()
+                .WithSubscribe(DetectAndSetupRelationships)
+                .AddTo(Disposables);
+
+            UpdateRecordCountsCommand = new ReactiveCommand()
+                .WithSubscribe(UpdateEntityRecordCounts)
+                .AddTo(Disposables);
+
             CancelCommand = new ReactiveCommand()
                 .WithSubscribe(() =>
                 {
-                    var window = Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.DataContext == this);
+                    var window = Application.Current.Windows.OfType<System.Windows.Window>()
+                        .FirstOrDefault(w => w.DataContext == this);
                     window?.Close();
                 })
                 .AddTo(Disposables);
-        }
-
-        // 指定されたエンティティのプロパティリストを取得するメソッド
-        public List<string> GetEntityProperties(string entityName)
-        {
-            var entity = Entities.FirstOrDefault(e => e.Name.Value == entityName);
-            if (entity != null)
-            {
-                return entity.Properties.Select(p => p.Name.Value).ToList();
-            }
-            return new List<string>();
-        }
-
-        private void LoadAdditionalEntity()
-        {
-            // ファイル選択ダイアログを表示
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "C# Files (*.cs)|*.cs",
-                Title = "関連エンティティファイルを選択"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                // ファイルを開いて解析
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    try
-                    {
-                        SetProcessing(true, "関連エンティティを解析中...");
-                        // DTEからファイルを開く
-                        var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
-                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, dialog.FileName);
-
-                        var document = documentWindow?.Document;
-
-                        // Roslynを使用してエンティティを解析
-                        var entityInfo = await LoadEntityFromDocument(document);
-                        if (entityInfo != null)
-                        {
-                            // EntityViewModelへ変換
-                            var entityVm = new EntityViewModel
-                            {
-                                Name = { Value = entityInfo.Name },
-                                FullName = { Value = entityInfo.FullName },
-                                RecordCount = { Value = 5 }, // デフォルト値
-                                IsSelected = { Value = true },
-                                FilePath = { Value = dialog.FileName }
-                            };
-
-                            // プロパティを読み込み
-                            foreach (var prop in entityInfo.Properties)
-                            {
-                                entityVm.Properties.Add(new PropertyViewModel
-                                {
-                                    Name = { Value = prop.Name },
-                                    Type = { Value = prop.TypeName },
-                                    DataType = { Value = DetermineDataType(prop.Name, prop.TypeName) }
-                                });
-                            }
-
-                            Entities.Add(entityVm);
-                            SelectedEntity.Value = entityVm;
-
-                            // リレーションシップを検出
-                            DetectRelationships();
-                        }
-                    }
-                    finally
-                    {
-                        SetProcessing(false);
-                    }
-                });
-            }
-        }
-
-        /// <summary>
-        /// ドキュメントからエンティティ情報を解析して読み込む
-        /// </summary>
-        private async Task<EntityInfo> LoadEntityFromDocument(EnvDTE.Document document)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            try
-            {
-                // Roslynドキュメントを取得
-                var roslynDoc = await GetRoslynDocumentFromActiveDocumentAsync(document);
-                if (roslynDoc == null) return null;
-
-                // コードを解析するためのSyntaxTreeとSemanticModelを取得
-                var syntaxTree = await roslynDoc.GetSyntaxTreeAsync();
-                var root = await syntaxTree.GetRootAsync();
-                var model = await roslynDoc.GetSemanticModelAsync();
-
-                // クラス宣言を検索（最初に見つかったクラスを使用）
-                var classDeclarations = root.DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>();
-                var recordDeclarations = root.DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.RecordDeclarationSyntax>();
-
-                var recordAndClassdeclarations = classDeclarations.Cast<TypeDeclarationSyntax>().Union(recordDeclarations);
-
-                foreach (var classDecl in recordAndClassdeclarations)
-                {
-                    // クラスのシンボル情報を取得
-                    var classSymbol = model.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
-                    if (classSymbol == null) continue;
-
-                    // EntityInfoオブジェクトを作成
-                    var entityInfo = new EntityInfo
-                    {
-                        Name = classSymbol.Name,
-                        FullName = classSymbol.ToDisplayString(),
-                        Namespace = classSymbol.ContainingNamespace?.ToDisplayString(),
-                        Symbol = classSymbol,
-                        Document = roslynDoc
-                    };
-
-                    // 継承情報を設定
-                    if (classSymbol.BaseType != null && classSymbol.BaseType.Name != "Object")
-                    {
-                        entityInfo.UsesInheritance = true;
-                        entityInfo.BaseTypeName = classSymbol.BaseType.Name;
-                    }
-
-                    // テーブル名の設定（Table属性から取得または名前から推測）
-                    SetTableNameFromAttributes(entityInfo, classSymbol);
-
-                    // プロパティを解析して追加（ベースクラスも含める）
-                    await ParsePropertiesWithBaseClasses(entityInfo, classSymbol, model);
-
-                    // リレーションシップを解析（ナビゲーションプロパティや外部キーから）
-                    ParseRelationships(entityInfo, classSymbol);
-
-                    return entityInfo; // 最初に見つかったクラスを返す
-                }
-
-                return null; // クラスが見つからなかった場合
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading entity from document: {ex.Message}");
-                Debug.WriteLine(ex.StackTrace);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// エンティティのプロパティを解析（ベースクラスのプロパティを含む）
-        /// </summary>
-        private async Task ParsePropertiesWithBaseClasses(EntityInfo entityInfo, INamedTypeSymbol classSymbol, SemanticModel model)
-        {
-            // 継承階層をたどる
-            var currentSymbol = classSymbol;
-            var processedTypes = new HashSet<string>(); // 処理済みの型を追跡して無限ループを防止
-
-            while (currentSymbol != null &&
-                   currentSymbol.Name != "Object" &&
-                   !processedTypes.Contains(currentSymbol.ToDisplayString()))
-            {
-                // このクラスが処理済みとしてマーク
-                processedTypes.Add(currentSymbol.ToDisplayString());
-
-                // このクラスのプロパティを解析
-                var properties = currentSymbol.GetMembers().OfType<IPropertySymbol>();
-
-                foreach (var propSymbol in properties)
-                {
-                    // 既にプロパティリストに同名のプロパティがある場合はスキップ（派生クラスのオーバーライドを優先）
-                    if (entityInfo.Properties.Any(p => p.Name == propSymbol.Name))
-                        continue;
-
-                    // 静的プロパティはスキップ
-                    if (propSymbol.IsStatic)
-                        continue;
-
-                    var propertyInfo = new PropertyInfo
-                    {
-                        Name = propSymbol.Name,
-                        TypeName = propSymbol.Type.Name,
-                        FullTypeName = propSymbol.Type.ToDisplayString(),
-                        TypeSymbol = propSymbol.Type,
-                        Symbol = propSymbol,
-                        ColumnName = propSymbol.Name, // デフォルトはプロパティ名と同じ
-                        IsNavigationProperty = EntityAnalyzer.IsNavigationProperty(propSymbol)
-                    };
-
-                    // 種類別のフラグ設定
-                    SetPropertyFlags(propertyInfo, propSymbol);
-
-                    // Enum型のチェック
-                    if (propSymbol.Type.TypeKind == TypeKind.Enum)
-                    {
-                        propertyInfo.IsEnum = true;
-                        ParseEnumValues(propertyInfo, propSymbol.Type as INamedTypeSymbol);
-                    }
-
-                    // Nullable型のチェック
-                    if (propSymbol.Type.Name == "Nullable" && propSymbol.Type is INamedTypeSymbol namedType)
-                    {
-                        propertyInfo.IsNullable = true;
-                        if (namedType.TypeArguments.Length > 0)
-                        {
-                            propertyInfo.UnderlyingTypeName = namedType.TypeArguments[0].Name;
-                        }
-                    }
-
-                    // コレクション型のチェック
-                    if (IsCollectionType(propSymbol.Type) && propSymbol.Type is INamedTypeSymbol collType)
-                    {
-                        propertyInfo.IsCollection = true;
-                        if (collType.TypeArguments.Length > 0)
-                        {
-                            propertyInfo.CollectionElementType = collType.TypeArguments[0].Name;
-                        }
-                    }
-
-                    // 属性からプロパティの設定を解析
-                    ParsePropertyAttributes(propertyInfo, propSymbol);
-
-                    // 基底クラスから継承したプロパティである場合はその情報を追加
-                    if (currentSymbol != classSymbol)
-                    {
-                        propertyInfo.Description = $"Inherited from {currentSymbol.Name}";
-                    }
-
-                    // プロパティリストに追加
-                    entityInfo.Properties.Add(propertyInfo);
-                }
-
-                // 基底クラスへ移動
-                currentSymbol = currentSymbol.BaseType;
-            }
-
-            // プロパティのポスト処理
-            // Key属性を持つプロパティがない場合、Id/EntityIdプロパティを主キーとして設定
-            if (!entityInfo.Properties.Any(p => p.IsKey))
-            {
-                var idProp = entityInfo.Properties.FirstOrDefault(p =>
-                    p.Name == "Id" || p.Name == $"{entityInfo.Name}Id");
-
-                if (idProp != null)
-                {
-                    idProp.IsKey = true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Table属性からテーブル名を取得
-        /// </summary>
-        private void SetTableNameFromAttributes(EntityInfo entityInfo, INamedTypeSymbol classSymbol)
-        {
-            // デフォルトはクラス名（複数形化しない）
-            entityInfo.TableName = classSymbol.Name;
-
-            // Table属性を検索
-            foreach (var attribute in classSymbol.GetAttributes())
-            {
-                if (attribute.AttributeClass.Name == "TableAttribute" ||
-                    attribute.AttributeClass.Name == "Table")
-                {
-                    // 属性の引数からテーブル名を取得
-                    if (attribute.ConstructorArguments.Length > 0)
-                    {
-                        entityInfo.TableName = attribute.ConstructorArguments[0].Value?.ToString();
-                    }
-
-                    // スキーマ名も取得（存在すれば）
-                    if (attribute.NamedArguments.Any(na => na.Key == "Schema"))
-                    {
-                        var schemaArg = attribute.NamedArguments.First(na => na.Key == "Schema");
-                        entityInfo.SchemaName = schemaArg.Value.Value?.ToString();
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// エンティティのプロパティを解析
-        /// </summary>
-        private async Task ParseProperties(EntityInfo entityInfo, INamedTypeSymbol classSymbol, SemanticModel model)
-        {
-            // クラスのプロパティを取得
-            var properties = classSymbol.GetMembers().OfType<IPropertySymbol>();
-
-            foreach (var propSymbol in properties)
-            {
-                var propertyInfo = new PropertyInfo
-                {
-                    Name = propSymbol.Name,
-                    TypeName = propSymbol.Type.Name,
-                    FullTypeName = propSymbol.Type.ToDisplayString(),
-                    TypeSymbol = propSymbol.Type,
-                    Symbol = propSymbol,
-                    ColumnName = propSymbol.Name, // デフォルトはプロパティ名と同じ
-                    IsNavigationProperty = EntityAnalyzer.IsNavigationProperty(propSymbol)
-                };
-
-                // 種類別のフラグ設定
-                SetPropertyFlags(propertyInfo, propSymbol);
-
-                // Enum型のチェック
-                if (propSymbol.Type.TypeKind == TypeKind.Enum)
-                {
-                    propertyInfo.IsEnum = true;
-                    ParseEnumValues(propertyInfo, propSymbol.Type as INamedTypeSymbol);
-                }
-
-                // Nullable型のチェック
-                if (propSymbol.Type.Name == "Nullable" && propSymbol.Type is INamedTypeSymbol namedType)
-                {
-                    propertyInfo.IsNullable = true;
-                    if (namedType.TypeArguments.Length > 0)
-                    {
-                        propertyInfo.UnderlyingTypeName = namedType.TypeArguments[0].Name;
-                    }
-                }
-
-                // コレクション型のチェック
-                if (IsCollectionType(propSymbol.Type) && propSymbol.Type is INamedTypeSymbol collType)
-                {
-                    propertyInfo.IsCollection = true;
-                    if (collType.TypeArguments.Length > 0)
-                    {
-                        propertyInfo.CollectionElementType = collType.TypeArguments[0].Name;
-                    }
-                }
-
-                // 属性からプロパティの設定を解析
-                ParsePropertyAttributes(propertyInfo, propSymbol);
-
-                // プロパティリストに追加
-                entityInfo.Properties.Add(propertyInfo);
-            }
-        }
-
-        /// <summary>
-        /// プロパティの各種フラグを設定
-        /// </summary>
-        private void SetPropertyFlags(PropertyInfo propertyInfo, IPropertySymbol propSymbol)
-        {
-            // 主キーかどうか（Key属性かIdという名前で判断）
-            propertyInfo.IsKey = HasAttribute(propSymbol, "Key") ||
-                                  propSymbol.Name == "Id" ||
-                                  propSymbol.Name == $"{propSymbol.ContainingType.Name}Id";
-
-            // 必須かどうか（Required属性、non-null、カスタム属性から判断）
-            propertyInfo.IsRequired = HasAttribute(propSymbol, "Required") ||
-                                       (!propertyInfo.IsNullable && !IsReferenceType(propSymbol.Type));
-
-            // システム型かどうか
-            propertyInfo.IsSystemType = propSymbol.Type.ContainingNamespace?.ToDisplayString()
-                                        .StartsWith("System") == true;
-        }
-
-        /// <summary>
-        /// プロパティの属性を解析
-        /// </summary>
-        private void ParsePropertyAttributes(PropertyInfo propertyInfo, IPropertySymbol propSymbol)
-        {
-            foreach (var attribute in propSymbol.GetAttributes())
-            {
-                var attrName = attribute.AttributeClass.Name;
-
-                // Column属性
-                if (attrName == "Column" || attrName == "ColumnAttribute")
-                {
-                    if (attribute.ConstructorArguments.Length > 0)
-                    {
-                        propertyInfo.ColumnName = attribute.ConstructorArguments[0].Value?.ToString();
-                    }
-                }
-
-                // MaxLength/StringLength属性
-                else if (attrName == "MaxLength" || attrName == "StringLength")
-                {
-                    if (attribute.ConstructorArguments.Length > 0 &&
-                        attribute.ConstructorArguments[0].Value is int length)
-                    {
-                        propertyInfo.MaxLength = length;
-                    }
-                }
-
-                // MinLength属性
-                else if (attrName == "MinLength")
-                {
-                    if (attribute.ConstructorArguments.Length > 0 &&
-                        attribute.ConstructorArguments[0].Value is int length)
-                    {
-                        propertyInfo.MinLength = length;
-                    }
-                }
-
-                // Range属性
-                else if (attrName == "Range")
-                {
-                    if (attribute.ConstructorArguments.Length >= 2)
-                    {
-                        if (attribute.ConstructorArguments[0].Value is double min)
-                        {
-                            propertyInfo.MinValue = min;
-                        }
-
-                        if (attribute.ConstructorArguments[1].Value is double max)
-                        {
-                            propertyInfo.MaxValue = max;
-                        }
-                    }
-                }
-
-                // 正規表現属性
-                else if (attrName == "RegularExpression")
-                {
-                    if (attribute.ConstructorArguments.Length > 0)
-                    {
-                        propertyInfo.RegexPattern = attribute.ConstructorArguments[0].Value?.ToString();
-                    }
-                }
-
-                // ForeignKey属性
-                else if (attrName == "ForeignKey")
-                {
-                    propertyInfo.IsForeignKey = true;
-                    if (attribute.ConstructorArguments.Length > 0)
-                    {
-                        var navPropName = attribute.ConstructorArguments[0].Value?.ToString();
-                        // 関連するエンティティ名を推測（実際の実装ではより複雑になる可能性あり）
-                        propertyInfo.ForeignKeyTargetEntity = navPropName;
-                    }
-                }
-
-                // DatabaseGenerated属性
-                else if (attrName == "DatabaseGenerated")
-                {
-                    if (attribute.ConstructorArguments.Length > 0 &&
-                        attribute.ConstructorArguments[0].Value is int genOption)
-                    {
-                        // Identity(1)またはComputed(2)の場合は自動生成
-                        propertyInfo.IsAutoGenerated = genOption == 1 || genOption == 2;
-                    }
-                }
-            }
-
-            // 名前に基づく外部キーの推測
-            if (!propertyInfo.IsForeignKey && propertyInfo.Name.EndsWith("Id") &&
-                propertyInfo.Name != "Id" && !propertyInfo.IsKey)
-            {
-                propertyInfo.IsForeignKey = true;
-                var targetEntityName = propertyInfo.Name.Substring(0, propertyInfo.Name.Length - 2);
-                propertyInfo.ForeignKeyTargetEntity = targetEntityName;
-                propertyInfo.ForeignKeyTargetProperty = "Id";
-            }
-        }
-
-        /// <summary>
-        /// Enum型の値を解析
-        /// </summary>
-        private void ParseEnumValues(PropertyInfo propertyInfo, INamedTypeSymbol enumType)
-        {
-            // Flags属性のチェック
-            propertyInfo.IsEnumFlags = HasAttribute(enumType, "Flags");
-
-            // Enum値を取得
-            foreach (var member in enumType.GetMembers().OfType<IFieldSymbol>())
-            {
-                if (member.ConstantValue != null)
-                {
-                    propertyInfo.EnumValues.Add(new EnumValueInfo
-                    {
-                        Name = member.Name,
-                        Value = Convert.ToInt32(member.ConstantValue)
-                    });
-                }
-            }
-        }
-
-        /// <summary>
-        /// リレーションシップの解析
-        /// </summary>
-        private void ParseRelationships(EntityInfo entityInfo, INamedTypeSymbol classSymbol)
-        {
-            // ナビゲーションプロパティに基づくリレーションシップの検出
-            foreach (var property in entityInfo.Properties.Where(p => p.IsNavigationProperty))
-            {
-                var propSymbol = property.Symbol;
-
-                if (property.IsCollection)
-                {
-                    // 1対多のリレーションシップ
-                    var relationship = new RelationshipInfo
-                    {
-                        RelationType = RelationshipType.OneToMany,
-                        SourceEntityName = entityInfo.Name,
-                        TargetEntityName = property.CollectionElementType,
-                        SourceNavigationPropertyName = property.Name
-                    };
-
-                    entityInfo.Relationships.Add(relationship);
-                }
-                else
-                {
-                    // 多対1または1対1のリレーションシップ
-                    var relationship = new RelationshipInfo
-                    {
-                        RelationType = RelationshipType.ManyToOne, // デフォルトは多対1と仮定
-                        SourceEntityName = entityInfo.Name,
-                        TargetEntityName = property.TypeName,
-                        SourceNavigationPropertyName = property.Name
-                    };
-
-                    // 外部キープロパティを検索
-                    var _foreignKeyProps = entityInfo.Properties.Where(p => p.IsForeignKey &&
-                                                                           p.ForeignKeyTargetEntity == property.TypeName);
-                    if (_foreignKeyProps.Any())
-                    {
-                        relationship.ForeignKeyPropertyName = _foreignKeyProps.First().Name;
-                        relationship.PrincipalKeyPropertyName = "Id"; // 通常はId
-                    }
-
-                    entityInfo.Relationships.Add(relationship);
-                }
-            }
-
-            // ベースクラスのリレーションシップを自動的にマッピング
-            // 主キーと外部キーを使用したリレーションシップの推測
-            // この実装は簡略化していますが、実際には複雑な規則を適用する必要があるかもしれません
-            var keyProps = entityInfo.Properties.Where(p => p.IsKey).ToList();
-            var foreignKeyProps = entityInfo.Properties.Where(p => p.IsForeignKey).ToList();
-
-            foreach (var fkProp in foreignKeyProps)
-            {
-                // まだリレーションシップが登録されていないか確認
-                if (!entityInfo.Relationships.Any(r => r.ForeignKeyPropertyName == fkProp.Name))
-                {
-                    // ターゲットエンティティ名がまだ設定されていない場合は推測する
-                    if (string.IsNullOrEmpty(fkProp.ForeignKeyTargetEntity))
-                    {
-                        // IdサフィックスがあればそれをEntityの名前と見なす
-                        if (fkProp.Name.EndsWith("Id") && fkProp.Name.Length > 2)
-                        {
-                            fkProp.ForeignKeyTargetEntity = fkProp.Name.Substring(0, fkProp.Name.Length - 2);
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(fkProp.ForeignKeyTargetEntity))
-                    {
-                        var relationship = new RelationshipInfo
-                        {
-                            RelationType = RelationshipType.ManyToOne,
-                            SourceEntityName = entityInfo.Name,
-                            TargetEntityName = fkProp.ForeignKeyTargetEntity,
-                            ForeignKeyPropertyName = fkProp.Name,
-                            PrincipalKeyPropertyName = "Id" // 通常はId
-                        };
-
-                        entityInfo.Relationships.Add(relationship);
-                    }
-                }
-            }
-
-            // InverseProperty属性やその他の方法でリレーションシップを補完する処理も必要
-        }
-
-        /// <summary>
-        /// 型がコレクション型かどうかを判定
-        /// </summary>
-        private bool IsCollectionType(ITypeSymbol type)
-        {
-            if (!(type is INamedTypeSymbol namedType)) return false;
-
-            // 代表的なコレクション型のチェック
-            return namedType.IsGenericType &&
-                   (namedType.Name == "List" ||
-                    namedType.Name == "ICollection" ||
-                    namedType.Name == "IEnumerable" ||
-                    namedType.Name == "HashSet" ||
-                    namedType.Name == "DbSet" ||
-                    namedType.AllInterfaces.Any(i => i.Name == "IEnumerable" || i.Name == "ICollection"));
-        }
-
-        /// <summary>
-        /// 型が参照型かどうかを判定
-        /// </summary>
-        private bool IsReferenceType(ITypeSymbol type)
-        {
-            return !type.IsValueType;
-        }
-
-        /// <summary>
-        /// 型がシステム型かどうかを判定
-        /// </summary>
-        private bool IsSystemType(ITypeSymbol type)
-        {
-            return type.ContainingNamespace?.ToDisplayString().StartsWith("System") == true;
-        }
-
-        /// <summary>
-        /// シンボルが特定の属性を持つかどうかをチェック
-        /// </summary>
-        private bool HasAttribute(ISymbol symbol, string attributeName)
-        {
-            return symbol.GetAttributes().Any(attr =>
-                attr.AttributeClass.Name == attributeName ||
-                attr.AttributeClass.Name == $"{attributeName}Attribute");
-        }
-
-        private void DetectRelationships()
-        {
-            if (Entities.Count <= 1) return;
-
-            foreach (var sourceEntity in Entities)
-            {
-                // 外部キープロパティの検出（命名規則ベース）
-                foreach (var property in sourceEntity.Properties)
-                {
-                    // IdサフィックスでもEntityIdパターンでもない場合はスキップ
-                    if (!property.Name.Value.EndsWith("Id") || property.Name.Value == "Id")
-                        continue;
-
-                    // 対象エンティティを推測 (例: CustomerId -> Customer)
-                    string targetEntityName = property.Name.Value.Substring(0, property.Name.Value.Length - 2);
-
-                    // 対象エンティティが存在するか確認
-                    var targetEntity = Entities.FirstOrDefault(e =>
-                        e.Name.Value.Equals(targetEntityName, StringComparison.OrdinalIgnoreCase));
-
-                    if (targetEntity != null)
-                    {
-                        // リレーションシップを作成
-                        var relationship = new RelationshipViewModel
-                        {
-                            SourceEntityName = { Value = sourceEntity.Name.Value },
-                            TargetEntityName = { Value = targetEntity.Name.Value },
-                            SourceProperty = { Value = property.Name.Value },
-                            TargetProperty = { Value = "Id" }, // 通常はIdが主キー
-                            RelationType = { Value = RelationshipType.ManyToOne }
-                        };
-
-                        sourceEntity.Relationships.Add(relationship);
-                    }
-                }
-            }
-        }
-
-        private async Task<bool> GenerateRelationalSeedData(Document document, string className)
-        {
-            // エンティティの依存関係を解決
-            var orderedEntities = ResolveDependencyOrder(Entities.ToList());
-
-            // 生成されたキー値を保存する辞書
-            var generatedKeys = new Dictionary<string, List<object>>();
-
-            // 依存関係の順序でデータを生成
-            var codeBuilder = new StringBuilder();
-
-            codeBuilder.AppendLine($"    public static List<{className}> GenerateSeedData(ModelBuilder modelBuilder)");
-            codeBuilder.AppendLine("    {");
-
-            foreach (var entity in orderedEntities)
-            {
-                if (!entity.IsSelected.Value) continue;
-
-                codeBuilder.AppendLine($"        // {entity.Name.Value} エンティティのシードデータ");
-                codeBuilder.AppendLine($"        modelBuilder.Entity<{entity.Name.Value}>().HasData(");
-
-                // このエンティティのキー値を保存するリスト
-                generatedKeys[entity.Name.Value] = new List<object>();
-
-                for (int i = 0; i < entity.RecordCount.Value; i++)
-                {
-                    codeBuilder.AppendLine($"            new {entity.Name.Value}");
-                    codeBuilder.AppendLine("            {");
-
-                    // プロパティ値を生成
-                    var propValues = new List<string>();
-                    foreach (var prop in entity.Properties)
-                    {
-                        string value;
-
-                        // 主キーの場合
-                        if (prop.Name.Value == "Id")
-                        {
-                            value = (i + 1).ToString();
-                            generatedKeys[entity.Name.Value].Add(i + 1);
-                        }
-                        // 外部キーの場合
-                        else if (prop.Name.Value.EndsWith("Id") && prop.Name.Value != "Id")
-                        {
-                            string targetEntityName = prop.Name.Value.Substring(0, prop.Name.Value.Length - 2);
-
-                            // 親エンティティの生成済みキー値があれば使用
-                            if (generatedKeys.ContainsKey(targetEntityName) &&
-                                generatedKeys[targetEntityName].Count > 0)
-                            {
-                                // どの親レコードを参照するかの計算（例：ラウンドロビンなど）
-                                int targetIndex = i % generatedKeys[targetEntityName].Count;
-                                value = generatedKeys[targetEntityName][targetIndex].ToString();
-                            }
-                            else
-                            {
-                                // 親エンティティがまだ処理されていない場合は仮の値
-                                value = "1";
-                            }
-                        }
-                        else
-                        {
-                            // 通常のプロパティはランダム値生成
-                            value = GetSampleValueForType(prop.Type.Value, prop.Name.Value, prop.DataType.Value);
-                        }
-
-                        propValues.Add($"                {prop.Name.Value} = {value}");
-                    }
-
-                    codeBuilder.AppendLine(string.Join($",{Environment.NewLine}", propValues));
-                    codeBuilder.AppendLine("            }" + (i < entity.RecordCount.Value - 1 ? "," : ""));
-                }
-
-                codeBuilder.AppendLine("        );");
-                codeBuilder.AppendLine();
-            }
-
-            codeBuilder.AppendLine("    }");
-
-            // 生成されたコードを使用（ファイルに書き込むなど）
-            var seedCode = codeBuilder.ToString();
-
-            // ドキュメントオブジェクトをTextDocumentに変換
-            var textDocument = document.Object("TextDocument") as TextDocument;
-            if (textDocument == null)
-            {
-                Debug.WriteLine("TextDocument is null");
-                return false;
-            }
-
-            // クラスの閉じ括弧（}）を探して、その前にメソッドを挿入
-            var editPoint = textDocument.StartPoint.CreateEditPoint();
-            var documentText = editPoint.GetText(textDocument.EndPoint);
-
-            // クラス定義を正規表現で検索
-            var classRegex = new Regex($@"(class|record)\s+{className}(?:\s*:\s*\w+(?:<.*>)?(?:\s*,\s*\w+(?:<.*>)?)*)??\s*\{{");
-            var classMatch = classRegex.Match(documentText);
-            if (!classMatch.Success)
-            {
-                Debug.WriteLine($"Class {className} not found");
-                return false;
-            }
-
-            // クラスの閉じ括弧を検索するため、クラス開始位置以降のテキストを取得
-            var classStartPos = classMatch.Index + classMatch.Length;
-            var remainingText = documentText.Substring(classStartPos);
-
-            // 括弧の深さを追跡して正しい閉じ括弧を見つける
-            int depth = 1;
-            int closePos = -1;
-            for (int i = 0; i < remainingText.Length; i++)
-            {
-                if (remainingText[i] == '{') depth++;
-                else if (remainingText[i] == '}')
-                {
-                    depth--;
-                    if (depth == 0)
-                    {
-                        closePos = i;
-                        break;
-                    }
-                }
-            }
-
-            if (closePos == -1)
-            {
-                Debug.WriteLine("Could not find closing brace of class");
-                return false;
-            }
-
-            // 別の方法で挿入位置に移動 - 行と文字位置を使用
-            var insertPos = classStartPos + closePos;
-
-            // オフセットから行と列位置を計算
-            int line = 1;
-            int column = 1;
-            for (int i = 0; i < insertPos; i++)
-            {
-                if (documentText[i] == '\n')
-                {
-                    line++;
-                    column = 1;
-                }
-                else
-                {
-                    column++;
-                }
-            }
-
-            // 行と列位置を使用して移動
-            var insertPoint = textDocument.CreateEditPoint();
-            insertPoint.LineDown(line - 1);  // 行に移動
-            insertPoint.CharRight(column - 1); // 列に移動
-
-            // メソッドを挿入
-            insertPoint.Insert("\n\n" + seedCode + "\n");
-
-            return true;
-        }
-
-        // 依存関係の順序でエンティティをソート
-        private List<EntityViewModel> ResolveDependencyOrder(List<EntityViewModel> entities)
-        {
-            var result = new List<EntityViewModel>();
-            var visited = new HashSet<string>();
-            var processing = new HashSet<string>();
-
-            // 依存関係グラフに基づいて訪問
-            foreach (var entity in entities)
-            {
-                if (!visited.Contains(entity.Name.Value))
-                {
-                    VisitEntity(entity, entities, visited, processing, result);
-                }
-            }
-
-            return result;
-        }
-
-        private void VisitEntity(
-            EntityViewModel entity,
-            List<EntityViewModel> allEntities,
-            HashSet<string> visited,
-            HashSet<string> processing,
-            List<EntityViewModel> result)
-        {
-            // 循環参照チェック
-            if (processing.Contains(entity.Name.Value))
-            {
-                // 循環参照の場合は警告して続行
-                Debug.WriteLine($"循環参照を検出: {entity.Name.Value}");
-                return;
-            }
-
-            // 既に処理済みならスキップ
-            if (visited.Contains(entity.Name.Value))
-            {
-                return;
-            }
-
-            processing.Add(entity.Name.Value);
-
-            // 依存するエンティティを先に処理
-            foreach (var relationship in entity.Relationships)
-            {
-                if (relationship.RelationType.Value == RelationshipType.ManyToOne)
-                {
-                    var dependencyEntity = allEntities.FirstOrDefault(e =>
-                        e.Name.Value == relationship.TargetEntityName.Value);
-
-                    if (dependencyEntity != null)
-                    {
-                        VisitEntity(dependencyEntity, allEntities, visited, processing, result);
-                    }
-                }
-            }
-
-            processing.Remove(entity.Name.Value);
-            visited.Add(entity.Name.Value);
-            result.Add(entity);
-        }
-
-        private void AddRelationship()
-        {
-            if (SelectedEntity.Value == null || Entities.Count < 2) return;
-
-            var relationship = new RelationshipViewModel
-            {
-                SourceEntityName = { Value = SelectedEntity.Value.Name.Value },
-                TargetEntityName = { Value = Entities.First(e => e != SelectedEntity.Value).Name.Value },
-                SourceProperty = { Value = "Id" },
-                TargetProperty = { Value = "Id" },
-                RelationType = { Value = RelationshipType.OneToMany }
-            };
-
-            SelectedEntity.Value.Relationships.Add(relationship);
-            SelectedRelationship.Value = relationship;
-        }
-
-        // リレーションシップ削除メソッド
-        private void RemoveRelationship()
-        {
-            if (SelectedEntity.Value == null || SelectedRelationship.Value == null) return;
-
-            SelectedEntity.Value.Relationships.Remove(SelectedRelationship.Value);
-            SelectedRelationship.Value = null;
-        }
-
-        /// <summary>
-        /// 対象ドキュメントを設定
-        /// </summary>
-        public void SetTargetDocument(EnvDTE.Document document, string documentType)
-        {
-            _targetDocument = document;
-            TargetFileName.Value = Path.GetFileName(document.FullName);
-            TargetType.Value = documentType;
-
-            // 文書の種類に応じてデータ形式のデフォルト値を設定
-            switch (documentType.ToLowerInvariant())
-            {
-                case "csharp":
-                    SelectedDataFormat.Value = "C#クラス";
-                    break;
-                case "json":
-                    SelectedDataFormat.Value = "JSON配列";
-                    break;
-                case "csv":
-                    SelectedDataFormat.Value = "CSV形式";
-                    break;
-                case "sql":
-                    SelectedDataFormat.Value = "SQL INSERT文";
-                    break;
-                case "xml":
-                    SelectedDataFormat.Value = "XML形式";
-                    break;
-                default:
-                    SelectedDataFormat.Value = "C#クラス";
-                    break;
-            }
-
-            // ファイルの内容からスキーマ情報を自動読み込み
-            LoadSchema();
-        }
-
-        /// <summary>
-        /// ダイアログが開かれた時の処理
-        /// </summary>
-        public override void OnDialogOpened(object dialog)
-        {
-            base.OnDialogOpened(dialog);
-
-            // 初期プレビュー更新
-            UpdatePreview();
         }
 
         /// <summary>
@@ -1749,6 +864,388 @@ namespace boilersExtensions.ViewModels
             }
         }
 
+        private void AddRelationship()
+        {
+            if (SelectedEntity.Value == null || Entities.Count < 2) return;
+
+            var relationship = new RelationshipViewModel
+            {
+                SourceEntityName = { Value = SelectedEntity.Value.Name.Value },
+                TargetEntityName = { Value = Entities.First(e => e != SelectedEntity.Value).Name.Value },
+                SourceProperty = { Value = "Id" },
+                TargetProperty = { Value = "Id" },
+                RelationType = { Value = RelationshipType.OneToMany }
+            };
+
+            SelectedEntity.Value.Relationships.Add(relationship);
+            SelectedRelationship.Value = relationship;
+        }
+
+        /// <summary>
+        /// リレーションシップ削除メソッド
+        /// </summary>
+        private void RemoveRelationship()
+        {
+            if (SelectedEntity.Value == null || SelectedRelationship.Value == null) return;
+
+            SelectedEntity.Value.Relationships.Remove(SelectedRelationship.Value);
+            SelectedRelationship.Value = null;
+        }
+
+        /// <summary>
+        /// 対象ドキュメントを設定
+        /// </summary>
+        public void SetTargetDocument(EnvDTE.Document document, string documentType)
+        {
+            _targetDocument = document;
+            TargetFileName.Value = Path.GetFileName(document.FullName);
+            TargetType.Value = documentType;
+
+            // 文書の種類に応じてデータ形式のデフォルト値を設定
+            switch (documentType.ToLowerInvariant())
+            {
+                case "csharp":
+                    SelectedDataFormat.Value = "C#クラス";
+                    break;
+                case "json":
+                    SelectedDataFormat.Value = "JSON配列";
+                    break;
+                case "csv":
+                    SelectedDataFormat.Value = "CSV形式";
+                    break;
+                case "sql":
+                    SelectedDataFormat.Value = "SQL INSERT文";
+                    break;
+                case "xml":
+                    SelectedDataFormat.Value = "XML形式";
+                    break;
+                default:
+                    SelectedDataFormat.Value = "C#クラス";
+                    break;
+            }
+
+            // ファイルの内容からスキーマ情報を自動読み込み
+            LoadSchema();
+        }
+
+        /// <summary>
+        /// 全プロパティの固定値の組み合わせ数を計算して表示を更新するメソッド
+        /// </summary>
+        internal void CalculateAndUpdateTotalRecordCount()
+        {
+            int baseCount = DataCount.Value;
+            int totalCombinations = CalculateTotalCombinations();
+
+            // 基本のレコード数と組み合わせ数を掛けて総レコード数を計算
+            int totalRecords = baseCount * Math.Max(1, totalCombinations);
+
+            // UIの表示を更新
+            if (totalCombinations > 1)
+            {
+                // 組み合わせ数がある場合は、その情報を表示
+                RecordCountInfoText.Value = $"{baseCount} × {totalCombinations} = {totalRecords}件";
+                TotalRecordCount.Value = totalRecords;
+            }
+            else
+            {
+                // 組み合わせがない場合は単純に件数を表示
+                RecordCountInfoText.Value = $"{baseCount}件";
+                TotalRecordCount.Value = baseCount;
+            }
+
+            // プレビュー更新
+            UpdatePreview();
+        }
+
+        /// <summary>
+        /// 全プロパティの固定値の組み合わせ総数を計算
+        /// </summary>
+        private int CalculateTotalCombinations()
+        {
+            int combinations = 1;
+
+            // アクティブなエンティティの固定値を持つプロパティを検索
+            var entity = SelectedEntity.Value;
+            if (entity != null)
+            {
+                foreach (var prop in entity.Properties)
+                {
+                    int fixedValueCount = prop.FixedValues.Count;
+                    if (fixedValueCount > 0)
+                    {
+                        combinations *= fixedValueCount;
+                    }
+                }
+            }
+            else
+            {
+                // 古いUI（単一エンティティ）のための処理
+                foreach (var prop in Properties)
+                {
+                    int fixedValueCount = prop.FixedValues.Count;
+                    if (fixedValueCount > 0)
+                    {
+                        combinations *= fixedValueCount;
+                    }
+                }
+            }
+
+            return combinations;
+        }
+
+        /// <summary>
+        /// エンティティ間のリレーションシップを自動検出して設定
+        /// </summary>
+        private void DetectAndSetupRelationships()
+        {
+            if (Entities.Count <= 1) return;
+
+            // エンティティの親子関係を検出
+            var entityConfigs = new List<EntityConfigViewModel>();
+
+            // EntityViewModelからEntityConfigViewModelを作成
+            foreach (var entity in Entities)
+            {
+                var config = new EntityConfigViewModel
+                {
+                    EntityName = entity.Name.Value, IsSelected = { Value = entity.IsSelected.Value }
+                };
+
+                // RecordCountをコピー
+                config.RecordCount.Value = entity.RecordCount.Value;
+
+                // プロパティ設定をコピー
+                foreach (var prop in entity.Properties)
+                {
+                    config.PropertyConfigs.Add(new PropertyConfigViewModel
+                    {
+                        PropertyName = prop.Name.Value, PropertyTypeName = prop.Type.Value
+                    });
+                }
+
+                entityConfigs.Add(config);
+            }
+
+            // リレーションシップを解決
+            foreach (var config in entityConfigs)
+            {
+                config.ResolveEntityRelationships(entityConfigs);
+            }
+
+            // EntityViewModelの関係を更新
+            foreach (var entity in Entities)
+            {
+                var config = entityConfigs.FirstOrDefault(c => c.EntityName == entity.Name.Value);
+                if (config != null)
+                {
+                    // 親がある場合は設定を反映
+                    if (config.HasParent.Value && config.ParentEntity.Value != null)
+                    {
+                        var parentName = config.ParentEntity.Value.EntityName;
+                        var parentEntity = Entities.FirstOrDefault(e => e.Name.Value == parentName);
+
+                        if (parentEntity != null)
+                        {
+                            // 親1件あたりの子レコード数を設定（デフォルト値）
+                            entity.RecordsPerParent.Value = 2;
+                            entity.ParentEntity.Value = parentEntity;
+
+                            // リレーションシップを追加
+                            var relationship = entity.Relationships.FirstOrDefault(r =>
+                                r.TargetEntityName.Value == parentName);
+
+                            if (relationship == null)
+                            {
+                                // 外部キーフィールドを探す
+                                string fkField = entity.Properties
+                                    .FirstOrDefault(p => p.Name.Value == parentName + "Id")?.Name.Value;
+
+                                if (!string.IsNullOrEmpty(fkField))
+                                {
+                                    relationship = new RelationshipViewModel
+                                    {
+                                        SourceEntityName = { Value = entity.Name.Value },
+                                        SourceProperty = { Value = fkField },
+                                        TargetEntityName = { Value = parentName },
+                                        TargetProperty = { Value = "Id" },
+                                        RelationType = { Value = RelationshipType.ManyToOne }
+                                    };
+
+                                    entity.Relationships.Add(relationship);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // レコード数を更新
+            UpdateEntityRecordCounts();
+
+            // リレーションシップ表示を更新
+            UpdateEntityRelationshipInfo();
+        }
+
+        /// <summary>
+        /// エンティティの親子関係に基づいてレコード数を更新
+        /// </summary>
+        private void UpdateEntityRecordCounts()
+        {
+            // 親エンティティから順に処理
+            var processedEntities = new HashSet<string>();
+            var entitiesToProcess = new Queue<EntityViewModel>(
+                Entities.Where(e => e.ParentEntity.Value == null)); // 親を持たないエンティティから
+
+            while (entitiesToProcess.Count > 0)
+            {
+                var entity = entitiesToProcess.Dequeue();
+
+                if (processedEntities.Contains(entity.Name.Value))
+                    continue;
+
+                processedEntities.Add(entity.Name.Value);
+
+                // 親を持たない場合は指定のレコード数
+                if (entity.ParentEntity.Value == null)
+                {
+                    entity.TotalRecordCount.Value = entity.RecordCount.Value;
+                }
+                // 親を持つ場合は「親のレコード数 × 親1件あたりの件数」
+                else
+                {
+                    var parent = entity.ParentEntity.Value;
+                    entity.TotalRecordCount.Value = parent.TotalRecordCount.Value * entity.RecordsPerParent.Value;
+                }
+
+                // 子エンティティを処理キューに追加
+                foreach (var otherEntity in Entities)
+                {
+                    if (otherEntity.ParentEntity.Value == entity)
+                    {
+                        entitiesToProcess.Enqueue(otherEntity);
+                    }
+                }
+            }
+
+            // エンティティ関係図を更新
+            UpdateEntityRelationshipInfo();
+        }
+
+        /// <summary>
+        /// エンティティの親子関係情報を更新
+        /// </summary>
+        private void UpdateEntityRelationshipInfo()
+        {
+            EntityRelationships.Clear();
+
+            foreach (var entity in Entities)
+            {
+                if (entity.ParentEntity.Value != null)
+                {
+                    var parent = entity.ParentEntity.Value;
+
+                    EntityRelationships.Add(new EntityRelationshipInfo
+                    {
+                        ParentEntityName = parent.Name.Value,
+                        ChildEntityName = entity.Name.Value,
+                        RelationshipType = "1対多",
+                        RecordsPerParent = entity.RecordsPerParent.Value,
+                        TotalRecords = entity.TotalRecordCount.Value
+                    });
+                }
+                else
+                {
+                    // 親を持たないエンティティ
+                    EntityRelationships.Add(new EntityRelationshipInfo
+                    {
+                        ParentEntityName = entity.Name.Value,
+                        ChildEntityName = "",
+                        RelationshipType = "単体",
+                        RecordsPerParent = 0,
+                        TotalRecords = entity.TotalRecordCount.Value
+                    });
+                }
+            }
+        }
+
+        // 指定されたエンティティのプロパティリストを取得するメソッド
+        public List<string> GetEntityProperties(string entityName)
+        {
+            var entity = Entities.FirstOrDefault(e => e.Name.Value == entityName);
+            if (entity != null)
+            {
+                return entity.Properties.Select(p => p.Name.Value).ToList();
+            }
+
+            return new List<string>();
+        }
+
+        private void LoadAdditionalEntity()
+        {
+            // ファイル選択ダイアログを表示
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "C# Files (*.cs)|*.cs", Title = "関連エンティティファイルを選択"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                // ファイルを開いて解析
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    try
+                    {
+                        SetProcessing(true, "関連エンティティを解析中...");
+                        // DTEからファイルを開く
+                        var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
+                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, dialog.FileName);
+
+                        var document = documentWindow?.Document;
+
+                        // Roslynを使用してエンティティを解析
+                        var entityInfo = await LoadEntityFromDocument(document);
+                        if (entityInfo != null)
+                        {
+                            // EntityViewModelへ変換
+                            var entityVm = new EntityViewModel
+                            {
+                                Name = { Value = entityInfo.Name },
+                                FullName = { Value = entityInfo.FullName },
+                                RecordCount = { Value = 5 }, // デフォルト値
+                                RecordsPerParent = { Value = 2 }, // デフォルト値：親1件あたり2件
+                                IsSelected = { Value = true },
+                                FilePath = { Value = dialog.FileName }
+                            };
+
+                            // プロパティを読み込み
+                            foreach (var prop in entityInfo.Properties)
+                            {
+                                entityVm.Properties.Add(new PropertyViewModel
+                                {
+                                    Name = { Value = prop.Name },
+                                    Type = { Value = prop.TypeName },
+                                    DataType = { Value = DetermineDataType(prop.Name, prop.TypeName) }
+                                });
+                            }
+
+                            Entities.Add(entityVm);
+                            SelectedEntity.Value = entityVm;
+
+                            // 自動的にリレーションシップを検出
+                            if (AutoDetectRelationships.Value)
+                            {
+                                DetectAndSetupRelationships();
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        SetProcessing(false);
+                    }
+                });
+            }
+        }
+
         /// <summary>
         /// 名前と型からデータタイプを推測
         /// </summary>
@@ -1821,6 +1318,41 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
+        /// ドキュメントからエンティティ情報を解析して読み込む
+        /// </summary>
+        private async Task<EntityInfo> LoadEntityFromDocument(EnvDTE.Document document)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            try
+            {
+                // Roslynドキュメントを取得
+                var roslynDoc = await GetRoslynDocumentFromActiveDocumentAsync(document);
+                if (roslynDoc == null) return null;
+
+                // 以下はコードの一部を省略（既存のコードを引き継ぎ）
+                // EntityAnalyzerを使用してエンティティ情報を取得する処理
+                var analyzer = new EntityAnalyzer();
+                var entities = await analyzer.AnalyzeEntitiesAsync(roslynDoc);
+
+                if (entities.Count > 0)
+                {
+                    return entities[0]; // 最初のエンティティを返す
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading entity from document: {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
+            }
+
+            return null;
+        }
+
+        // 以下は既存のメソッドの省略
+        // ...
+
+        /// <summary>
         /// シードデータを生成して挿入
         /// </summary>
         private void GenerateSeedData()
@@ -1835,7 +1367,7 @@ namespace boilersExtensions.ViewModels
                     UpdateProgress(0);
 
                     // プロパティリストが空の場合はエラー
-                    if (SelectedEntity.Value == null || SelectedEntity.Value.Properties.Count == 0)
+                    if (Entities.Count == 0 || Entities.All(e => e.Properties.Count == 0))
                     {
                         MessageBox.Show(
                             "プロパティ/エンティティが設定されていません。スキーマ読込または手動でプロパティ/エンティティを追加してください。",
@@ -1845,14 +1377,14 @@ namespace boilersExtensions.ViewModels
                         return;
                     }
 
-                    // EntityInfoリストを作成
+                    // EntityInfo リストを作成
                     var entityInfos = new List<EntityInfo>();
 
-                    foreach (var _entity in Entities)
+                    foreach (var entity in Entities.Where(e => e.IsSelected.Value))
                     {
                         // DTEからファイルを開く
                         var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
-                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, _entity.FilePath.Value);
+                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, entity.FilePath.Value);
 
                         var envDTEDocument = documentWindow?.Document;
 
@@ -1865,11 +1397,11 @@ namespace boilersExtensions.ViewModels
                         if (document == null)
                         {
                             MessageBox.Show(
-                                "ドキュメントの解析に失敗しました。",
+                                $"{entity.Name.Value}の解析に失敗しました。",
                                 "エラー",
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
-                            return;
+                            continue;
                         }
 
                         try
@@ -1884,37 +1416,39 @@ namespace boilersExtensions.ViewModels
                         }
                     }
 
-                    if (entityInfos.Count == 0 || entityInfos.All(x => x.Name != ClassName.Value))
+                    if (entityInfos.Count == 0)
                     {
                         MessageBox.Show(
-                            $"アクティブドキュメントから {ClassName.Value} が検出できませんでした。",
+                            $"出力可能なエンティティクラスが見つかりませんでした。",
                             "エラー",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                         return;
                     }
 
-                    //if (entityInfos.Count == 0)
-                    //{
-                    //    MessageBox.Show(
-                    //        $"出力可能なエンティティクラスが見つかりませんでした。",
-                    //        "エラー",
-                    //        MessageBoxButton.OK,
-                    //        MessageBoxImage.Error);
-                    //    return;
-                    //}
-
                     // EntityInfoからSeedDataConfigを作成
                     var config = new SeedDataConfig();
 
                     // 選択されているエンティティの設定を取得
-                    //var entity = entityInfos.First(x => x.Name == ClassName.Value);
                     foreach (var entity in entityInfos)
                     {
-                        var entityConfig = new EntityConfigViewModel
+                        // 対応するEntityViewModelを探す
+                        var entityVm = Entities.FirstOrDefault(e => e.Name.Value == entity.Name);
+                        if (entityVm == null || !entityVm.IsSelected.Value) continue;
+
+                        var entityConfig = new EntityConfigViewModel { EntityName = entity.Name, IsSelected = { Value = true } };
+
+                        // RecordCount値とRecordsPerParent値を設定
+                        entityConfig.RecordCount.Value = entityVm.RecordCount.Value;
+                        entityConfig.RecordsPerParent.Value = entityVm.RecordsPerParent.Value;
+                        entityConfig.TotalRecordCount.Value = entityVm.TotalRecordCount.Value;
+
+                        // 親エンティティが設定されている場合
+                        if (entityVm.ParentEntity.Value != null)
                         {
-                            EntityName = entity.Name, RecordCount = TotalRecordCount.Value, IsSelected = true
-                        };
+                            entityConfig.ParentEntityName.Value = entityVm.ParentEntity.Value.Name.Value;
+                            entityConfig.HasParent.Value = true;
+                        }
 
                         // プロパティ設定をコピー
                         foreach (var prop in entity.Properties)
@@ -1923,7 +1457,7 @@ namespace boilersExtensions.ViewModels
                                 continue;
 
                             // UIから該当するプロパティ設定を検索
-                            var uiPropConfig = SelectedEntity.Value.GetPropertyConfig(prop.Name);
+                            var uiPropConfig = entityVm.GetPropertyConfig(prop.Name);
                             if (uiPropConfig != null)
                             {
                                 // 設定をコピー
@@ -1939,35 +1473,72 @@ namespace boilersExtensions.ViewModels
                             }
                         }
 
+                        // リレーションシップ設定をコピー
+                        foreach (var relationship in entityVm.Relationships)
+                        {
+                            var relConfig = new RelationshipConfigViewModel
+                            {
+                                RelatedEntityName = relationship.TargetEntityName.Value,
+                                Strategy = ConvertRelationshipType(relationship.RelationType.Value)
+                            };
+
+                            // 親1件あたりの子レコード数を設定
+                            if (relationship.RelationType.Value == RelationshipType.ManyToOne ||
+                                relationship.RelationType.Value == RelationshipType.OneToMany)
+                            {
+                                relConfig.ChildrenPerParent = entityVm.RecordsPerParent.Value;
+                            }
+
+                            entityConfig.RelationshipConfigs.Add(relConfig);
+                        }
+
                         // 設定を保存
                         config.UpdateEntityConfig(entityConfig);
+                    }
+
+                    // 親子関係を解決
+                    foreach (var entityConfig in config.EntityConfigs)
+                    {
+                        if (!string.IsNullOrEmpty(entityConfig.ParentEntityName.Value))
+                        {
+                            var parentConfig = config.GetEntityConfig(entityConfig.ParentEntityName.Value);
+                            if (parentConfig != null)
+                            {
+                                entityConfig.ParentEntity.Value = parentConfig;
+                            }
+                        }
                     }
 
                     UpdateProgress(50, "コード生成中...");
 
                     // 拡張シードデータジェネレーターを使用
-                    var seedGenerator = new EnhancedSeedDataGenerator();
-                    var generatedCode = seedGenerator.GenerateSeedDataWithFixedValues(entityInfos, config);
+                    var seedGenerator = new EnhancedRelationalSeedDataGenerator();
+                    var generatedCode = seedGenerator.GenerateSeedDataWithRelationships(entityInfos, config);
 
                     UpdateProgress(80, "コードを挿入中...");
 
                     // 生成したコードを挿入
                     var executor = new SeedDataInsertExecutor(Package);
-                    bool result = await executor.InsertGeneratedCodeToDocument(_targetDocument, ClassName.Value, generatedCode);
+                    bool result =
+                        await executor.InsertGeneratedCodeToDocument(_targetDocument, ClassName.Value, generatedCode);
 
                     UpdateProgress(100, "完了");
 
                     // 結果に応じたメッセージを表示
                     if (result)
                     {
+                        int totalRecords = Entities.Where(e => e.IsSelected.Value)
+                            .Sum(e => e.TotalRecordCount.Value);
+
                         MessageBox.Show(
-                            $"{TotalRecordCount.Value}件のテストデータを生成しました。",
+                            $"合計{totalRecords}件のテストデータを生成しました。",
                             "完了",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
 
                         // ダイアログを閉じる
-                        var window = Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.DataContext == this);
+                        var window = Application.Current.Windows.OfType<System.Windows.Window>()
+                            .FirstOrDefault(w => w.DataContext == this);
                         window?.Close();
                     }
                     else
@@ -1992,119 +1563,6 @@ namespace boilersExtensions.ViewModels
                     SetProcessing(false);
                 }
             });
-        }
-
-        // RelationshipType から RelationshipStrategy への変換メソッド
-        private RelationshipStrategy ConvertRelationshipType(RelationshipType type)
-        {
-            switch (type)
-            {
-                case RelationshipType.OneToOne:
-                    return RelationshipStrategy.OneToOne;
-                case RelationshipType.OneToMany:
-                    return RelationshipStrategy.OneToMany;
-                case RelationshipType.ManyToOne:
-                    return RelationshipStrategy.ManyToOne;
-                case RelationshipType.ManyToMany:
-                    // ManyToManyは直接マッピングできないため、CustomまたはOneToManyを返す
-                    return RelationshipStrategy.Custom;
-                default:
-                    return RelationshipStrategy.OneToOne; // デフォルト
-            }
-        }
-
-        /// <summary>
-        /// 生成されたコードをドキュメントに挿入します
-        /// </summary>
-        private async Task<bool> InsertGeneratedCodeToDocument(EnvDTE.Document document, string className, string generatedCode)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            try
-            {
-                // ドキュメントオブジェクトをTextDocumentに変換
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
-                if (textDocument == null)
-                {
-                    Debug.WriteLine("TextDocument is null");
-                    return false;
-                }
-
-                // クラスの閉じ括弧（}）を探して、その前にメソッドを挿入
-                var editPoint = textDocument.StartPoint.CreateEditPoint();
-                var documentText = editPoint.GetText(textDocument.EndPoint);
-
-                // クラス定義を正規表現で検索
-                var classRegex = new Regex($@"(class|record)\s+{className}(?:\s*:\s*\w+(?:<.*>)?(?:\s*,\s*\w+(?:<.*>)?)*)??\s*\{{");
-                var classMatch = classRegex.Match(documentText);
-                if (!classMatch.Success)
-                {
-                    Debug.WriteLine($"Class {className} not found");
-                    return false;
-                }
-
-                // クラスの閉じ括弧を検索するため、クラス開始位置以降のテキストを取得
-                var classStartPos = classMatch.Index + classMatch.Length;
-                var remainingText = documentText.Substring(classStartPos);
-
-                // 括弧の深さを追跡して正しい閉じ括弧を見つける
-                int depth = 1;
-                int closePos = -1;
-                for (int i = 0; i < remainingText.Length; i++)
-                {
-                    if (remainingText[i] == '{') depth++;
-                    else if (remainingText[i] == '}')
-                    {
-                        depth--;
-                        if (depth == 0)
-                        {
-                            closePos = i;
-                            break;
-                        }
-                    }
-                }
-
-                if (closePos == -1)
-                {
-                    Debug.WriteLine("Could not find closing brace of class");
-                    return false;
-                }
-
-                // 別の方法で挿入位置に移動 - 行と文字位置を使用
-                var insertPos = classStartPos + closePos;
-
-                // オフセットから行と列位置を計算
-                int line = 1;
-                int column = 1;
-                for (int i = 0; i < insertPos; i++)
-                {
-                    if (documentText[i] == '\n')
-                    {
-                        line++;
-                        column = 1;
-                    }
-                    else
-                    {
-                        column++;
-                    }
-                }
-
-                // 行と列位置を使用して移動
-                var insertPoint = textDocument.CreateEditPoint();
-                insertPoint.LineDown(line - 1);  // 行に移動
-                insertPoint.CharRight(column - 1); // 列に移動
-
-                // GenerateSeedDataメソッドを挿入
-                string methodCode = "\n\n    public static List<" + className + "> GenerateSeedData(ModelBuilder modelBuilder)\n    {\n" + generatedCode + "\n        return null;\n    }\n";
-                insertPoint.Insert(methodCode);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error inserting code: {ex.Message}");
-                return false;
-            }
         }
 
         private async Task<Microsoft.CodeAnalysis.Document> GetRoslynDocumentFromActiveDocumentAsync(EnvDTE.Document activeDocument)
@@ -2159,6 +1617,25 @@ namespace boilersExtensions.ViewModels
             {
                 Debug.WriteLine($"Error getting Roslyn Document: {ex.Message}");
                 throw;
+            }
+        }
+
+        // RelationshipType から RelationshipStrategy への変換メソッド
+        private RelationshipStrategy ConvertRelationshipType(RelationshipType type)
+        {
+            switch (type)
+            {
+                case RelationshipType.OneToOne:
+                    return RelationshipStrategy.OneToOne;
+                case RelationshipType.OneToMany:
+                    return RelationshipStrategy.OneToMany;
+                case RelationshipType.ManyToOne:
+                    return RelationshipStrategy.ManyToOne;
+                case RelationshipType.ManyToMany:
+                    // ManyToManyは直接マッピングできないため、CustomまたはOneToManyを返す
+                    return RelationshipStrategy.Custom;
+                default:
+                    return RelationshipStrategy.OneToOne; // デフォルト
             }
         }
 
@@ -2451,231 +1928,6 @@ namespace boilersExtensions.ViewModels
 
             sb.AppendLine($"</{RootElementName.Value}>");
         }
-
-        // SeedDataConfigViewModelに追加するメソッド
-
-        /// <summary>
-        /// 総レコード数を更新（固定値の組み合わせを考慮）
-        /// </summary>
-        public void UpdateTotalRecordCount()
-        {
-            int baseCount = DataCount.Value;
-            int totalCombinations = 1;
-
-            // 各プロパティの固定値の組み合わせ数を計算
-            foreach (var prop in Properties)
-            {
-                int valueCount = prop.FixedValues.Count;
-                if (valueCount > 0)
-                {
-                    totalCombinations *= valueCount;
-                }
-            }
-
-            // データ件数を更新（基本件数 × 固定値の組み合わせ数）
-            if (totalCombinations > 1)
-            {
-                DataCount.Value = baseCount * totalCombinations;
-            }
-
-            // プレビュー更新
-            UpdatePreview();
-        }
-
-        /// <summary>
-        /// 固定値を考慮してプロパティ値を生成します
-        /// </summary>
-        private string GeneratePropertyValueWithFixedValues(PropertyInfo property, int recordIndex, PropertyConfigViewModel propConfig)
-        {
-            // 固定値が設定されている場合
-            if (propConfig != null && propConfig.HasFixedValues)
-            {
-                // 固定値リストから適切な値を選択
-                int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
-                string fixedValue = propConfig.FixedValues[fixedValueIndex];
-
-                // 文字列型の場合は引用符を追加
-                if (property.TypeName == "String" || property.TypeName.Contains("string"))
-                {
-                    return $"\"{fixedValue}\"";
-                }
-
-                return fixedValue;
-            }
-
-            // 固定値がない場合は標準の値生成メソッドを使用
-            // 注: entityConfigを渡す必要があるため、この時点でGeneratePropertyValueを直接呼び出せない
-            // entityConfigが必要なため、呼び出し元で標準の生成ロジックを呼び出す必要がある
-            return null; // 固定値がないことを示す
-        }
-
-        /// <summary>
-        /// シードデータ生成メソッド（既存の生成メソッドを拡張して固定値対応）
-        /// </summary>
-        public async Task<string> GenerateSeedDataWithFixedValues(List<EntityInfo> entities, SeedDataConfig config)
-        {
-            var sb = new StringBuilder();
-
-            // 各エンティティに対して処理
-            foreach (var entity in entities)
-            {
-                var entityConfig = config.GetEntityConfig(entity.Name);
-                if (entityConfig == null || !entityConfig.IsSelected || entityConfig.RecordCount <= 0)
-                {
-                    continue;
-                }
-
-                sb.AppendLine($"    // {entity.Name} エンティティのシードデータ");
-                sb.AppendLine($"    modelBuilder.Entity<{entity.Name}>().HasData(");
-
-                // 固定値の組み合わせ配列を作成
-                var propertiesWithFixedValues = entity.Properties
-                    .Where(p => !p.ExcludeFromSeed && !p.IsNavigationProperty && !p.IsCollection)
-                    .Select(p => new
-                    {
-                        Property = p,
-                        Config = entityConfig.GetPropertyConfig(p.Name),
-                        HasFixedValues = entityConfig.GetPropertyConfig(p.Name)?.HasFixedValues ?? false
-                    })
-                    .Where(x => x.HasFixedValues)
-                    .ToList();
-
-                int totalRecords = entityConfig.RecordCount;
-
-                // レコード生成
-                for (int i = 0; i < totalRecords; i++)
-                {
-                    sb.AppendLine($"        new {entity.Name}");
-                    sb.AppendLine("        {");
-
-                    // プロパティごとに値を生成
-                    var propStrings = new List<string>();
-                    foreach (var prop in entity.Properties)
-                    {
-                        if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
-                        {
-                            continue;
-                        }
-
-                        // プロパティの設定を取得
-                        var propConfig = entityConfig.GetPropertyConfig(prop.Name);
-
-                        // 固定値対応のプロパティ値生成
-                        // プロパティの値を生成
-                        string propValue = GeneratePropertyValueWithFixedValues(prop, i, propConfig);
-                        if (propValue != null)
-                        {
-                            propStrings.Add($"            {prop.Name} = {propValue}");
-                        }
-                    }
-
-                    sb.AppendLine(string.Join(",\r\n", propStrings));
-                    sb.AppendLine("        }" + (i < totalRecords - 1 ? "," : ""));
-                }
-
-                sb.AppendLine("    );");
-                sb.AppendLine();
-            }
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// 全プロパティの固定値の組み合わせ数を計算して表示を更新するメソッド
-        /// </summary>
-        internal void CalculateAndUpdateTotalRecordCount()
-        {
-            int baseCount = DataCount.Value;
-            int totalCombinations = CalculateTotalCombinations();
-
-            // 基本のレコード数と組み合わせ数を掛けて総レコード数を計算
-            int totalRecords = baseCount * Math.Max(1, totalCombinations);
-
-            // UIの表示を更新
-            if (totalCombinations > 1)
-            {
-                // 組み合わせ数がある場合は、その情報を表示
-                RecordCountInfoText.Value = $"{baseCount} × {totalCombinations} = {totalRecords}件";
-                TotalRecordCount.Value = totalRecords;
-            }
-            else
-            {
-                // 組み合わせがない場合は単純に件数を表示
-                RecordCountInfoText.Value = $"{baseCount}件";
-                TotalRecordCount.Value = baseCount;
-            }
-
-            // プレビュー更新
-            UpdatePreview();
-        }
-
-        /// <summary>
-        /// プロパティ名から固定値の表示テキストを取得するメソッド
-        /// </summary>
-        public string GetFixedValuesDisplayForProperty(string propertyName)
-        {
-            if (string.IsNullOrEmpty(propertyName) || SelectedEntity.Value == null)
-                return string.Empty;
-
-            var propConfig = SelectedEntity.Value.GetPropertyConfig(propertyName);
-            if (propConfig == null || !propConfig.HasFixedValues)
-                return string.Empty;
-
-            return propConfig.GetFixedValuesDisplayText();
-        }
-
-        /// <summary>
-        /// プロパティ名から固定値リストを取得するメソッド
-        /// </summary>
-        public List<string> GetFixedValuesForProperty(string propertyName)
-        {
-            if (string.IsNullOrEmpty(propertyName) || SelectedEntity.Value == null)
-                return new List<string>();
-
-            var propConfig = SelectedEntity.Value.GetPropertyConfig(propertyName);
-            if (propConfig == null || !propConfig.HasFixedValues)
-                return new List<string>();
-
-            return propConfig.FixedValues;
-        }
-
-        /// <summary>
-        /// 全プロパティの固定値の組み合わせ総数を計算
-        /// </summary>
-        private int CalculateTotalCombinations()
-        {
-            int combinations = 1;
-
-            // アクティブなエンティティの固定値を持つプロパティを検索
-            var entity = SelectedEntity.Value;
-            if (entity != null)
-            {
-                foreach (var prop in entity.Properties)
-                {
-                    int fixedValueCount = prop.FixedValues.Count;
-                    if (fixedValueCount > 0)
-                    {
-                        combinations *= fixedValueCount;
-                    }
-                }
-            }
-            else
-            {
-                // 古いUI（単一エンティティ）のための処理
-                foreach (var prop in Properties)
-                {
-                    int fixedValueCount = prop.FixedValues.Count;
-                    if (fixedValueCount > 0)
-                    {
-                        combinations *= fixedValueCount;
-                    }
-                }
-            }
-
-            return combinations;
-        }
-
-        #region サンプル値生成メソッド
 
         /// <summary>
         /// C#のプロパティ型に応じたサンプル値を取得
@@ -3030,8 +2282,50 @@ namespace boilersExtensions.ViewModels
                     return $"Sample {attributeName}";
             }
         }
+    }
 
-        #endregion
+    /// <summary>
+    /// エンティティ関係情報を表示するためのクラス
+    /// </summary>
+    public class EntityRelationshipInfo
+    {
+        /// <summary>
+        /// 親エンティティ名
+        /// </summary>
+        public string ParentEntityName { get; set; }
+
+        /// <summary>
+        /// 子エンティティ名
+        /// </summary>
+        public string ChildEntityName { get; set; }
+
+        /// <summary>
+        /// リレーションシップの種類
+        /// </summary>
+        public string RelationshipType { get; set; }
+
+        /// <summary>
+        /// 親1件あたりの子レコード数
+        /// </summary>
+        public int RecordsPerParent { get; set; }
+
+        /// <summary>
+        /// 合計レコード数
+        /// </summary>
+        public int TotalRecords { get; set; }
+
+        /// <summary>
+        /// 表示用文字列
+        /// </summary>
+        public override string ToString()
+        {
+            if (string.IsNullOrEmpty(ChildEntityName))
+            {
+                return $"{ParentEntityName}: {TotalRecords}件";
+            }
+
+            return $"{ParentEntityName} → {ChildEntityName}: 親1件あたり{RecordsPerParent}件 (合計{TotalRecords}件)";
+        }
     }
 
     /// <summary>

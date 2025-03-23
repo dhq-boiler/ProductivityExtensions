@@ -59,8 +59,8 @@ namespace boilersExtensions.Utils
                 var entityConfig = new EntityConfigViewModel
                 {
                     EntityName = className,
-                    RecordCount = recordCount,
-                    IsSelected = true
+                    RecordCount = { Value = recordCount },
+                    IsSelected = { Value = true }
                 };
 
                 // プロパティ設定を追加

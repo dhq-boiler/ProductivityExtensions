@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using boilersExtensions.Models;
-using boilersExtensions.ViewModels;
 using static boilersExtensions.Generators.FixedValueCombinationGenerator;
 
 namespace boilersExtensions.Generators
@@ -40,9 +38,9 @@ namespace boilersExtensions.Generators
             foreach (var entity in orderedEntities)
             {
                 var entityConfig = config.GetEntityConfig(entity.Name);
-                if (entityConfig != null && entityConfig.IsSelected)
+                if (entityConfig != null && entityConfig.IsSelected.Value)
                 {
-                    entityRecordCounts[entity.Name] = entityConfig.RecordCount;
+                    entityRecordCounts[entity.Name] = entityConfig.RecordCount.Value;
                 }
             }
 
@@ -50,7 +48,7 @@ namespace boilersExtensions.Generators
             {
                 // 設定で指定された数のシードデータを生成
                 var entityConfig = config.GetEntityConfig(entity.Name);
-                if (entityConfig == null || !entityConfig.IsSelected || entityConfig.RecordCount <= 0)
+                if (entityConfig == null || !entityConfig.IsSelected.Value || entityConfig.RecordCount.Value <= 0)
                 {
                     continue;
                 }
@@ -80,7 +78,7 @@ namespace boilersExtensions.Generators
                 }
 
                 // 生成するレコード数を決定
-                int recordsToGenerate = entityConfig.RecordCount;
+                int recordsToGenerate = entityConfig.RecordCount.Value;
 
                 // 主キー値のリストを初期化
                 generatedPrimaryKeys[entity.Name] = new List<object>();
@@ -177,7 +175,7 @@ namespace boilersExtensions.Generators
             {
                 // 設定で指定された数のシードデータを生成
                 var entityConfig = config.GetEntityConfig(entity.Name);
-                if (entityConfig == null || !entityConfig.IsSelected || entityConfig.RecordCount <= 0)
+                if (entityConfig == null || !entityConfig.IsSelected.Value || entityConfig.RecordCount.Value <= 0)
                 {
                     continue;
                 }
@@ -213,7 +211,7 @@ namespace boilersExtensions.Generators
                 }
 
                 // 生成するレコード数
-                int recordsToGenerate = entityConfig.RecordCount;
+                int recordsToGenerate = entityConfig.RecordCount.Value;
 
                 // 主キー値のリストを初期化
                 generatedPrimaryKeys[entity.Name] = new List<object>();

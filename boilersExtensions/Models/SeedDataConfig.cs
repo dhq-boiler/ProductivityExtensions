@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using boilersExtensions.ViewModels;
+using Reactive.Bindings;
+using System.Reactive.Linq;
+using Reactive.Bindings.Extensions;
 
 namespace boilersExtensions.Models
 {
@@ -155,9 +159,9 @@ namespace boilersExtensions.Models
     }
 
     /// <summary>
-    /// エンティティごとの設定を保持するビューモデル
+    /// エンティティごとの設定を保持するビューモデル（改修版）
     /// </summary>
-    public class EntityConfigViewModel
+    public class EntityConfigViewModel : ViewModelBase
     {
         /// <summary>
         /// エンティティの名前
@@ -167,7 +171,37 @@ namespace boilersExtensions.Models
         /// <summary>
         /// 生成するレコード数
         /// </summary>
-        public int RecordCount { get; set; } = 10;
+        public ReactivePropertySlim<int> RecordCount { get; set; } = new ReactivePropertySlim<int>(10);
+
+        /// <summary>
+        /// 親エンティティ1件あたりの子レコード数
+        /// </summary>
+        public ReactivePropertySlim<int> RecordsPerParent { get; set; } = new ReactivePropertySlim<int>(1);
+
+        /// <summary>
+        /// 親エンティティ名（外部キー参照先）
+        /// </summary>
+        public ReactivePropertySlim<string> ParentEntityName { get; set; } = new ReactivePropertySlim<string>("");
+
+        /// <summary>
+        /// 親エンティティの設定（リンク）
+        /// </summary>
+        public ReactivePropertySlim<EntityConfigViewModel> ParentEntity { get; set; } = new ReactivePropertySlim<EntityConfigViewModel>(null);
+
+        /// <summary>
+        /// 合計レコード数（計算プロパティ）
+        /// </summary>
+        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
+
+        /// <summary>
+        /// このエンティティが親を持つかどうか
+        /// </summary>
+        public ReactivePropertySlim<bool> HasParent { get; } = new ReactivePropertySlim<bool>(false);
+
+        /// <summary>
+        /// このエンティティが親エンティティかどうか
+        /// </summary>
+        public ReactivePropertySlim<bool> IsParentEntity { get; } = new ReactivePropertySlim<bool>(false);
 
         /// <summary>
         /// プロパティごとの設定リスト
@@ -182,7 +216,45 @@ namespace boilersExtensions.Models
         /// <summary>
         /// 選択された列挙型のエンティティを生成するかどうか
         /// </summary>
-        public bool IsSelected { get; set; } = true;
+        public ReactivePropertySlim<bool> IsSelected { get; } = new ReactivePropertySlim<bool>(true);
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public EntityConfigViewModel()
+        {
+            // 親エンティティの変更を監視し、合計レコード数を更新
+            Observable.CombineLatest(
+                RecordCount,
+                RecordsPerParent,
+                ParentEntity,
+                HasParent,
+                (count, perParent, parent, hasParent) => new { count, perParent, parent, hasParent })
+                .Subscribe(x =>
+                {
+                    if (x.hasParent && x.parent != null)
+                    {
+                        // 親がある場合は「親のレコード数 × 親1件あたりの件数」
+                        TotalRecordCount.Value = x.parent.TotalRecordCount.Value * x.perParent;
+                    }
+                    else
+                    {
+                        // 親がない場合は自身のレコード数
+                        TotalRecordCount.Value = x.count;
+                    }
+                })
+                .AddTo(Disposables);
+
+            // ReactivePropertyをDisposableに追加
+            RecordCount.AddTo(Disposables);
+            RecordsPerParent.AddTo(Disposables);
+            ParentEntityName.AddTo(Disposables);
+            ParentEntity.AddTo(Disposables);
+            TotalRecordCount.AddTo(Disposables);
+            HasParent.AddTo(Disposables);
+            IsParentEntity.AddTo(Disposables);
+            IsSelected.AddTo(Disposables);
+        }
 
         /// <summary>
         /// プロパティ名から対応する設定を取得します
@@ -202,6 +274,40 @@ namespace boilersExtensions.Models
         public RelationshipConfigViewModel GetRelationshipConfig(string relatedEntityName)
         {
             return RelationshipConfigs.FirstOrDefault(r => string.Equals(r.RelatedEntityName, relatedEntityName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// リレーションシップ情報からエンティティの依存関係を設定します
+        /// </summary>
+        /// <param name="allEntities">すべてのエンティティ設定</param>
+        public void ResolveEntityRelationships(List<EntityConfigViewModel> allEntities)
+        {
+            // 自身のフィールドで外部キーを持つものを検索
+            var foreignKeyFieldNames = PropertyConfigs
+                .Where(p => p.PropertyName.EndsWith("Id") && p.PropertyName != "Id")
+                .Select(p => p.PropertyName)
+                .ToList();
+
+            foreach (var fkField in foreignKeyFieldNames)
+            {
+                // 'xxxId' から 'xxx' を取得
+                string parentEntityName = fkField.Substring(0, fkField.Length - 2);
+
+                // 対応する親エンティティを探す
+                var parentEntity = allEntities.FirstOrDefault(e => e.EntityName == parentEntityName);
+                if (parentEntity != null)
+                {
+                    // 親子関係を設定
+                    ParentEntityName.Value = parentEntityName;
+                    ParentEntity.Value = parentEntity;
+                    HasParent.Value = true;
+
+                    // 親エンティティのフラグも設定
+                    parentEntity.IsParentEntity.Value = true;
+
+                    break; // 最初の親を優先（複数の親がある場合）
+                }
+            }
         }
     }
 
