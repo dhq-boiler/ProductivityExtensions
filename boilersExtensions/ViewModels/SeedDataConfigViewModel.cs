@@ -1138,32 +1138,42 @@ namespace boilersExtensions.ViewModels
         {
             EntityRelationships.Clear();
 
-            foreach (var entity in Entities)
+            // まず親エンティティとなるエンティティを追加
+            foreach (var entity in Entities.Where(e => e.IsSelected.Value))
+            {
+                if (entity.ParentEntity.Value == null)
+                {
+                    // 親を持たないエンティティ
+                    EntityRelationships.Add(new EntityRelationshipInfo
+                    {
+                        ParentEntityName = "",
+                        ThisEntityName = entity.Name.Value,
+                        RelationshipType = "単体",
+                        RecordsPerParent = 0,
+                        TotalRecords = entity.TotalRecordCount.Value
+                    });
+                }
+            }
+
+            // 次に子エンティティを追加
+            foreach (var entity in Entities.Where(e => e.IsSelected.Value))
             {
                 if (entity.ParentEntity.Value != null)
                 {
                     var parent = entity.ParentEntity.Value;
 
-                    EntityRelationships.Add(new EntityRelationshipInfo
+                    // 親が選択されているエンティティの場合のみ追加
+                    if (parent.IsSelected.Value)
                     {
-                        ParentEntityName = parent.Name.Value,
-                        ChildEntityName = entity.Name.Value,
-                        RelationshipType = "1対多",
-                        RecordsPerParent = entity.RecordsPerParent.Value,
-                        TotalRecords = entity.TotalRecordCount.Value
-                    });
-                }
-                else
-                {
-                    // 親を持たないエンティティ
-                    EntityRelationships.Add(new EntityRelationshipInfo
-                    {
-                        ParentEntityName = entity.Name.Value,
-                        ChildEntityName = "",
-                        RelationshipType = "単体",
-                        RecordsPerParent = 0,
-                        TotalRecords = entity.TotalRecordCount.Value
-                    });
+                        EntityRelationships.Add(new EntityRelationshipInfo
+                        {
+                            ParentEntityName = parent.Name.Value,
+                            ThisEntityName = entity.Name.Value,
+                            RelationshipType = "1対多",
+                            RecordsPerParent = entity.RecordsPerParent.Value,
+                            TotalRecords = entity.TotalRecordCount.Value
+                        });
+                    }
                 }
             }
         }
@@ -2295,9 +2305,9 @@ namespace boilersExtensions.ViewModels
         public string ParentEntityName { get; set; }
 
         /// <summary>
-        /// 子エンティティ名
+        /// エンティティ名
         /// </summary>
-        public string ChildEntityName { get; set; }
+        public string ThisEntityName { get; set; }
 
         /// <summary>
         /// リレーションシップの種類
@@ -2319,12 +2329,12 @@ namespace boilersExtensions.ViewModels
         /// </summary>
         public override string ToString()
         {
-            if (string.IsNullOrEmpty(ChildEntityName))
+            if (string.IsNullOrEmpty(ThisEntityName))
             {
                 return $"{ParentEntityName}: {TotalRecords}件";
             }
 
-            return $"{ParentEntityName} → {ChildEntityName}: 親1件あたり{RecordsPerParent}件 (合計{TotalRecords}件)";
+            return $"{ParentEntityName} → {ThisEntityName}: 親1件あたり{RecordsPerParent}件 (合計{TotalRecords}件)";
         }
     }
 

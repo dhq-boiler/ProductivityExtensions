@@ -420,17 +420,17 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding ParentEntityName}" />
+                                            <TextBlock Grid.Column="0" Text="{Binding ThisEntityName}" />
 
                                             <!--  親子関係がある場合のみ表示  -->
                                             <TextBlock
                                                 Grid.Column="1"
                                                 Text=" → "
-                                                Visibility="{Binding ChildEntityName, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonEmpty}" />
+                                                Visibility="{Binding ThisEntityName, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonEmpty}" />
                                             <TextBlock
                                                 Grid.Column="2"
-                                                Text="{Binding ChildEntityName}"
-                                                Visibility="{Binding ChildEntityName, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonEmpty}" />
+                                                Text="{Binding ThisEntityName}"
+                                                Visibility="{Binding ThisEntityName, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonEmpty}" />
 
                                             <TextBlock
                                                 Grid.Column="3"
