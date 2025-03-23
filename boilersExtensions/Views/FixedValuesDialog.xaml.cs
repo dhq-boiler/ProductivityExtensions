@@ -1,25 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace boilersExtensions.Dialogs
 {
     /// <summary>
-    /// 固定値編集ダイアログ
+    ///     固定値編集ダイアログ
     /// </summary>
     public partial class FixedValuesDialog : Window
     {
+        public FixedValuesDialog()
+        {
+            InitializeComponent();
+            DataContext = this;
+        }
+
         public string PropertyName { get; set; }
         public string FixedValuesText { get; set; }
         public List<string> FixedValues { get; private set; }
 
-        public FixedValuesDialog()
-        {
-            InitializeComponent();
-            this.DataContext = this;
-        }
-
         /// <summary>
-        /// 固定値を設定
+        ///     固定値を設定
         /// </summary>
         public void SetFixedValues(string propertyName, IEnumerable<string> values)
         {
@@ -28,7 +29,7 @@ namespace boilersExtensions.Dialogs
         }
 
         /// <summary>
-        /// OKボタン押下時の処理
+        ///     OKボタン押下時の処理
         /// </summary>
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
@@ -36,10 +37,10 @@ namespace boilersExtensions.Dialogs
             FixedValues = new List<string>();
             if (!string.IsNullOrEmpty(FixedValuesText))
             {
-                string[] lines = FixedValuesText.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries);
+                var lines = FixedValuesText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var line in lines)
                 {
-                    string trimmedLine = line.Trim();
+                    var trimmedLine = line.Trim();
                     if (!string.IsNullOrEmpty(trimmedLine))
                     {
                         FixedValues.Add(trimmedLine);
@@ -52,7 +53,7 @@ namespace boilersExtensions.Dialogs
         }
 
         /// <summary>
-        /// キャンセルボタン押下時の処理
+        ///     キャンセルボタン押下時の処理
         /// </summary>
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {

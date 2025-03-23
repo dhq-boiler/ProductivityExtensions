@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using boilersExtensions.Models;
-using static boilersExtensions.Generators.FixedValueCombinationGenerator;
 
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// 親子関係を考慮した改良版シードデータ生成クラス
+    ///     親子関係を考慮した改良版シードデータ生成クラス
     /// </summary>
     public class EnhancedRelationalSeedDataGenerator : EnhancedSeedDataGenerator
     {
         /// <summary>
-        /// 親子関係を考慮してシードデータを生成します
+        ///     親子関係を考慮してシードデータを生成します
         /// </summary>
         public string GenerateSeedDataWithRelationships(List<EntityInfo> entities, SeedDataConfig config)
         {
@@ -31,16 +30,18 @@ namespace boilersExtensions.Generators
             var generatedKeys = new Dictionary<string, List<object>>();
 
             // まず親エンティティを処理
-            for (int i = 0; i < orderedEntities.Count; i++)
+            for (var i = 0; i < orderedEntities.Count; i++)
             {
                 var entity = orderedEntities[i];
                 var entityConfig = config.GetEntityConfig(entity.Name);
 
                 if (entityConfig == null || !entityConfig.IsSelected.Value)
+                {
                     continue;
+                }
 
                 // 親エンティティを持つかどうか
-                bool hasParent = entityConfig.HasParent.Value && entityConfig.ParentEntity.Value != null;
+                var hasParent = entityConfig.HasParent.Value && entityConfig.ParentEntity.Value != null;
 
                 sb.AppendLine($"        // {entity.Name} エンティティのシードデータ");
                 sb.AppendLine($"        modelBuilder.Entity<{entity.Name}>().HasData(");
@@ -62,8 +63,8 @@ namespace boilersExtensions.Generators
                     }
 
                     // 「親の件数 × 親1件あたりの件数」を計算
-                    int parentRecordCount = generatedKeys[parentEntityName].Count;
-                    int recordsPerParent = entityConfig.RecordsPerParent.Value;
+                    var parentRecordCount = generatedKeys[parentEntityName].Count;
+                    var recordsPerParent = entityConfig.RecordsPerParent.Value;
                     recordsToGenerate = parentRecordCount * recordsPerParent;
                 }
                 else
@@ -76,7 +77,7 @@ namespace boilersExtensions.Generators
                 generatedKeys[entity.Name] = new List<object>();
 
                 // 各レコードを生成
-                for (int recordIndex = 0; recordIndex < recordsToGenerate; recordIndex++)
+                for (var recordIndex = 0; recordIndex < recordsToGenerate; recordIndex++)
                 {
                     sb.AppendLine($"            new {entity.Name}");
                     sb.AppendLine("            {");
@@ -87,15 +88,21 @@ namespace boilersExtensions.Generators
                     {
                         // シードデータから除外するプロパティはスキップ
                         if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                        {
                             continue;
+                        }
 
                         // EqualityContract プロパティはスキップ (record型で自動生成される)
                         if (prop.Name == "EqualityContract")
+                        {
                             continue;
+                        }
 
                         // 読み取り専用プロパティはスキップ
                         if (prop.Symbol != null && prop.Symbol.SetMethod == null)
+                        {
                             continue;
+                        }
 
                         // 外部キープロパティの場合、親エンティティの主キー値を参照
                         if (prop.IsForeignKey && hasParent &&
@@ -105,8 +112,8 @@ namespace boilersExtensions.Generators
                             var parentKeys = generatedKeys[prop.ForeignKeyTargetEntity];
 
                             // 親レコードを特定（均等に分配）
-                            int recordsPerParent = entityConfig.RecordsPerParent.Value;
-                            int parentIndex = recordIndex / recordsPerParent;
+                            var recordsPerParent = entityConfig.RecordsPerParent.Value;
+                            var parentIndex = recordIndex / recordsPerParent;
 
                             // インデックスの範囲チェック
                             if (parentIndex < parentKeys.Count)
@@ -140,7 +147,7 @@ namespace boilersExtensions.Generators
                             if (prop.TypeName == "Guid" || prop.TypeName.Contains("Guid"))
                             {
                                 // Guid型の場合は決定論的なGUIDを生成
-                                string guidString = GenerateDeterministicGuid(entity.Name, recordIndex);
+                                var guidString = GenerateDeterministicGuid(entity.Name, recordIndex);
                                 keyValue = $"new Guid(\"{guidString}\")";
                                 generatedKeys[entity.Name].Add(guidString);
                             }
@@ -148,7 +155,7 @@ namespace boilersExtensions.Generators
                                      prop.TypeName == "Int64" || prop.TypeName == "Long")
                             {
                                 // 整数型の場合はインデックス+1を使用
-                                int intKey = recordIndex + 1;
+                                var intKey = recordIndex + 1;
                                 keyValue = intKey.ToString();
                                 generatedKeys[entity.Name].Add(intKey);
                             }
@@ -164,7 +171,7 @@ namespace boilersExtensions.Generators
                         }
 
                         // その他のプロパティは通常生成
-                        string propValue = GeneratePropertyValue(prop, recordIndex, entityConfig);
+                        var propValue = GeneratePropertyValue(prop, recordIndex, entityConfig);
                         if (propValue != null)
                         {
                             propStrings.Add($"                {prop.Name} = {propValue}");
@@ -183,18 +190,18 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 決定論的なGUIDを生成します
+        ///     決定論的なGUIDを生成します
         /// </summary>
         private string GenerateDeterministicGuid(string prefix, int index)
         {
             // シード文字列を作成
-            string seedString = $"{prefix}_{index}_{DateTime.Now.Ticks}";
+            var seedString = $"{prefix}_{index}_{DateTime.Now.Ticks}";
 
             // MD5ハッシュを使用（SHA256なども使用可能）
-            using (var md5 = System.Security.Cryptography.MD5.Create())
+            using (var md5 = MD5.Create())
             {
-                byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(seedString);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                var inputBytes = Encoding.UTF8.GetBytes(seedString);
+                var hashBytes = md5.ComputeHash(inputBytes);
 
                 // GUID形式で返す
                 return new Guid(hashBytes).ToString();

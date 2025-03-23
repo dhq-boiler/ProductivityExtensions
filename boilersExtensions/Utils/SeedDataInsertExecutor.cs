@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using boilersExtensions.Generators;
 using boilersExtensions.Models;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 
 namespace boilersExtensions.Utils
 {
     /// <summary>
-    /// シードデータを各種ファイルに挿入するユーティリティクラス
+    ///     シードデータを各種ファイルに挿入するユーティリティクラス
     /// </summary>
     public class SeedDataInsertExecutor
     {
@@ -23,7 +22,7 @@ namespace boilersExtensions.Utils
         private readonly SeedDataGenerator _seedGenerator;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public SeedDataInsertExecutor(AsyncPackage package)
         {
@@ -33,10 +32,10 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// C#クラスにシードデータメソッドを挿入します
+        ///     C#クラスにシードデータメソッドを挿入します
         /// </summary>
         public async Task<bool> InsertSeedMethodToCSharpClassAsync(
-            EnvDTE.Document document,
+            Document document,
             string className,
             List<PropertyInfo> properties,
             int recordCount)
@@ -46,11 +45,7 @@ namespace boilersExtensions.Utils
             try
             {
                 // EntityInfoを作成
-                var entityInfo = new EntityInfo
-                {
-                    Name = className,
-                    Properties = properties
-                };
+                var entityInfo = new EntityInfo { Name = className, Properties = properties };
 
                 // SeedDataConfig作成
                 var config = new SeedDataConfig();
@@ -58,9 +53,7 @@ namespace boilersExtensions.Utils
                 // EntityConfigを設定
                 var entityConfig = new EntityConfigViewModel
                 {
-                    EntityName = className,
-                    RecordCount = { Value = recordCount },
-                    IsSelected = { Value = true }
+                    EntityName = className, RecordCount = { Value = recordCount }, IsSelected = { Value = true }
                 };
 
                 // プロパティ設定を追加
@@ -68,8 +61,7 @@ namespace boilersExtensions.Utils
                 {
                     var propConfig = new PropertyConfigViewModel
                     {
-                        PropertyName = prop.Name,
-                        PropertyTypeName = prop.TypeName
+                        PropertyName = prop.Name, PropertyTypeName = prop.TypeName
                     };
 
                     entityConfig.PropertyConfigs.Add(propConfig);
@@ -92,16 +84,17 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 生成されたコードをドキュメントに挿入します
+        ///     生成されたコードをドキュメントに挿入します
         /// </summary>
-        internal async Task<bool> InsertGeneratedCodeToDocument(EnvDTE.Document document, string className, string generatedCode)
+        internal async Task<bool> InsertGeneratedCodeToDocument(Document document, string className,
+            string generatedCode)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             try
             {
                 // ドキュメントオブジェクトをTextDocumentに変換
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
+                var textDocument = document.Object("TextDocument") as TextDocument;
                 if (textDocument == null)
                 {
                     Debug.WriteLine("TextDocument is null");
@@ -113,7 +106,8 @@ namespace boilersExtensions.Utils
                 var documentText = editPoint.GetText(textDocument.EndPoint);
 
                 // クラス定義を正規表現で検索
-                var classRegex = new Regex($@"(class|record)\s+{className}(?:\s*:\s*\w+(?:<.*>)?(?:\s*,\s*\w+(?:<.*>)?)*)??\s*\{{");
+                var classRegex =
+                    new Regex($@"(class|record)\s+{className}(?:\s*:\s*\w+(?:<.*>)?(?:\s*,\s*\w+(?:<.*>)?)*)??\s*\{{");
                 var classMatch = classRegex.Match(documentText);
                 if (!classMatch.Success)
                 {
@@ -126,11 +120,14 @@ namespace boilersExtensions.Utils
                 var remainingText = documentText.Substring(classStartPos);
 
                 // 括弧の深さを追跡して正しい閉じ括弧を見つける
-                int depth = 1;
-                int closePos = -1;
-                for (int i = 0; i < remainingText.Length; i++)
+                var depth = 1;
+                var closePos = -1;
+                for (var i = 0; i < remainingText.Length; i++)
                 {
-                    if (remainingText[i] == '{') depth++;
+                    if (remainingText[i] == '{')
+                    {
+                        depth++;
+                    }
                     else if (remainingText[i] == '}')
                     {
                         depth--;
@@ -152,9 +149,9 @@ namespace boilersExtensions.Utils
                 var insertPos = classStartPos + closePos;
 
                 // オフセットから行と列位置を計算
-                int line = 1;
-                int column = 1;
-                for (int i = 0; i < insertPos; i++)
+                var line = 1;
+                var column = 1;
+                for (var i = 0; i < insertPos; i++)
                 {
                     if (documentText[i] == '\n')
                     {
@@ -169,11 +166,12 @@ namespace boilersExtensions.Utils
 
                 // 行と列位置を使用して移動
                 var insertPoint = textDocument.CreateEditPoint();
-                insertPoint.LineDown(line - 1);  // 行に移動
+                insertPoint.LineDown(line - 1); // 行に移動
                 insertPoint.CharRight(column - 1); // 列に移動
 
                 // GenerateSeedDataメソッドを挿入
-                string methodCode = "\n\n    public static void GenerateSeedData(ModelBuilder modelBuilder)\n    {\n" + generatedCode + "\n    }\n";
+                var methodCode = "\n\n    public static void GenerateSeedData(ModelBuilder modelBuilder)\n    {\n" +
+                                 generatedCode + "\n    }\n";
                 insertPoint.Insert(methodCode);
 
                 return true;
@@ -186,10 +184,10 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// JSONファイルにシードデータを挿入します
+        ///     JSONファイルにシードデータを挿入します
         /// </summary>
         public async Task<bool> InsertSeedDataToJsonFileAsync(
-            EnvDTE.Document document,
+            Document document,
             List<string> propertyNames,
             int recordCount)
         {
@@ -197,8 +195,11 @@ namespace boilersExtensions.Utils
 
             try
             {
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
-                if (textDocument == null) return false;
+                var textDocument = document.Object("TextDocument") as TextDocument;
+                if (textDocument == null)
+                {
+                    return false;
+                }
 
                 var editPoint = textDocument.StartPoint.CreateEditPoint();
                 var documentText = editPoint.GetText(textDocument.EndPoint);
@@ -207,13 +208,13 @@ namespace boilersExtensions.Utils
                 var jsonBuilder = new StringBuilder();
                 jsonBuilder.AppendLine("[");
 
-                for (int i = 0; i < recordCount; i++)
+                for (var i = 0; i < recordCount; i++)
                 {
                     jsonBuilder.AppendLine("  {");
-                    for (int j = 0; j < propertyNames.Count; j++)
+                    for (var j = 0; j < propertyNames.Count; j++)
                     {
                         var propName = propertyNames[j];
-                        string value = GetJsonValueByPropertyName(propName, i);
+                        var value = GetJsonValueByPropertyName(propName, i);
 
                         if (j < propertyNames.Count - 1)
                         {
@@ -251,10 +252,10 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// CSVファイルにシードデータを挿入します
+        ///     CSVファイルにシードデータを挿入します
         /// </summary>
         public async Task<bool> InsertSeedDataToCsvFileAsync(
-            EnvDTE.Document document,
+            Document document,
             List<string> headers,
             int recordCount)
         {
@@ -262,8 +263,11 @@ namespace boilersExtensions.Utils
 
             try
             {
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
-                if (textDocument == null) return false;
+                var textDocument = document.Object("TextDocument") as TextDocument;
+                if (textDocument == null)
+                {
+                    return false;
+                }
 
                 var editPoint = textDocument.StartPoint.CreateEditPoint();
                 var documentText = editPoint.GetText(textDocument.EndPoint);
@@ -275,13 +279,14 @@ namespace boilersExtensions.Utils
                 csvBuilder.AppendLine(string.Join(",", headers));
 
                 // データ行
-                for (int i = 0; i < recordCount; i++)
+                for (var i = 0; i < recordCount; i++)
                 {
                     var values = new List<string>();
                     foreach (var header in headers)
                     {
                         values.Add(GetCsvValueByPropertyName(header, i));
                     }
+
                     csvBuilder.AppendLine(string.Join(",", values));
                 }
 
@@ -299,10 +304,10 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// SQLファイルにシードデータを挿入します
+        ///     SQLファイルにシードデータを挿入します
         /// </summary>
         public async Task<bool> InsertSeedDataToSqlFileAsync(
-            EnvDTE.Document document,
+            Document document,
             string tableName,
             List<(string Name, string Type)> columns,
             int recordCount)
@@ -311,8 +316,11 @@ namespace boilersExtensions.Utils
 
             try
             {
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
-                if (textDocument == null) return false;
+                var textDocument = document.Object("TextDocument") as TextDocument;
+                if (textDocument == null)
+                {
+                    return false;
+                }
 
                 var editPoint = textDocument.StartPoint.CreateEditPoint();
                 var documentText = editPoint.GetText(textDocument.EndPoint);
@@ -326,18 +334,18 @@ namespace boilersExtensions.Utils
                 sqlBuilder.AppendLine();
 
                 // カラム名のリスト
-                string columnNames = string.Join(", ", columns.Select(c => c.Name));
+                var columnNames = string.Join(", ", columns.Select(c => c.Name));
 
-                for (int i = 0; i < recordCount; i++)
+                for (var i = 0; i < recordCount; i++)
                 {
                     var values = new List<string>();
                     foreach (var (name, type) in columns)
                     {
-                        string value = GetSqlValueByPropertyNameAndType(name, type, i);
+                        var value = GetSqlValueByPropertyNameAndType(name, type, i);
                         values.Add(value);
                     }
 
-                    string valueList = string.Join(", ", values);
+                    var valueList = string.Join(", ", values);
                     sqlBuilder.AppendLine($"INSERT INTO {tableName} ({columnNames}) VALUES ({valueList});");
                 }
 
@@ -358,10 +366,10 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// XMLファイルにシードデータを挿入します
+        ///     XMLファイルにシードデータを挿入します
         /// </summary>
         public async Task<bool> InsertSeedDataToXmlFileAsync(
-            EnvDTE.Document document,
+            Document document,
             string rootElement,
             string itemElement,
             List<string> attributes,
@@ -371,8 +379,11 @@ namespace boilersExtensions.Utils
 
             try
             {
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
-                if (textDocument == null) return false;
+                var textDocument = document.Object("TextDocument") as TextDocument;
+                if (textDocument == null)
+                {
+                    return false;
+                }
 
                 var editPoint = textDocument.StartPoint.CreateEditPoint();
                 var documentText = editPoint.GetText(textDocument.EndPoint);
@@ -382,13 +393,13 @@ namespace boilersExtensions.Utils
                 xmlBuilder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 xmlBuilder.AppendLine($"<{rootElement}>");
 
-                for (int i = 0; i < recordCount; i++)
+                for (var i = 0; i < recordCount; i++)
                 {
                     xmlBuilder.Append($"  <{itemElement}");
 
                     foreach (var attrName in attributes)
                     {
-                        string value = GetXmlValueByPropertyName(attrName, i);
+                        var value = GetXmlValueByPropertyName(attrName, i);
                         xmlBuilder.Append($" {attrName}=\"{value}\"");
                     }
 
@@ -420,30 +431,33 @@ namespace boilersExtensions.Utils
             {
                 return (index + 1).ToString();
             }
-            else if (propName.Contains("name"))
+
+            if (propName.Contains("name"))
             {
                 return $"\"{_randomDataProvider.GetRandomPersonName()} {index + 1}\"";
             }
-            else if (propName.Contains("email"))
+
+            if (propName.Contains("email"))
             {
                 return $"\"user{index + 1}@example.com\"";
             }
-            else if (propName.Contains("date") || propName.Contains("time"))
+
+            if (propName.Contains("date") || propName.Contains("time"))
             {
                 return $"\"{DateTime.Now.AddDays(-index).ToString("yyyy-MM-dd")}\"";
             }
-            else if (propName.Contains("bool") || propName.Contains("is") || propName == "active" || propName == "enabled")
+
+            if (propName.Contains("bool") || propName.Contains("is") || propName == "active" || propName == "enabled")
             {
                 return index % 2 == 0 ? "true" : "false";
             }
-            else if (propName.Contains("price") || propName.Contains("amount") || propName.Contains("cost"))
+
+            if (propName.Contains("price") || propName.Contains("amount") || propName.Contains("cost"))
             {
-                return Math.Round(9.99 + index * 10.0, 2).ToString();
+                return Math.Round(9.99 + (index * 10.0), 2).ToString();
             }
-            else
-            {
-                return $"\"Value {propName} {index + 1}\"";
-            }
+
+            return $"\"Value {propName} {index + 1}\"";
         }
 
         private string GetCsvValueByPropertyName(string header, int index)
@@ -454,31 +468,34 @@ namespace boilersExtensions.Utils
             {
                 return (index + 1).ToString();
             }
-            else if (header.Contains("name"))
+
+            if (header.Contains("name"))
             {
                 // CSVではカンマを含む可能性があるため、ダブルクォートで囲む
                 return $"\"{_randomDataProvider.GetRandomPersonName()} {index + 1}\"";
             }
-            else if (header.Contains("email"))
+
+            if (header.Contains("email"))
             {
                 return $"user{index + 1}@example.com";
             }
-            else if (header.Contains("date") || header.Contains("time"))
+
+            if (header.Contains("date") || header.Contains("time"))
             {
                 return DateTime.Now.AddDays(-index).ToString("yyyy-MM-dd");
             }
-            else if (header.Contains("bool") || header.Contains("is") || header == "active" || header == "enabled")
+
+            if (header.Contains("bool") || header.Contains("is") || header == "active" || header == "enabled")
             {
                 return index % 2 == 0 ? "true" : "false";
             }
-            else if (header.Contains("price") || header.Contains("amount") || header.Contains("cost"))
+
+            if (header.Contains("price") || header.Contains("amount") || header.Contains("cost"))
             {
-                return Math.Round(9.99 + index * 10.0, 2).ToString();
+                return Math.Round(9.99 + (index * 10.0), 2).ToString();
             }
-            else
-            {
-                return $"Value {header} {index + 1}";
-            }
+
+            return $"Value {header} {index + 1}";
         }
 
         private string GetSqlValueByPropertyNameAndType(string columnName, string typeName, int index)
@@ -490,41 +507,44 @@ namespace boilersExtensions.Utils
             {
                 return (index + 1).ToString();
             }
-            else if (typeName.Contains("varchar") || typeName.Contains("text") || typeName.Contains("char"))
+
+            if (typeName.Contains("varchar") || typeName.Contains("text") || typeName.Contains("char"))
             {
                 if (columnName.Contains("name"))
                 {
                     return $"'{_randomDataProvider.GetRandomPersonName()} {index + 1}'";
                 }
-                else if (columnName.Contains("email"))
+
+                if (columnName.Contains("email"))
                 {
                     return $"'user{index + 1}@example.com'";
                 }
-                else
-                {
-                    return $"'Value {columnName} {index + 1}'";
-                }
+
+                return $"'Value {columnName} {index + 1}'";
             }
-            else if (typeName.Contains("date") || typeName.Contains("time"))
+
+            if (typeName.Contains("date") || typeName.Contains("time"))
             {
                 return $"'{DateTime.Now.AddDays(-index).ToString("yyyy-MM-dd")}'";
             }
-            else if (typeName.Contains("bool") || typeName.Contains("bit"))
+
+            if (typeName.Contains("bool") || typeName.Contains("bit"))
             {
                 return index % 2 == 0 ? "1" : "0";
             }
-            else if (typeName.Contains("int"))
+
+            if (typeName.Contains("int"))
             {
-                return (10 + index * 5).ToString();
+                return (10 + (index * 5)).ToString();
             }
-            else if (typeName.Contains("decimal") || typeName.Contains("numeric") || typeName.Contains("float") || typeName.Contains("real"))
+
+            if (typeName.Contains("decimal") || typeName.Contains("numeric") || typeName.Contains("float") ||
+                typeName.Contains("real"))
             {
-                return Math.Round(9.99 + index * 10.0, 2).ToString();
+                return Math.Round(9.99 + (index * 10.0), 2).ToString();
             }
-            else
-            {
-                return $"'{columnName}_{index + 1}'";
-            }
+
+            return $"'{columnName}_{index + 1}'";
         }
 
         private string GetXmlValueByPropertyName(string attributeName, int index)
@@ -535,30 +555,34 @@ namespace boilersExtensions.Utils
             {
                 return (index + 1).ToString();
             }
-            else if (attributeName.Contains("name"))
+
+            if (attributeName.Contains("name"))
             {
                 return _randomDataProvider.GetRandomPersonName() + " " + (index + 1);
             }
-            else if (attributeName.Contains("email"))
+
+            if (attributeName.Contains("email"))
             {
                 return $"user{index + 1}@example.com";
             }
-            else if (attributeName.Contains("date") || attributeName.Contains("time"))
+
+            if (attributeName.Contains("date") || attributeName.Contains("time"))
             {
                 return DateTime.Now.AddDays(-index).ToString("yyyy-MM-dd");
             }
-            else if (attributeName.Contains("bool") || attributeName.Contains("is") || attributeName == "active" || attributeName == "enabled")
+
+            if (attributeName.Contains("bool") || attributeName.Contains("is") || attributeName == "active" ||
+                attributeName == "enabled")
             {
                 return index % 2 == 0 ? "true" : "false";
             }
-            else if (attributeName.Contains("price") || attributeName.Contains("amount") || attributeName.Contains("cost"))
+
+            if (attributeName.Contains("price") || attributeName.Contains("amount") || attributeName.Contains("cost"))
             {
-                return Math.Round(9.99 + index * 10.0, 2).ToString();
+                return Math.Round(9.99 + (index * 10.0), 2).ToString();
             }
-            else
-            {
-                return $"Value {attributeName} {index + 1}";
-            }
+
+            return $"Value {attributeName} {index + 1}";
         }
 
         #endregion

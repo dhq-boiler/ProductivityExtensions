@@ -6,7 +6,7 @@ using boilersExtensions.Models;
 namespace boilersExtensions.Converters
 {
     /// <summary>
-    /// EntityViewModelとプロパティ名からPropertyConfigの固定値表示テキストを取得するコンバーター
+    ///     EntityViewModelとプロパティ名からPropertyConfigの固定値表示テキストを取得するコンバーター
     /// </summary>
     public class PropertyConfigConverter : IValueConverter
     {
@@ -24,9 +24,7 @@ namespace boilersExtensions.Converters
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
             throw new NotImplementedException();
-        }
     }
 }

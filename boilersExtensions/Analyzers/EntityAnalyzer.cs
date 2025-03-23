@@ -8,28 +8,28 @@ using boilersExtensions.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.FindSymbols;
 
 namespace boilersExtensions.Analyzers
 {
     /// <summary>
-    /// Entity Frameworkのエンティティクラスを解析するクラス
+    ///     Entity Frameworkのエンティティクラスを解析するクラス
     /// </summary>
     public class EntityAnalyzer
     {
-        // 解析済みエンティティのキャッシュ
-        private readonly Dictionary<string, EntityInfo> _entityCache = new Dictionary<string, EntityInfo>();
-
         // DbContextクラス名の一般的なサフィックス
         private static readonly string[] DbContextSuffixes = { "DbContext", "Context", "DataContext" };
 
+        // 解析済みエンティティのキャッシュ
+        private readonly Dictionary<string, EntityInfo> _entityCache = new Dictionary<string, EntityInfo>();
+
         /// <summary>
-        /// ドキュメント内のすべてのエンティティクラスを解析します
+        ///     ドキュメント内のすべてのエンティティクラスを解析します
         /// </summary>
         /// <param name="document">解析対象のドキュメント</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>検出されたエンティティ情報のリスト</returns>
-        public async Task<List<EntityInfo>> AnalyzeEntitiesAsync(Document document, CancellationToken cancellationToken = default)
+        public async Task<List<EntityInfo>> AnalyzeEntitiesAsync(Document document,
+            CancellationToken cancellationToken = default)
         {
             var result = new List<EntityInfo>();
             // ファイルパスをキャッシュキーとして使用
@@ -57,7 +57,7 @@ namespace boilersExtensions.Analyzers
 
             foreach (var typeDecl in typeDeclarations)
             {
-                var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl) as INamedTypeSymbol;
+                var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl);
                 if (typeSymbol == null)
                 {
                     continue;
@@ -67,7 +67,8 @@ namespace boilersExtensions.Analyzers
                 if (await IsEntityClass(document, typeSymbol))
                 {
                     // エンティティ情報を抽出
-                    var entityInfo = await ExtractEntityInfoAsync(typeSymbol, typeDecl, document, semanticModel, cancellationToken);
+                    var entityInfo = await ExtractEntityInfoAsync(typeSymbol, typeDecl, document, semanticModel,
+                        cancellationToken);
                     if (entityInfo != null)
                     {
                         result.Add(entityInfo);
@@ -84,12 +85,13 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// 解析対象のソリューション内でDbContextクラスを検索します
+        ///     解析対象のソリューション内でDbContextクラスを検索します
         /// </summary>
         /// <param name="solution">解析対象のソリューション</param>
         /// <param name="cancellationToken">キャンセルトークン</param>
         /// <returns>DbContextクラスの情報</returns>
-        public async Task<List<DbContextInfo>> FindDbContextsInSolutionAsync(Solution solution, CancellationToken cancellationToken = default)
+        public async Task<List<DbContextInfo>> FindDbContextsInSolutionAsync(Solution solution,
+            CancellationToken cancellationToken = default)
         {
             var result = new List<DbContextInfo>();
 
@@ -123,7 +125,7 @@ namespace boilersExtensions.Analyzers
                     foreach (var classDecl in classDeclarations)
                     {
                         // クラスシンボルを取得
-                        var classSymbol = semanticModel.GetDeclaredSymbol(classDecl) as INamedTypeSymbol;
+                        var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
                         if (classSymbol == null)
                         {
                             continue;
@@ -147,7 +149,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// クラスシンボルからエンティティ情報を抽出します（基底クラスのプロパティも含む）
+        ///     クラスシンボルからエンティティ情報を抽出します（基底クラスのプロパティも含む）
         /// </summary>
         private async Task<EntityInfo> ExtractEntityInfoAsync(
             INamedTypeSymbol typeSymbol,
@@ -175,19 +177,21 @@ namespace boilersExtensions.Analyzers
             }
 
             // プロパティを抽出（基底クラスも含めて再帰的に）
-            await ExtractPropertiesRecursivelyAsync(entityInfo, typeSymbol, semanticModel, new HashSet<string>(), cancellationToken);
+            await ExtractPropertiesRecursivelyAsync(entityInfo, typeSymbol, semanticModel, new HashSet<string>(),
+                cancellationToken);
 
             // リレーションシップを抽出
             await ExtractRelationshipsAsync(entityInfo, typeSymbol, semanticModel, cancellationToken);
 
             // DbSetプロパティ名を検索（親DbContextから）
-            entityInfo.DbSetName = await FindDbSetPropertyNameAsync(typeSymbol, document.Project.Solution, cancellationToken);
+            entityInfo.DbSetName =
+                await FindDbSetPropertyNameAsync(typeSymbol, document.Project.Solution, cancellationToken);
 
             return entityInfo;
         }
 
         /// <summary>
-        /// 再帰的にクラス階層からプロパティを抽出します
+        ///     再帰的にクラス階層からプロパティを抽出します
         /// </summary>
         private async Task ExtractPropertiesRecursivelyAsync(
             EntityInfo entityInfo,
@@ -261,7 +265,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティシンボルからプロパティ情報を抽出します
+        ///     プロパティシンボルからプロパティ情報を抽出します
         /// </summary>
         private PropertyInfo ExtractPropertyInfo(IPropertySymbol propertySymbol, SemanticModel semanticModel)
         {
@@ -293,14 +297,14 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティが主キーかどうかを判定します
+        ///     プロパティが主キーかどうかを判定します
         /// </summary>
         private void SetKeyInfo(PropertyInfo propertyInfo, IPropertySymbol propertySymbol)
         {
             // Key属性があるか確認
             propertyInfo.IsKey = HasAttribute(propertySymbol, "Key") ||
-                                  propertySymbol.Name == "Id" ||
-                                  propertySymbol.Name == $"{propertySymbol.ContainingType.Name}Id";
+                                 propertySymbol.Name == "Id" ||
+                                 propertySymbol.Name == $"{propertySymbol.ContainingType.Name}Id";
 
             // 主キーのAutoGeneratedの設定
             if (propertyInfo.IsKey)
@@ -323,7 +327,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティの型情報を設定します
+        ///     プロパティの型情報を設定します
         /// </summary>
         private void SetPropertyTypeInfo(PropertyInfo propertyInfo, IPropertySymbol propertySymbol)
         {
@@ -359,11 +363,11 @@ namespace boilersExtensions.Analyzers
 
             // システム型かどうか
             propertyInfo.IsSystemType = propertySymbol.Type.ContainingNamespace?.ToDisplayString()
-                                       .StartsWith("System") == true;
+                .StartsWith("System") == true;
         }
 
         /// <summary>
-        /// プロパティが外部キーかどうかを判定し、情報を設定します
+        ///     プロパティが外部キーかどうかを判定し、情報を設定します
         /// </summary>
         private void SetForeignKeyInfo(PropertyInfo propertyInfo, IPropertySymbol propertySymbol)
         {
@@ -404,7 +408,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティが必須かどうかを判定します
+        ///     プロパティが必須かどうかを判定します
         /// </summary>
         private bool IsRequired(IPropertySymbol propertySymbol)
         {
@@ -421,7 +425,8 @@ namespace boilersExtensions.Analyzers
             }
 
             // 非Nullable参照型は必須（C# 8.0以降の機能）
-            if (!propertySymbol.Type.IsValueType && propertySymbol.NullableAnnotation == NullableAnnotation.NotAnnotated)
+            if (!propertySymbol.Type.IsValueType &&
+                propertySymbol.NullableAnnotation == NullableAnnotation.NotAnnotated)
             {
                 return true;
             }
@@ -430,15 +435,14 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// 型がNullable型かどうかを判定します
+        ///     型がNullable型かどうかを判定します
         /// </summary>
-        private bool IsNullableType(ITypeSymbol type)
-        {
-            return type.Name == "Nullable" && type is INamedTypeSymbol namedType && namedType.TypeArguments.Length > 0;
-        }
+        private bool IsNullableType(ITypeSymbol type) => type.Name == "Nullable" &&
+                                                         type is INamedTypeSymbol namedType &&
+                                                         namedType.TypeArguments.Length > 0;
 
         /// <summary>
-        /// プロパティの属性情報を抽出します
+        ///     プロパティの属性情報を抽出します
         /// </summary>
         private void ExtractAttributeInfo(PropertyInfo propertyInfo, IPropertySymbol propertySymbol)
         {
@@ -519,7 +523,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// シンボルが特定の属性を持つかどうかを確認します
+        ///     シンボルが特定の属性を持つかどうかを確認します
         /// </summary>
         private bool HasAttribute(ISymbol symbol, string attributeName)
         {
@@ -529,7 +533,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// Enum型の値を抽出します
+        ///     Enum型の値を抽出します
         /// </summary>
         private void ExtractEnumValues(PropertyInfo propertyInfo, INamedTypeSymbol enumType)
         {
@@ -543,8 +547,7 @@ namespace boilersExtensions.Analyzers
                 {
                     var enumValueInfo = new EnumValueInfo
                     {
-                        Name = member.Name,
-                        Value = Convert.ToInt32(member.ConstantValue)
+                        Name = member.Name, Value = Convert.ToInt32(member.ConstantValue)
                     };
 
                     // Description属性があれば取得
@@ -566,11 +569,11 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// エンティティのテーブル名を取得します
+        ///     エンティティのテーブル名を取得します
         /// </summary>
         private string GetTableName(INamedTypeSymbol typeSymbol)
         {
-            string tableName = typeSymbol.Name;
+            var tableName = typeSymbol.Name;
 
             // Table属性を検索
             foreach (var attribute in typeSymbol.GetAttributes())
@@ -588,7 +591,7 @@ namespace boilersExtensions.Analyzers
                     if (attribute.NamedArguments.Any(na => na.Key == "Schema"))
                     {
                         var schemaArg = attribute.NamedArguments.First(na => na.Key == "Schema");
-                        string schema = schemaArg.Value.Value?.ToString();
+                        var schema = schemaArg.Value.Value?.ToString();
 
                         if (!string.IsNullOrEmpty(schema))
                         {
@@ -604,7 +607,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// エンティティ間のリレーションシップを抽出します
+        ///     エンティティ間のリレーションシップを抽出します
         /// </summary>
         private async Task ExtractRelationshipsAsync(
             EntityInfo entityInfo,
@@ -620,8 +623,7 @@ namespace boilersExtensions.Analyzers
             {
                 var relationship = new RelationshipInfo
                 {
-                    SourceEntityName = entityInfo.Name,
-                    SourceNavigationPropertyName = navProp.Name
+                    SourceEntityName = entityInfo.Name, SourceNavigationPropertyName = navProp.Name
                 };
 
                 // 1対多または多対多のリレーションシップ
@@ -678,7 +680,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// 対応する逆方向のナビゲーションプロパティを検索します
+        ///     対応する逆方向のナビゲーションプロパティを検索します
         /// </summary>
         private async Task<IPropertySymbol> FindInverseNavigationPropertyAsync(
             INamedTypeSymbol sourceClass,
@@ -744,7 +746,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// ナビゲーションプロパティに関連する外部キープロパティを検索します
+        ///     ナビゲーションプロパティに関連する外部キープロパティを検索します
         /// </summary>
         private IPropertySymbol FindForeignKeyProperty(INamedTypeSymbol classSymbol, IPropertySymbol navigationProperty)
         {
@@ -762,7 +764,8 @@ namespace boilersExtensions.Analyzers
 
             // 規約に基づく検索 (NavPropertyName + "Id")
             var conventionForeignKeyName = navigationProperty.Name + "Id";
-            var conventionForeignKey = classSymbol.GetMembers(conventionForeignKeyName).OfType<IPropertySymbol>().FirstOrDefault();
+            var conventionForeignKey = classSymbol.GetMembers(conventionForeignKeyName).OfType<IPropertySymbol>()
+                .FirstOrDefault();
             if (conventionForeignKey != null)
             {
                 return conventionForeignKey;
@@ -772,7 +775,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// エンティティクラスに対応するDbSetプロパティ名を検索します
+        ///     エンティティクラスに対応するDbSetプロパティ名を検索します
         /// </summary>
         private async Task<string> FindDbSetPropertyNameAsync(
             INamedTypeSymbol entityClass,
@@ -799,9 +802,9 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// クラスがEntity Frameworkのエンティティクラスかどうかを判定します
+        ///     クラスがEntity Frameworkのエンティティクラスかどうかを判定します
         /// </summary>
-        private async Task<bool> IsEntityClass(Microsoft.CodeAnalysis.Document document, INamedTypeSymbol classSymbol)
+        private async Task<bool> IsEntityClass(Document document, INamedTypeSymbol classSymbol)
         {
             // 抽象クラスは通常エンティティとして扱わない（ただし、継承階層の親として重要）
             if (classSymbol.IsAbstract)
@@ -831,7 +834,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// クラスがDbContextを継承しているかどうかを判定します
+        ///     クラスがDbContextを継承しているかどうかを判定します
         /// </summary>
         private bool IsDbContextClass(INamedTypeSymbol classSymbol)
         {
@@ -852,6 +855,7 @@ namespace boilersExtensions.Analyzers
                     {
                         return true;
                     }
+
                     currentType = currentType.BaseType;
                 }
 
@@ -869,7 +873,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロジェクトがEntity Frameworkを使用しているかどうかを判定します
+        ///     プロジェクトがEntity Frameworkを使用しているかどうかを判定します
         /// </summary>
         private async Task<bool> ProjectUsesEntityFrameworkAsync(Project project, CancellationToken cancellationToken)
         {
@@ -906,17 +910,11 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// クラスがEF Core関連の属性を持っているかどうかを判定します
+        ///     クラスがEF Core関連の属性を持っているかどうかを判定します
         /// </summary>
         private bool HasEntityFrameworkAttributes(INamedTypeSymbol classSymbol)
         {
-            var attributeNames = new[]
-            {
-                "Table",
-                "Entity",
-                "Keyless",
-                "Owned"
-            };
+            var attributeNames = new[] { "Table", "Entity", "Keyless", "Owned" };
 
             return classSymbol.GetAttributes().Any(attr =>
                 attributeNames.Contains(attr.AttributeClass.Name) ||
@@ -924,9 +922,10 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// クラスがDbContextから参照されているかどうかを判定します
+        ///     クラスがDbContextから参照されているかどうかを判定します
         /// </summary>
-        private async Task<bool> IsReferencedByDbContext(Microsoft.CodeAnalysis.Document document, INamedTypeSymbol typeSymbol, CancellationToken cancellationToken = default)
+        private async Task<bool> IsReferencedByDbContext(Document document, INamedTypeSymbol typeSymbol,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -941,18 +940,27 @@ namespace boilersExtensions.Analyzers
                         cancellationToken.ThrowIfCancellationRequested();
 
                         var syntaxRoot = await projectDocument.GetSyntaxRootAsync(cancellationToken);
-                        if (syntaxRoot == null) continue;
+                        if (syntaxRoot == null)
+                        {
+                            continue;
+                        }
 
                         var semanticModel = await projectDocument.GetSemanticModelAsync(cancellationToken);
-                        if (semanticModel == null) continue;
+                        if (semanticModel == null)
+                        {
+                            continue;
+                        }
 
                         // クラスとレコードの宣言を検索
                         var typeDeclarations = syntaxRoot.DescendantNodes().OfType<TypeDeclarationSyntax>();
 
                         foreach (var typeDecl in typeDeclarations)
                         {
-                            var classSymbol = semanticModel.GetDeclaredSymbol(typeDecl) as INamedTypeSymbol;
-                            if (classSymbol == null) continue;
+                            var classSymbol = semanticModel.GetDeclaredSymbol(typeDecl);
+                            if (classSymbol == null)
+                            {
+                                continue;
+                            }
 
                             if (IsDbContextClass(classSymbol))
                             {
@@ -1006,7 +1014,7 @@ namespace boilersExtensions.Analyzers
         //}
 
         /// <summary>
-        /// プロパティがDbSet<T>型かどうかを判定し、Tの型を取得します
+        ///     プロパティがDbSet<T>型かどうかを判定し、Tの型を取得します
         /// </summary>
         private bool IsDbSetProperty(IPropertySymbol propertySymbol, out ITypeSymbol entityType)
         {
@@ -1026,7 +1034,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// クラスが主キープロパティを持っているかどうかを判定します
+        ///     クラスが主キープロパティを持っているかどうかを判定します
         /// </summary>
         private bool HasPrimaryKey(INamedTypeSymbol classSymbol)
         {
@@ -1046,7 +1054,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティがKey属性を持っているかどうかを判定します
+        ///     プロパティがKey属性を持っているかどうかを判定します
         /// </summary>
         private bool HasKeyAttribute(IPropertySymbol propertySymbol)
         {
@@ -1056,7 +1064,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティがRequired属性を持っているか、非Nullableかどうかを判定します
+        ///     プロパティがRequired属性を持っているか、非Nullableかどうかを判定します
         /// </summary>
         private bool IsRequiredProperty(IPropertySymbol propertySymbol)
         {
@@ -1071,7 +1079,8 @@ namespace boilersExtensions.Analyzers
             }
 
             // プリミティブ型で非Nullableの場合
-            if (propertySymbol.Type.IsValueType && !(propertySymbol.Type is INamedTypeSymbol namedType && namedType.IsNullableType()))
+            if (propertySymbol.Type.IsValueType &&
+                !(propertySymbol.Type is INamedTypeSymbol namedType && namedType.IsNullableType()))
             {
                 return true;
             }
@@ -1086,7 +1095,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティがDatabaseGenerated属性を持っているかどうかを判定します
+        ///     プロパティがDatabaseGenerated属性を持っているかどうかを判定します
         /// </summary>
         private bool HasDatabaseGeneratedAttribute(IPropertySymbol propertySymbol)
         {
@@ -1096,7 +1105,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティの最大長・最小長の制約を抽出します
+        ///     プロパティの最大長・最小長の制約を抽出します
         /// </summary>
         private void ExtractLengthConstraints(IPropertySymbol propertySymbol, PropertyInfo propertyInfo)
         {
@@ -1123,7 +1132,8 @@ namespace boilersExtensions.Analyzers
                 attr.AttributeClass.Name == "MaxLength" ||
                 attr.AttributeClass.Name == "MaxLengthAttribute");
 
-            if (maxLengthAttr != null && maxLengthAttr.ConstructorArguments.Length > 0 && propertyInfo.MaxLength == null)
+            if (maxLengthAttr != null && maxLengthAttr.ConstructorArguments.Length > 0 &&
+                propertyInfo.MaxLength == null)
             {
                 propertyInfo.MaxLength = Convert.ToInt32(maxLengthAttr.ConstructorArguments[0].Value);
             }
@@ -1133,14 +1143,15 @@ namespace boilersExtensions.Analyzers
                 attr.AttributeClass.Name == "MinLength" ||
                 attr.AttributeClass.Name == "MinLengthAttribute");
 
-            if (minLengthAttr != null && minLengthAttr.ConstructorArguments.Length > 0 && propertyInfo.MinLength == null)
+            if (minLengthAttr != null && minLengthAttr.ConstructorArguments.Length > 0 &&
+                propertyInfo.MinLength == null)
             {
                 propertyInfo.MinLength = Convert.ToInt32(minLengthAttr.ConstructorArguments[0].Value);
             }
         }
 
         /// <summary>
-        /// 外部キー情報を抽出します
+        ///     外部キー情報を抽出します
         /// </summary>
         private void ExtractForeignKeyInfo(IPropertySymbol propertySymbol, PropertyInfo propertyInfo)
         {
@@ -1159,7 +1170,8 @@ namespace boilersExtensions.Analyzers
                 if (!string.IsNullOrEmpty(navigationPropertyName))
                 {
                     var containingType = propertySymbol.ContainingType;
-                    var navigationProperty = containingType.GetMembers(navigationPropertyName).OfType<IPropertySymbol>().FirstOrDefault();
+                    var navigationProperty = containingType.GetMembers(navigationPropertyName).OfType<IPropertySymbol>()
+                        .FirstOrDefault();
                     if (navigationProperty != null)
                     {
                         propertyInfo.ForeignKeyTargetEntity = navigationProperty.Type.Name;
@@ -1181,7 +1193,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// Enum型の値情報を抽出します
+        ///     Enum型の値情報を抽出します
         /// </summary>
         private List<EnumValueInfo> ExtractEnumValues(INamedTypeSymbol enumType)
         {
@@ -1198,8 +1210,7 @@ namespace boilersExtensions.Analyzers
                 {
                     var enumValue = new EnumValueInfo
                     {
-                        Name = member.Name,
-                        Value = Convert.ToInt32(member.ConstantValue)
+                        Name = member.Name, Value = Convert.ToInt32(member.ConstantValue)
                     };
 
                     result.Add(enumValue);
@@ -1221,7 +1232,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティがForeignKey属性を持っているかどうかを判定します
+        ///     プロパティがForeignKey属性を持っているかどうかを判定します
         /// </summary>
         private bool HasForeignKeyAttribute(IPropertySymbol propertySymbol, string targetEntityName = null)
         {
@@ -1260,7 +1271,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// 型がナビゲーションプロパティかどうかを判定します
+        ///     型がナビゲーションプロパティかどうかを判定します
         /// </summary>
         public static bool IsNavigationProperty(ITypeSymbol propertySymbol)
         {
@@ -1309,7 +1320,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// 型がコレクション型かどうかを判定します
+        ///     型がコレクション型かどうかを判定します
         /// </summary>
         private static bool IsCollectionType(ITypeSymbol type)
         {
@@ -1347,7 +1358,8 @@ namespace boilersExtensions.Analyzers
                         }
 
                         if (interfaceName.StartsWith($"System.Collections.Generic.IEnumerable<{namedType.Name}>")
-                            || interfaceName.StartsWith($"System.Collections.Generic.IEnumerable<{namedType.ContainingNamespace}.{namedType.Name}>"))
+                            || interfaceName.StartsWith(
+                                $"System.Collections.Generic.IEnumerable<{namedType.ContainingNamespace}.{namedType.Name}>"))
                         {
                             return true;
                         }
@@ -1394,7 +1406,8 @@ namespace boilersExtensions.Analyzers
                         }
 
                         if (interfaceName.StartsWith($"System.Collections.Generic.IEnumerable<{namedType.Name}>")
-                            || interfaceName.StartsWith($"System.Collections.Generic.IEnumerable<{namedType.ContainingNamespace}.{namedType.Name}>"))
+                            || interfaceName.StartsWith(
+                                $"System.Collections.Generic.IEnumerable<{namedType.ContainingNamespace}.{namedType.Name}>"))
                         {
                             return true;
                         }
@@ -1406,7 +1419,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// コレクション型の要素の型名を取得します
+        ///     コレクション型の要素の型名を取得します
         /// </summary>
         private string GetCollectionElementType(ITypeSymbol type)
         {
@@ -1419,7 +1432,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// 型がシステム型かどうかを判定します
+        ///     型がシステム型かどうかを判定します
         /// </summary>
         private static bool IsSystemType(ITypeSymbol type)
         {
@@ -1510,7 +1523,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// カラム名を取得します（Column属性から、なければプロパティ名）
+        ///     カラム名を取得します（Column属性から、なければプロパティ名）
         /// </summary>
         private string GetColumnName(IPropertySymbol propertySymbol)
         {
@@ -1528,7 +1541,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// DbContext情報を抽出します
+        ///     DbContext情報を抽出します
         /// </summary>
         private DbContextInfo ExtractDbContextInfo(
             INamedTypeSymbol classSymbol,
@@ -1551,8 +1564,7 @@ namespace boilersExtensions.Analyzers
                 {
                     var dbSetInfo = new DbSetInfo
                     {
-                        PropertyName = member.Name,
-                        EntityTypeName = GetDbSetEntityTypeName(member.Type)
+                        PropertyName = member.Name, EntityTypeName = GetDbSetEntityTypeName(member.Type)
                     };
 
                     contextInfo.DbSetProperties.Add(dbSetInfo);
@@ -1563,7 +1575,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// プロパティがDbSet<T>かどうかを判定します
+        ///     プロパティがDbSet<T>かどうかを判定します
         /// </summary>
         private bool IsDbSetProperty(IPropertySymbol propertySymbol)
         {
@@ -1579,7 +1591,7 @@ namespace boilersExtensions.Analyzers
         }
 
         /// <summary>
-        /// DbSet<T>からエンティティ型名を取得します
+        ///     DbSet<T>からエンティティ型名を取得します
         /// </summary>
         private string GetDbSetEntityTypeName(ITypeSymbol type)
         {
@@ -1593,87 +1605,77 @@ namespace boilersExtensions.Analyzers
     }
 
     /// <summary>
-    /// DbContextに関する情報を格納するクラス
+    ///     DbContextに関する情報を格納するクラス
     /// </summary>
     public class DbContextInfo
     {
         /// <summary>
-        /// DbContextの名前
+        ///     DbContextの名前
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// 完全修飾名（名前空間を含む）
+        ///     完全修飾名（名前空間を含む）
         /// </summary>
         public string FullName { get; set; }
 
         /// <summary>
-        /// 名前空間
+        ///     名前空間
         /// </summary>
         public string Namespace { get; set; }
 
         /// <summary>
-        /// DbContextの元となるドキュメント参照
+        ///     DbContextの元となるドキュメント参照
         /// </summary>
         public Document Document { get; set; }
 
         /// <summary>
-        /// DbSetプロパティのリスト
+        ///     DbSetプロパティのリスト
         /// </summary>
         public List<DbSetInfo> DbSetProperties { get; set; } = new List<DbSetInfo>();
 
         /// <summary>
-        /// ToString()のオーバーライド
+        ///     ToString()のオーバーライド
         /// </summary>
-        public override string ToString()
-        {
-            return $"{Name} ({DbSetProperties.Count} entities)";
-        }
+        public override string ToString() => $"{Name} ({DbSetProperties.Count} entities)";
     }
 
     /// <summary>
-    /// DbSetプロパティに関する情報を格納するクラス
+    ///     DbSetプロパティに関する情報を格納するクラス
     /// </summary>
     public class DbSetInfo
     {
         /// <summary>
-        /// DbSetプロパティの名前
+        ///     DbSetプロパティの名前
         /// </summary>
         public string PropertyName { get; set; }
 
         /// <summary>
-        /// エンティティの型名
+        ///     エンティティの型名
         /// </summary>
         public string EntityTypeName { get; set; }
 
         /// <summary>
-        /// ToString()のオーバーライド
+        ///     ToString()のオーバーライド
         /// </summary>
-        public override string ToString()
-        {
-            return $"{PropertyName} ({EntityTypeName})";
-        }
+        public override string ToString() => $"{PropertyName} ({EntityTypeName})";
     }
 
     /// <summary>
-    /// 拡張メソッド
+    ///     拡張メソッド
     /// </summary>
     public static class EntityAnalyzerExtensions
     {
         /// <summary>
-        /// プロパティが自動実装されたプロパティかどうかを判定します
+        ///     プロパティが自動実装されたプロパティかどうかを判定します
         /// </summary>
-        public static bool IsAutoProperty(this IPropertySymbol property)
-        {
-            return property.GetMethod != null && property.SetMethod != null;
-        }
+        public static bool IsAutoProperty(this IPropertySymbol property) =>
+            property.GetMethod != null && property.SetMethod != null;
 
         /// <summary>
-        /// 型がNullable<T>かどうかを判定します
+        ///     型がNullable<T>かどうかを判定します
         /// </summary>
-        public static bool IsNullableType(this INamedTypeSymbol type)
-        {
-            return type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
-        }
+        public static bool IsNullableType(this INamedTypeSymbol type) =>
+            type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
     }
 }

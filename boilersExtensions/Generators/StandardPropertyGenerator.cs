@@ -6,7 +6,7 @@ using boilersExtensions.Models;
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// 標準的なプロパティ型の値を生成するクラス（改善版）
+    ///     標準的なプロパティ型の値を生成するクラス（改善版）
     /// </summary>
     public class StandardPropertyGenerator
     {
@@ -14,7 +14,7 @@ namespace boilersExtensions.Generators
         private readonly Dictionary<string, Dictionary<int, object>> _valueCache;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         /// <param name="randomDataProvider">ランダムデータプロバイダ</param>
         public StandardPropertyGenerator(RandomDataProvider randomDataProvider)
@@ -24,7 +24,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// プロパティに適した値を生成します
+        ///     プロパティに適した値を生成します
         /// </summary>
         /// <param name="property">プロパティ情報</param>
         /// <param name="recordIndex">レコードのインデックス（0から始まる）</param>
@@ -44,8 +44,8 @@ namespace boilersExtensions.Generators
                 // 固定値の処理
                 if (propConfig.HasFixedValues)
                 {
-                    int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
-                    string fixedValue = propConfig.FixedValues[fixedValueIndex];
+                    var fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                    var fixedValue = propConfig.FixedValues[fixedValueIndex];
 
                     // 型に応じてフォーマット
                     if (property.TypeName == "String" || property.TypeName.Contains("string"))
@@ -58,7 +58,7 @@ namespace boilersExtensions.Generators
             }
 
             // キャッシュキーを生成
-            string cacheKey = $"{property.FullTypeName}_{property.Name}";
+            var cacheKey = $"{property.FullTypeName}_{property.Name}";
 
             // レコードごとに一貫した値を生成するためにキャッシュを使用
             if (!_valueCache.TryGetValue(cacheKey, out var recordValues))
@@ -79,12 +79,12 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// プロパティの型に応じた値を生成します
+        ///     プロパティの型に応じた値を生成します
         /// </summary>
         private object GenerateValueByType(PropertyInfo property, int recordIndex)
         {
             // nullableの型の場合
-            bool isNullable = property.IsNullable || !property.IsRequired;
+            var isNullable = property.IsNullable || !property.IsRequired;
 
             // 稀にnull値を生成（nullableかつ必須でない場合）
             if (isNullable && !property.IsRequired && _randomDataProvider.ShouldGenerateNull())
@@ -93,7 +93,7 @@ namespace boilersExtensions.Generators
             }
 
             // プロパティの型に応じた値を生成
-            string typeName = property.IsNullable ? property.UnderlyingTypeName : property.TypeName;
+            var typeName = property.IsNullable ? property.UnderlyingTypeName : property.TypeName;
 
             switch (typeName)
             {
@@ -164,12 +164,12 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 文字列値を生成します
+        ///     文字列値を生成します
         /// </summary>
         private string GenerateStringValue(PropertyInfo property, int recordIndex)
         {
             // 文字列の生成パターンを決定
-            string pattern = DetermineStringPattern(property);
+            var pattern = DetermineStringPattern(property);
 
             // パターンに基づいて文字列を生成
             switch (pattern)
@@ -215,17 +215,17 @@ namespace boilersExtensions.Generators
 
                 default:
                     // デフォルトはプロパティ名とレコードインデックスを組み合わせた文字列
-                    int maxLength = property.MaxLength ?? 50;
+                    var maxLength = property.MaxLength ?? 50;
                     return _randomDataProvider.GetRandomString(maxLength, property.Name, recordIndex);
             }
         }
 
         /// <summary>
-        /// 文字列プロパティの生成パターンを決定します
+        ///     文字列プロパティの生成パターンを決定します
         /// </summary>
         private string DetermineStringPattern(PropertyInfo property)
         {
-            string propName = property.Name.ToLowerInvariant();
+            var propName = property.Name.ToLowerInvariant();
 
             // プロパティ名に基づいて生成パターンを推測
             if (propName.Contains("email"))
@@ -268,7 +268,8 @@ namespace boilersExtensions.Generators
                 return "PhoneNumber";
             }
 
-            if (propName.Contains("url") || propName.Contains("uri") || propName.Contains("website") || propName.Contains("site"))
+            if (propName.Contains("url") || propName.Contains("uri") || propName.Contains("website") ||
+                propName.Contains("site"))
             {
                 return "Url";
             }
@@ -302,7 +303,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 型のデフォルト値を取得します
+        ///     型のデフォルト値を取得します
         /// </summary>
         private object GetDefaultValueForType(string typeName)
         {
@@ -361,7 +362,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 値をC#リテラル形式に変換します
+        ///     値をC#リテラル形式に変換します
         /// </summary>
         private string FormatValueAsLiteral(object value, string typeName)
         {
@@ -371,10 +372,10 @@ namespace boilersExtensions.Generators
             }
 
             // Handle nullable types by checking for "Nullable" typeName
-            bool isNullable = typeName == "Nullable";
+            var isNullable = typeName == "Nullable";
 
             // For nullable types, use the actual type of the value
-            string effectiveTypeName = isNullable ? value.GetType().Name : typeName;
+            var effectiveTypeName = isNullable ? value.GetType().Name : typeName;
 
             switch (effectiveTypeName)
             {
@@ -384,11 +385,13 @@ namespace boilersExtensions.Generators
 
                 case "DateTime":
                     var dateTime = (DateTime)value;
-                    return $"new DateTime({dateTime.Year}, {dateTime.Month}, {dateTime.Day}, {dateTime.Hour}, {dateTime.Minute}, {dateTime.Second})";
+                    return
+                        $"new DateTime({dateTime.Year}, {dateTime.Month}, {dateTime.Day}, {dateTime.Hour}, {dateTime.Minute}, {dateTime.Second})";
 
                 case "DateTimeOffset":
                     var dto = (DateTimeOffset)value;
-                    return $"new DateTimeOffset({dto.Year}, {dto.Month}, {dto.Day}, {dto.Hour}, {dto.Minute}, {dto.Second}, {dto.Offset.TotalHours}h)";
+                    return
+                        $"new DateTimeOffset({dto.Year}, {dto.Month}, {dto.Day}, {dto.Hour}, {dto.Minute}, {dto.Second}, {dto.Offset.TotalHours}h)";
 
                 case "TimeSpan":
                     var ts = (TimeSpan)value;
@@ -424,7 +427,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 文字列内の特殊文字をエスケープします
+        ///     文字列内の特殊文字をエスケープします
         /// </summary>
         private string EscapeString(string input)
         {
@@ -434,7 +437,7 @@ namespace boilersExtensions.Generators
             }
 
             var sb = new StringBuilder(input.Length);
-            foreach (char c in input)
+            foreach (var c in input)
             {
                 switch (c)
                 {
@@ -476,6 +479,7 @@ namespace boilersExtensions.Generators
                         {
                             sb.Append(c);
                         }
+
                         break;
                 }
             }
@@ -484,7 +488,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// バイト配列をC#配列リテラル形式にフォーマットします
+        ///     バイト配列をC#配列リテラル形式にフォーマットします
         /// </summary>
         private string FormatByteArray(byte[] bytes)
         {
@@ -494,7 +498,7 @@ namespace boilersExtensions.Generators
             }
 
             var sb = new StringBuilder("new byte[] { ");
-            for (int i = 0; i < bytes.Length; i++)
+            for (var i = 0; i < bytes.Length; i++)
             {
                 sb.Append("0x").Append(bytes[i].ToString("X2"));
 

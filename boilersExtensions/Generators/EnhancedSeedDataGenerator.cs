@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using boilersExtensions.Models;
 using static boilersExtensions.Generators.FixedValueCombinationGenerator;
 
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// 固定値に対応したシードデータ生成クラスの拡張
+    ///     固定値に対応したシードデータ生成クラスの拡張
     /// </summary>
     public class EnhancedSeedDataGenerator : SeedDataGenerator
     {
         /// <summary>
-        /// 固定値を考慮したシードデータを生成します
+        ///     固定値を考慮したシードデータを生成します
         /// </summary>
         public string GenerateSeedDataWithFixedValues(List<EntityInfo> entities, SeedDataConfig config)
         {
@@ -64,27 +65,28 @@ namespace boilersExtensions.Generators
                 foreach (var prop in entity.Properties)
                 {
                     if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                    {
                         continue;
+                    }
 
                     var propConfig = entityConfig.GetPropertyConfig(prop.Name);
                     if (propConfig is PropertyConfigViewModel vm && vm.FixedValues.Count > 0)
                     {
                         propertiesWithFixedValues.Add(new PropertyWithFixedValues
                         {
-                            PropertyName = prop.Name,
-                            FixedValues = vm.FixedValues.ToList()
+                            PropertyName = prop.Name, FixedValues = vm.FixedValues.ToList()
                         });
                     }
                 }
 
                 // 生成するレコード数を決定
-                int recordsToGenerate = entityConfig.RecordCount.Value;
+                var recordsToGenerate = entityConfig.RecordCount.Value;
 
                 // 主キー値のリストを初期化
                 generatedPrimaryKeys[entity.Name] = new List<object>();
 
                 // 各レコードを生成
-                for (int i = 0; i < recordsToGenerate; i++)
+                for (var i = 0; i < recordsToGenerate; i++)
                 {
                     sb.AppendLine($"            new {entity.Name}");
                     sb.AppendLine("            {");
@@ -114,11 +116,13 @@ namespace boilersExtensions.Generators
                         // 外部キープロパティの場合
                         if (prop.IsForeignKey)
                         {
-                            string propValue = GenerateForeignKeyValue(prop, i, entityConfig, entity.Name, generatedPrimaryKeys);
+                            var propValue = GenerateForeignKeyValue(prop, i, entityConfig, entity.Name,
+                                generatedPrimaryKeys);
                             if (propValue != null)
                             {
                                 propStrings.Add($"                {prop.Name} = {propValue}");
                             }
+
                             continue;
                         }
 
@@ -126,7 +130,7 @@ namespace boilersExtensions.Generators
                         if (prop.IsKey)
                         {
                             // プロパティの値を生成
-                            string propValue = GeneratePropertyValue(prop, i, entityConfig);
+                            var propValue = GeneratePropertyValue(prop, i, entityConfig);
                             if (propValue != null)
                             {
                                 propStrings.Add($"                {prop.Name} = {propValue}");
@@ -135,13 +139,13 @@ namespace boilersExtensions.Generators
                                 if (propValue.Contains("Guid"))
                                 {
                                     // "new Guid("xxxxx")" 形式からGUID文字列を抽出
-                                    var guidMatch = System.Text.RegularExpressions.Regex.Match(propValue, "\"(.+?)\"");
+                                    var guidMatch = Regex.Match(propValue, "\"(.+?)\"");
                                     if (guidMatch.Success)
                                     {
                                         generatedPrimaryKeys[entity.Name].Add(guidMatch.Groups[1].Value);
                                     }
                                 }
-                                else if (int.TryParse(propValue, out int intValue))
+                                else if (int.TryParse(propValue, out var intValue))
                                 {
                                     generatedPrimaryKeys[entity.Name].Add(intValue);
                                 }
@@ -151,11 +155,12 @@ namespace boilersExtensions.Generators
                                     generatedPrimaryKeys[entity.Name].Add(propValue);
                                 }
                             }
+
                             continue;
                         }
 
                         // 通常のプロパティの値を生成
-                        string value = GeneratePropertyValue(prop, i, entityConfig);
+                        var value = GeneratePropertyValue(prop, i, entityConfig);
                         if (value != null)
                         {
                             propStrings.Add($"                {prop.Name} = {value}");
@@ -181,7 +186,7 @@ namespace boilersExtensions.Generators
                 }
 
                 // このエンティティが外部キー参照を持っているかどうかを確認
-                bool hasForeignKeys = entity.Properties.Any(p => p.IsForeignKey);
+                var hasForeignKeys = entity.Properties.Any(p => p.IsForeignKey);
 
                 // 外部キー参照を持たないまたは既に処理済みの場合はスキップ
                 if (!hasForeignKeys || generatedPrimaryKeys.ContainsKey(entity.Name))
@@ -197,21 +202,22 @@ namespace boilersExtensions.Generators
                 foreach (var prop in entity.Properties)
                 {
                     if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                    {
                         continue;
+                    }
 
                     var propConfig = entityConfig.GetPropertyConfig(prop.Name);
                     if (propConfig is PropertyConfigViewModel vm && vm.FixedValues.Count > 0)
                     {
                         propertiesWithFixedValues.Add(new PropertyWithFixedValues
                         {
-                            PropertyName = prop.Name,
-                            FixedValues = vm.FixedValues.ToList()
+                            PropertyName = prop.Name, FixedValues = vm.FixedValues.ToList()
                         });
                     }
                 }
 
                 // 生成するレコード数
-                int recordsToGenerate = entityConfig.RecordCount.Value;
+                var recordsToGenerate = entityConfig.RecordCount.Value;
 
                 // 主キー値のリストを初期化
                 generatedPrimaryKeys[entity.Name] = new List<object>();
@@ -226,17 +232,18 @@ namespace boilersExtensions.Generators
                     if (!string.IsNullOrEmpty(fkProp.ForeignKeyTargetEntity) &&
                         generatedPrimaryKeys.ContainsKey(fkProp.ForeignKeyTargetEntity))
                     {
-                        int parentCount = generatedPrimaryKeys[fkProp.ForeignKeyTargetEntity].Count;
+                        var parentCount = generatedPrimaryKeys[fkProp.ForeignKeyTargetEntity].Count;
                         if (parentCount > 0)
                         {
                             // 均等に分配するための計算
-                            recordsPerParent[fkProp.ForeignKeyTargetEntity] = (int)Math.Ceiling((double)recordsToGenerate / parentCount);
+                            recordsPerParent[fkProp.ForeignKeyTargetEntity] =
+                                (int)Math.Ceiling((double)recordsToGenerate / parentCount);
                         }
                     }
                 }
 
                 // 各レコードを生成
-                for (int i = 0; i < recordsToGenerate; i++)
+                for (var i = 0; i < recordsToGenerate; i++)
                 {
                     sb.AppendLine($"            new {entity.Name}");
                     sb.AppendLine("            {");
@@ -266,21 +273,24 @@ namespace boilersExtensions.Generators
                         // 外部キープロパティの場合、親エンティティの主キー値を均等に分配
                         if (prop.IsForeignKey)
                         {
-                            string targetEntity = prop.ForeignKeyTargetEntity;
+                            var targetEntity = prop.ForeignKeyTargetEntity;
                             if (!string.IsNullOrEmpty(targetEntity) && generatedPrimaryKeys.ContainsKey(targetEntity))
                             {
                                 var parentKeys = generatedPrimaryKeys[targetEntity];
                                 if (parentKeys.Count > 0)
                                 {
                                     // 親エンティティに均等に分配するための計算
-                                    int parentIndex = i / (recordsPerParent.ContainsKey(targetEntity) ? recordsPerParent[targetEntity] : 1);
+                                    var parentIndex = i / (recordsPerParent.ContainsKey(targetEntity)
+                                        ? recordsPerParent[targetEntity]
+                                        : 1);
                                     parentIndex = Math.Min(parentIndex, parentKeys.Count - 1); // 配列の範囲を超えないように
 
                                     var parentKey = parentKeys[parentIndex];
 
                                     // 親キーの型に応じたフォーマット
                                     string fkValue;
-                                    if (parentKey is string strKey && System.Text.RegularExpressions.Regex.IsMatch(strKey, @"^[\da-fA-F]{8}(-[\da-fA-F]{4}){3}-[\da-fA-F]{12}$"))
+                                    if (parentKey is string strKey && Regex.IsMatch(strKey,
+                                            @"^[\da-fA-F]{8}(-[\da-fA-F]{4}){3}-[\da-fA-F]{12}$"))
                                     {
                                         // GUIDの場合
                                         fkValue = $"new Guid(\"{strKey}\")";
@@ -302,19 +312,20 @@ namespace boilersExtensions.Generators
                             else
                             {
                                 // 親エンティティが見つからない場合はデフォルト値を使用
-                                string defaultValue = GeneratePropertyValue(prop, i, entityConfig);
+                                var defaultValue = GeneratePropertyValue(prop, i, entityConfig);
                                 if (defaultValue != null)
                                 {
                                     propStrings.Add($"                {prop.Name} = {defaultValue}");
                                 }
                             }
+
                             continue;
                         }
 
                         // 主キープロパティの場合、キー値を保存
                         if (prop.IsKey)
                         {
-                            string propValue = GeneratePropertyValue(prop, i, entityConfig);
+                            var propValue = GeneratePropertyValue(prop, i, entityConfig);
                             if (propValue != null)
                             {
                                 propStrings.Add($"                {prop.Name} = {propValue}");
@@ -323,13 +334,13 @@ namespace boilersExtensions.Generators
                                 if (propValue.Contains("Guid"))
                                 {
                                     // "new Guid("xxxxx")" 形式からGUID文字列を抽出
-                                    var guidMatch = System.Text.RegularExpressions.Regex.Match(propValue, "\"(.+?)\"");
+                                    var guidMatch = Regex.Match(propValue, "\"(.+?)\"");
                                     if (guidMatch.Success)
                                     {
                                         generatedPrimaryKeys[entity.Name].Add(guidMatch.Groups[1].Value);
                                     }
                                 }
-                                else if (int.TryParse(propValue, out int intValue))
+                                else if (int.TryParse(propValue, out var intValue))
                                 {
                                     generatedPrimaryKeys[entity.Name].Add(intValue);
                                 }
@@ -339,11 +350,12 @@ namespace boilersExtensions.Generators
                                     generatedPrimaryKeys[entity.Name].Add(propValue);
                                 }
                             }
+
                             continue;
                         }
 
                         // 通常のプロパティの値を生成
-                        string value = GeneratePropertyValue(prop, i, entityConfig);
+                        var value = GeneratePropertyValue(prop, i, entityConfig);
                         if (value != null)
                         {
                             propStrings.Add($"                {prop.Name} = {value}");
@@ -362,7 +374,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 外部キー値を生成します
+        ///     外部キー値を生成します
         /// </summary>
         private string GenerateForeignKeyValue(
             PropertyInfo property,
@@ -384,8 +396,8 @@ namespace boilersExtensions.Generators
                 // 固定値の処理
                 if (propConfig.HasFixedValues)
                 {
-                    int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
-                    string fixedValue = propConfig.FixedValues[fixedValueIndex];
+                    var fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                    var fixedValue = propConfig.FixedValues[fixedValueIndex];
 
                     // 型に応じてフォーマット
                     if (property.TypeName == "String" || property.TypeName.Contains("string"))
@@ -398,34 +410,34 @@ namespace boilersExtensions.Generators
             }
 
             // 参照先エンティティが指定されている場合
-            string targetEntity = property.ForeignKeyTargetEntity;
+            var targetEntity = property.ForeignKeyTargetEntity;
             if (!string.IsNullOrEmpty(targetEntity) && generatedPrimaryKeys.ContainsKey(targetEntity))
             {
                 var parentKeys = generatedPrimaryKeys[targetEntity];
                 if (parentKeys.Count > 0)
                 {
                     // 親エンティティのレコード数に基づいて、均等に分配
-                    int parentEntityCount = parentKeys.Count;
-                    int parentRecordIndex = recordIndex % parentEntityCount;
+                    var parentEntityCount = parentKeys.Count;
+                    var parentRecordIndex = recordIndex % parentEntityCount;
 
                     var parentKey = parentKeys[parentRecordIndex];
 
                     // 親キーの型に応じたフォーマット
-                    if (parentKey is string strKey && System.Text.RegularExpressions.Regex.IsMatch(strKey, @"^[\da-fA-F]{8}(-[\da-fA-F]{4}){3}-[\da-fA-F]{12}$"))
+                    if (parentKey is string strKey &&
+                        Regex.IsMatch(strKey, @"^[\da-fA-F]{8}(-[\da-fA-F]{4}){3}-[\da-fA-F]{12}$"))
                     {
                         // GUIDの場合
                         return $"new Guid(\"{strKey}\")";
                     }
-                    else if (parentKey is int intKey)
+
+                    if (parentKey is int intKey)
                     {
                         // 整数の場合
                         return intKey.ToString();
                     }
-                    else
-                    {
-                        // その他の型は文字列として扱う
-                        return parentKey.ToString();
-                    }
+
+                    // その他の型は文字列として扱う
+                    return parentKey.ToString();
                 }
             }
 
@@ -434,7 +446,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// エンティティ間の外部キー関係をマッピングします
+        ///     エンティティ間の外部キー関係をマッピングします
         /// </summary>
         private Dictionary<string, Dictionary<string, List<string>>> BuildForeignKeyMappings(List<EntityInfo> entities)
         {
@@ -444,7 +456,7 @@ namespace boilersExtensions.Generators
             {
                 foreach (var prop in entity.Properties.Where(p => p.IsForeignKey))
                 {
-                    string targetEntity = prop.ForeignKeyTargetEntity;
+                    var targetEntity = prop.ForeignKeyTargetEntity;
                     if (!string.IsNullOrEmpty(targetEntity))
                     {
                         // parent -> child -> foreignKeyProperties マッピング

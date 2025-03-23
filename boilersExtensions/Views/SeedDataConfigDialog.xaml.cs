@@ -1,24 +1,21 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
-using boilersExtensions.Models;
 using boilersExtensions.ViewModels;
 
 namespace boilersExtensions.Dialogs
 {
     /// <summary>
-    /// SeedDataConfigDialog.xaml の相互作用ロジック
+    ///     SeedDataConfigDialog.xaml の相互作用ロジック
     /// </summary>
     public partial class SeedDataConfigDialog : Window
     {
-        public SeedDataConfigDialog()
-        {
-            InitializeComponent();
-        }
+        public SeedDataConfigDialog() => InitializeComponent();
 
         /// <summary>
-        /// ダイアログが閉じる時の処理
+        ///     ダイアログが閉じる時の処理
         /// </summary>
-        private void SeedDataConfigDialog_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void SeedDataConfigDialog_Closing(object sender, CancelEventArgs e)
         {
             if (DataContext is SeedDataConfigViewModel viewModel)
             {
@@ -27,7 +24,7 @@ namespace boilersExtensions.Dialogs
         }
 
         /// <summary>
-        /// 固定値編集ボタンが押された時の処理
+        ///     固定値編集ボタンが押された時の処理
         /// </summary>
         private void EditFixedValuesButton_Click(object sender, RoutedEventArgs e)
         {
@@ -35,13 +32,19 @@ namespace boilersExtensions.Dialogs
             {
                 // クリックされたボタンからプロパティ名を取得
                 var button = sender as Button;
-                if (button == null) return;
+                if (button == null)
+                {
+                    return;
+                }
 
                 // DataContextからプロパティ情報を取得
                 var property = button.DataContext as PropertyViewModel;
-                if (property == null) return;
+                if (property == null)
+                {
+                    return;
+                }
 
-                string propertyName = property.Name.Value;
+                var propertyName = property.Name.Value;
 
                 // プロパティ設定を取得
                 var entityConfig = viewModel.SelectedEntity.Value;

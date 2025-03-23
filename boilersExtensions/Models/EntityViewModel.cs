@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using boilersExtensions.ViewModels;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
@@ -11,67 +8,12 @@ using Reactive.Bindings.Extensions;
 namespace boilersExtensions.Models
 {
     /// <summary>
-    /// エンティティ情報を保持するViewModel（改修版）
+    ///     エンティティ情報を保持するViewModel（改修版）
     /// </summary>
     public class EntityViewModel : ViewModelBase
     {
         /// <summary>
-        /// エンティティ名
-        /// </summary>
-        public ReactivePropertySlim<string> Name { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// 完全修飾名
-        /// </summary>
-        public ReactivePropertySlim<string> FullName { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// 親エンティティを持たない場合の生成レコード数
-        /// </summary>
-        public ReactivePropertySlim<int> RecordCount { get; } = new ReactivePropertySlim<int>(10);
-
-        /// <summary>
-        /// 親エンティティ1件あたりの子レコード数
-        /// </summary>
-        public ReactivePropertySlim<int> RecordsPerParent { get; } = new ReactivePropertySlim<int>(2);
-
-        /// <summary>
-        /// 親エンティティの参照（親がある場合）
-        /// </summary>
-        public ReactivePropertySlim<EntityViewModel> ParentEntity { get; } = new ReactivePropertySlim<EntityViewModel>(null);
-
-        /// <summary>
-        /// 合計レコード数（計算プロパティ）
-        /// </summary>
-        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
-
-        /// <summary>
-        /// このエンティティを選択するかどうか
-        /// </summary>
-        public ReactivePropertySlim<bool> IsSelected { get; } = new ReactivePropertySlim<bool>(true);
-
-        /// <summary>
-        /// ファイルパス
-        /// </summary>
-        public ReactivePropertySlim<string> FilePath { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// プロパティ一覧
-        /// </summary>
-        public ObservableCollection<PropertyViewModel> Properties { get; } = new ObservableCollection<PropertyViewModel>();
-
-        /// <summary>
-        /// リレーションシップ一覧
-        /// </summary>
-        public ObservableCollection<RelationshipViewModel> Relationships { get; } = new ObservableCollection<RelationshipViewModel>();
-
-        /// <summary>
-        /// プロパティ設定のコレクション
-        /// </summary>
-        public ObservableCollection<PropertyConfigViewModel> PropertyConfigs { get; } = new ObservableCollection<PropertyConfigViewModel>();
-
-        /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public EntityViewModel()
         {
@@ -94,7 +36,66 @@ namespace boilersExtensions.Models
         }
 
         /// <summary>
-        /// 合計レコード数を更新
+        ///     エンティティ名
+        /// </summary>
+        public ReactivePropertySlim<string> Name { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     完全修飾名
+        /// </summary>
+        public ReactivePropertySlim<string> FullName { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     親エンティティを持たない場合の生成レコード数
+        /// </summary>
+        public ReactivePropertySlim<int> RecordCount { get; } = new ReactivePropertySlim<int>(10);
+
+        /// <summary>
+        ///     親エンティティ1件あたりの子レコード数
+        /// </summary>
+        public ReactivePropertySlim<int> RecordsPerParent { get; } = new ReactivePropertySlim<int>(2);
+
+        /// <summary>
+        ///     親エンティティの参照（親がある場合）
+        /// </summary>
+        public ReactivePropertySlim<EntityViewModel> ParentEntity { get; } =
+            new ReactivePropertySlim<EntityViewModel>();
+
+        /// <summary>
+        ///     合計レコード数（計算プロパティ）
+        /// </summary>
+        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
+
+        /// <summary>
+        ///     このエンティティを選択するかどうか
+        /// </summary>
+        public ReactivePropertySlim<bool> IsSelected { get; } = new ReactivePropertySlim<bool>(true);
+
+        /// <summary>
+        ///     ファイルパス
+        /// </summary>
+        public ReactivePropertySlim<string> FilePath { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     プロパティ一覧
+        /// </summary>
+        public ObservableCollection<PropertyViewModel> Properties { get; } =
+            new ObservableCollection<PropertyViewModel>();
+
+        /// <summary>
+        ///     リレーションシップ一覧
+        /// </summary>
+        public ObservableCollection<RelationshipViewModel> Relationships { get; } =
+            new ObservableCollection<RelationshipViewModel>();
+
+        /// <summary>
+        ///     プロパティ設定のコレクション
+        /// </summary>
+        public ObservableCollection<PropertyConfigViewModel> PropertyConfigs { get; } =
+            new ObservableCollection<PropertyConfigViewModel>();
+
+        /// <summary>
+        ///     合計レコード数を更新
         /// </summary>
         private void UpdateTotalRecordCount()
         {
@@ -111,7 +112,7 @@ namespace boilersExtensions.Models
         }
 
         /// <summary>
-        /// プロパティ名からPropertyConfigViewModelを取得します
+        ///     プロパティ名からPropertyConfigViewModelを取得します
         /// </summary>
         public PropertyConfigViewModel GetPropertyConfig(string propertyName)
         {
@@ -126,8 +127,7 @@ namespace boilersExtensions.Models
                 {
                     config = new PropertyConfigViewModel
                     {
-                        PropertyName = propertyName,
-                        PropertyTypeName = property.Type.Value
+                        PropertyName = propertyName, PropertyTypeName = property.Type.Value
                     };
 
                     PropertyConfigs.Add(config);
@@ -139,37 +139,12 @@ namespace boilersExtensions.Models
     }
 
     /// <summary>
-    /// リレーションシップ情報を保持するViewModel
+    ///     リレーションシップ情報を保持するViewModel
     /// </summary>
     public class RelationshipViewModel : ViewModelBase
     {
         /// <summary>
-        /// ソースエンティティ名
-        /// </summary>
-        public ReactivePropertySlim<string> SourceEntityName { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// ターゲットエンティティ名
-        /// </summary>
-        public ReactivePropertySlim<string> TargetEntityName { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// ソースプロパティ名
-        /// </summary>
-        public ReactivePropertySlim<string> SourceProperty { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// ターゲットプロパティ名
-        /// </summary>
-        public ReactivePropertySlim<string> TargetProperty { get; } = new ReactivePropertySlim<string>();
-
-        /// <summary>
-        /// リレーションシップの種類
-        /// </summary>
-        public ReactivePropertySlim<RelationshipType> RelationType { get; } = new ReactivePropertySlim<RelationshipType>(RelationshipType.OneToMany);
-
-        /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public RelationshipViewModel()
         {
@@ -180,5 +155,31 @@ namespace boilersExtensions.Models
             TargetProperty.AddTo(Disposables);
             RelationType.AddTo(Disposables);
         }
+
+        /// <summary>
+        ///     ソースエンティティ名
+        /// </summary>
+        public ReactivePropertySlim<string> SourceEntityName { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     ターゲットエンティティ名
+        /// </summary>
+        public ReactivePropertySlim<string> TargetEntityName { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     ソースプロパティ名
+        /// </summary>
+        public ReactivePropertySlim<string> SourceProperty { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     ターゲットプロパティ名
+        /// </summary>
+        public ReactivePropertySlim<string> TargetProperty { get; } = new ReactivePropertySlim<string>();
+
+        /// <summary>
+        ///     リレーションシップの種類
+        /// </summary>
+        public ReactivePropertySlim<RelationshipType> RelationType { get; } =
+            new ReactivePropertySlim<RelationshipType>(RelationshipType.OneToMany);
     }
 }

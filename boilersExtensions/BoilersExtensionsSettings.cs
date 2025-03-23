@@ -165,7 +165,7 @@ namespace boilersExtensions
         }
 
         /// <summary>
-        /// テストデータ生成機能が有効かどうか
+        ///     テストデータ生成機能が有効かどうか
         /// </summary>
         public static bool IsSeedDataGeneratorEnabled
         {
@@ -173,7 +173,7 @@ namespace boilersExtensions
             {
                 try
                 {
-                    return GetOptionPageProperty<bool>("EnableSeedDataGenerator", true);
+                    return GetOptionPageProperty("EnableSeedDataGenerator", true);
                 }
                 catch (Exception ex)
                 {

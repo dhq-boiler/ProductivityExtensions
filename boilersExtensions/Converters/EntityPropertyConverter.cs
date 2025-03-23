@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using boilersExtensions.ViewModels;
 using System.Windows.Data;
+using boilersExtensions.ViewModels;
 
 namespace boilersExtensions.Converters
 {
@@ -17,12 +14,11 @@ namespace boilersExtensions.Converters
             {
                 return viewModel.GetEntityProperties(entityName);
             }
+
             return new List<string>();
         }
 
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
             throw new NotImplementedException();
-        }
     }
 }

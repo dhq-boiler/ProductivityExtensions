@@ -1,45 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using boilersExtensions.Dialogs;
 using boilersExtensions.Models;
 using boilersExtensions.ViewModels;
-using boilersExtensions.Views;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using static System.Net.Mime.MediaTypeNames;
 using Task = System.Threading.Tasks.Task;
 
 namespace boilersExtensions.Commands
 {
     /// <summary>
-    /// テストデータ生成コマンド
+    ///     テストデータ生成コマンド
     /// </summary>
     internal sealed class SeedDataGeneratorCommand : OleMenuCommand
     {
         public const int CommandId = 0x0200;
-        public static readonly Guid CommandSet = new Guid("0A3B7D5F-6D61-4B5E-9A4F-6D0E6F8B3F1C"); // boilersExtensionsExtensionsCmdSet と同じGUID
+
+        public static readonly Guid
+            CommandSet = new Guid("0A3B7D5F-6D61-4B5E-9A4F-6D0E6F8B3F1C"); // boilersExtensionsExtensionsCmdSet と同じGUID
+
         private static AsyncPackage package;
         private static OleMenuCommand menuItem;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
-        private SeedDataGeneratorCommand() : base(Execute, new CommandID(CommandSet, CommandId))
-        {
+        private SeedDataGeneratorCommand() : base(Execute, new CommandID(CommandSet, CommandId)) =>
             base.BeforeQueryStatus += BeforeQueryStatus;
-        }
 
         public static SeedDataGeneratorCommand Instance { get; private set; }
         private static IAsyncServiceProvider ServiceProvider => package;
 
         /// <summary>
-        /// 初期化
+        ///     初期化
         /// </summary>
         public static async Task InitializeAsync(AsyncPackage package)
         {
@@ -55,7 +53,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// コマンド実行時の処理
+        ///     コマンド実行時の処理
         /// </summary>
         private static void Execute(object sender, EventArgs e)
         {
@@ -73,7 +71,7 @@ namespace boilersExtensions.Commands
                 Debug.WriteLine("SeedDataGeneratorCommand Execute called");
 
                 // アクティブなドキュメントの情報を取得
-                var dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                 if (dte?.ActiveDocument == null)
                 {
                     ShowMessage("アクティブなドキュメントがありません。");
@@ -113,16 +111,16 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// C#ファイルの処理
+        ///     C#ファイルの処理
         /// </summary>
-        private static void HandleCSharpFile(EnvDTE.Document document)
+        private static void HandleCSharpFile(Document document)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
                 // TextDocumentのテキストを取得
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
+                var textDocument = document.Object("TextDocument") as TextDocument;
                 if (textDocument == null)
                 {
                     ShowMessage("テキストとして開けませんでした。");
@@ -134,15 +132,16 @@ namespace boilersExtensions.Commands
 
                 // クラス構造を分析（簡易的な実装）
                 var classNamePattern = @"(class|record)\s+(\w+)";
-                var propertyPattern = @"(public|private|protected|internal)(?:\s+virtual|\s+override|\s+new)?\s+([^\s{]+)\s+(\w+)\s*\{\s*get\s*;";
+                var propertyPattern =
+                    @"(public|private|protected|internal)(?:\s+virtual|\s+override|\s+new)?\s+([^\s{]+)\s+(\w+)\s*\{\s*get\s*;";
 
-                var classNames = System.Text.RegularExpressions.Regex.Matches(documentText, classNamePattern)
-                    .Cast<System.Text.RegularExpressions.Match>()
+                var classNames = Regex.Matches(documentText, classNamePattern)
+                    .Cast<Match>()
                     .Select(m => m.Groups[1].Value)
                     .ToList();
 
-                var properties = System.Text.RegularExpressions.Regex.Matches(documentText, propertyPattern)
-                    .Cast<System.Text.RegularExpressions.Match>()
+                var properties = Regex.Matches(documentText, propertyPattern)
+                    .Cast<Match>()
                     .Select(m => new PropertyInfo
                     {
                         Name = m.Groups[3].Value,
@@ -173,10 +172,7 @@ namespace boilersExtensions.Commands
                     Package = package
                 };
 
-                var window = new SeedDataConfigDialog
-                {
-                    DataContext = viewModel
-                };
+                var window = new SeedDataConfigDialog { DataContext = viewModel };
 
                 // ViewModelの初期化
                 viewModel.OnDialogOpened(window);
@@ -195,16 +191,16 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// JSONファイルの処理
+        ///     JSONファイルの処理
         /// </summary>
-        private static void HandleJsonFile(EnvDTE.Document document)
+        private static void HandleJsonFile(Document document)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
                 // JSONファイルの内容を取得
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
+                var textDocument = document.Object("TextDocument") as TextDocument;
                 if (textDocument == null)
                 {
                     ShowMessage("JSONファイルをテキストとして開けませんでした。");
@@ -242,16 +238,16 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// その他のファイル形式の処理
+        ///     その他のファイル形式の処理
         /// </summary>
-        private static void HandleOtherFile(EnvDTE.Document document, string extension)
+        private static void HandleOtherFile(Document document, string extension)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
             try
             {
                 // ファイルの内容を取得
-                var textDocument = document.Object("TextDocument") as EnvDTE.TextDocument;
+                var textDocument = document.Object("TextDocument") as TextDocument;
                 if (textDocument == null)
                 {
                     ShowMessage("ファイルをテキストとして開けませんでした。");
@@ -307,15 +303,16 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// メッセージを表示
+        ///     メッセージを表示
         /// </summary>
         private static void ShowMessage(string message)
         {
             try
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () => {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                    var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                     if (dte != null)
                     {
                         dte.StatusBar.Text = message;
@@ -329,7 +326,7 @@ namespace boilersExtensions.Commands
         }
 
         /// <summary>
-        /// コマンドの有効/無効状態を更新
+        ///     コマンドの有効/無効状態を更新
         /// </summary>
         private static void BeforeQueryStatus(object sender, EventArgs e)
         {
@@ -338,7 +335,7 @@ namespace boilersExtensions.Commands
             if (sender is OleMenuCommand command)
             {
                 // 設定で無効化されているかチェック
-                bool featureEnabled = BoilersExtensionsSettings.IsSeedDataGeneratorEnabled;
+                var featureEnabled = BoilersExtensionsSettings.IsSeedDataGeneratorEnabled;
 
                 if (!featureEnabled)
                 {
@@ -352,7 +349,7 @@ namespace boilersExtensions.Commands
                 command.Visible = true;
 
                 // DTEオブジェクトを取得
-                var dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
+                var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
                 // アクティブなドキュメントがある場合のみ有効化
                 if (dte?.ActiveDocument != null)
@@ -361,8 +358,8 @@ namespace boilersExtensions.Commands
 
                     // サポートされているファイル形式かチェック
                     command.Enabled = extension == ".cs" || extension == ".json" ||
-                                   extension == ".xml" || extension == ".csv" ||
-                                   extension == ".sql";
+                                      extension == ".xml" || extension == ".csv" ||
+                                      extension == ".sql";
                     return;
                 }
 

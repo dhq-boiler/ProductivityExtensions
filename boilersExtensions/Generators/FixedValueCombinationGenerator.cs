@@ -1,36 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// 固定値を持つプロパティの組み合わせをすべて生成するヘルパークラス
+    ///     固定値を持つプロパティの組み合わせをすべて生成するヘルパークラス
     /// </summary>
     public class FixedValueCombinationGenerator
     {
         /// <summary>
-        /// 固定値を持つプロパティの情報
-        /// </summary>
-        public class PropertyWithFixedValues
-        {
-            public string PropertyName { get; set; }
-            public List<string> FixedValues { get; set; }
-            public int CurrentIndex { get; set; } = 0;
-        }
-
-        /// <summary>
-        /// 組み合わせの一つ
-        /// </summary>
-        public class Combination
-        {
-            public Dictionary<string, string> PropertyValues { get; } = new Dictionary<string, string>();
-        }
-
-        /// <summary>
-        /// すべての組み合わせを生成
+        ///     すべての組み合わせを生成
         /// </summary>
         public static List<Combination> GenerateAllCombinations(List<PropertyWithFixedValues> properties)
         {
@@ -40,7 +18,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 再帰的に組み合わせを生成
+        ///     再帰的に組み合わせを生成
         /// </summary>
         private static void GenerateCombinationsRecursive(
             List<PropertyWithFixedValues> properties,
@@ -57,7 +35,7 @@ namespace boilersExtensions.Generators
 
             // 現在のプロパティの固定値ごとに再帰
             var property = properties[propertyIndex];
-            for (int i = 0; i < property.FixedValues.Count; i++)
+            for (var i = 0; i < property.FixedValues.Count; i++)
             {
                 // 現在の組み合わせに値を追加
                 currentCombination.PropertyValues[property.PropertyName] = property.FixedValues[i];
@@ -70,7 +48,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 組み合わせのディープコピーを作成
+        ///     組み合わせのディープコピーを作成
         /// </summary>
         private static Combination CloneCombination(Combination original)
         {
@@ -79,7 +57,26 @@ namespace boilersExtensions.Generators
             {
                 clone.PropertyValues[kvp.Key] = kvp.Value;
             }
+
             return clone;
+        }
+
+        /// <summary>
+        ///     固定値を持つプロパティの情報
+        /// </summary>
+        public class PropertyWithFixedValues
+        {
+            public string PropertyName { get; set; }
+            public List<string> FixedValues { get; set; }
+            public int CurrentIndex { get; set; } = 0;
+        }
+
+        /// <summary>
+        ///     組み合わせの一つ
+        /// </summary>
+        public class Combination
+        {
+            public Dictionary<string, string> PropertyValues { get; } = new Dictionary<string, string>();
         }
     }
 }

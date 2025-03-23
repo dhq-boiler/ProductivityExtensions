@@ -1,25 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using boilersExtensions.Models;
-using Microsoft.CodeAnalysis;
 using PropertyInfo = boilersExtensions.Models.PropertyInfo;
 
 namespace boilersExtensions.Generators
 {
     /// <summary>
-    /// Entity Frameworkのエンティティに対するシードデータを生成するクラス（改善版）
+    ///     Entity Frameworkのエンティティに対するシードデータを生成するクラス（改善版）
     /// </summary>
     public class SeedDataGenerator
     {
-        private readonly RandomDataProvider _randomDataProvider;
-        private readonly EnumValueGenerator _enumValueGenerator;
-        private readonly StandardPropertyGenerator _standardPropertyGenerator;
         private readonly Dictionary<string, int> _entityKeyCounters;
+        private readonly EnumValueGenerator _enumValueGenerator;
+        private readonly RandomDataProvider _randomDataProvider;
+        private readonly StandardPropertyGenerator _standardPropertyGenerator;
 
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public SeedDataGenerator()
         {
@@ -30,7 +30,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 指定されたエンティティに対するシードデータを生成します
+        ///     指定されたエンティティに対するシードデータを生成します
         /// </summary>
         /// <param name="entities">エンティティ情報のリスト</param>
         /// <param name="config">シードデータ生成の設定</param>
@@ -59,7 +59,7 @@ namespace boilersExtensions.Generators
                 sb.AppendLine($"    // {entity.Name} エンティティのシードデータ");
                 sb.AppendLine($"    modelBuilder.Entity<{entity.Name}>().HasData(");
 
-                for (int i = 0; i < entityConfig.RecordCount.Value; i++)
+                for (var i = 0; i < entityConfig.RecordCount.Value; i++)
                 {
                     sb.AppendLine($"        new {entity.Name}");
                     sb.AppendLine("        {");
@@ -99,7 +99,7 @@ namespace boilersExtensions.Generators
                         }
 
                         // プロパティの値を生成
-                        string propValue = GeneratePropertyValue(prop, i, entityConfig);
+                        var propValue = GeneratePropertyValue(prop, i, entityConfig);
                         if (propValue != null)
                         {
                             propStrings.Add($"            {prop.Name} = {propValue}");
@@ -119,9 +119,10 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// プロパティに対する値を生成します
+        ///     プロパティに対する値を生成します
         /// </summary>
-        protected string GeneratePropertyValue(PropertyInfo property, int recordIndex, EntityConfigViewModel entityConfig)
+        protected string GeneratePropertyValue(PropertyInfo property, int recordIndex,
+            EntityConfigViewModel entityConfig)
         {
             // プロパティ固有の設定を取得
             var propConfig = entityConfig.GetPropertyConfig(property.Name);
@@ -143,7 +144,7 @@ namespace boilersExtensions.Generators
                 }
 
                 // インデックスに基づいて主キー値を生成
-                int keyValue = recordIndex + 1;
+                var keyValue = recordIndex + 1;
                 if (propConfig != null && propConfig.UseCustomStrategy)
                 {
                     keyValue = propConfig.CustomStartValue + recordIndex;
@@ -191,8 +192,8 @@ namespace boilersExtensions.Generators
                 // 固定値リストがある場合
                 if (propConfig.HasFixedValues)
                 {
-                    int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
-                    string fixedValue = propConfig.FixedValues[fixedValueIndex];
+                    var fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                    var fixedValue = propConfig.FixedValues[fixedValueIndex];
 
                     // 型に応じてフォーマット
                     if (property.TypeName == "String" || property.TypeName.Contains("string"))
@@ -209,13 +210,13 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 外部キーの値を生成します（様々なデータ型に対応）
+        ///     外部キーの値を生成します（様々なデータ型に対応）
         /// </summary>
         protected string GenerateForeignKeyValue(
-    PropertyInfo property,
-    int recordIndex,
-    EntityConfigViewModel entityConfig,
-    PropertyConfigViewModel propConfig)
+            PropertyInfo property,
+            int recordIndex,
+            EntityConfigViewModel entityConfig,
+            PropertyConfigViewModel propConfig)
         {
             // カスタム値が指定されている場合
             if (propConfig != null && propConfig.UseCustomStrategy)
@@ -226,8 +227,8 @@ namespace boilersExtensions.Generators
             // 固定値がある場合
             if (propConfig != null && propConfig.HasFixedValues)
             {
-                int fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
-                string fixedValue = propConfig.FixedValues[fixedValueIndex];
+                var fixedValueIndex = recordIndex % propConfig.FixedValues.Count;
+                var fixedValue = propConfig.FixedValues[fixedValueIndex];
 
                 // 型に応じてフォーマット
                 if (property.TypeName == "String" || property.TypeName.Contains("string"))
@@ -261,12 +262,13 @@ namespace boilersExtensions.Generators
                         {
                             targetIndex = 0; // デフォルト: 最初の親レコード
                         }
+
                         break;
 
                     case RelationshipStrategy.OneToMany:
                         // relationConfig.GetParentIdはインデックスから親IDを計算するメソッド
-                        string parentId = relationConfig.GetParentId(recordIndex);
-                        if (int.TryParse(parentId, out int parentIdInt))
+                        var parentId = relationConfig.GetParentId(recordIndex);
+                        if (int.TryParse(parentId, out var parentIdInt))
                         {
                             targetIndex = parentIdInt - 1; // 1ベースから0ベースのインデックスに変換
                         }
@@ -274,6 +276,7 @@ namespace boilersExtensions.Generators
                         {
                             targetIndex = 0;
                         }
+
                         break;
 
                     case RelationshipStrategy.Custom:
@@ -287,6 +290,7 @@ namespace boilersExtensions.Generators
                                 property.TypeName,
                                 property.IsNullable);
                         }
+
                         // マッピングがない場合はデフォルトインデックス
                         targetIndex = 0;
                         break;
@@ -310,17 +314,18 @@ namespace boilersExtensions.Generators
                 property,
                 property.TypeName,
                 property.IsNullable,
-                0,  // 最初のレコード
+                0, // 最初のレコード
                 property.ForeignKeyTargetEntity);
         }
 
         /// <summary>
-        /// 型とインデックスに基づいて外部キー値を生成
+        ///     型とインデックスに基づいて外部キー値を生成
         /// </summary>
-        private string GenerateForeignKeyByTypeAndIndex(PropertyInfo property, string typeName, bool isNullable, int index, string targetEntity)
+        private string GenerateForeignKeyByTypeAndIndex(PropertyInfo property, string typeName, bool isNullable,
+            int index, string targetEntity)
         {
             // Nullableの場合、基本型を取得
-            string baseTypeName = typeName;
+            var baseTypeName = typeName;
             if (isNullable && typeName == "Nullable" && !string.IsNullOrEmpty(property.UnderlyingTypeName))
             {
                 baseTypeName = property.UnderlyingTypeName;
@@ -352,10 +357,8 @@ namespace boilersExtensions.Generators
                     {
                         return $"(byte){index + 1}";
                     }
-                    else
-                    {
-                        return "(byte)1"; // オーバーフロー回避
-                    }
+
+                    return "(byte)1"; // オーバーフロー回避
 
                 case "Decimal":
                     // Decimal型
@@ -387,7 +390,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 外部キー値をフォーマット（カスタムマッピング用）
+        ///     外部キー値をフォーマット（カスタムマッピング用）
         /// </summary>
         private string FormatForeignKeyValue(PropertyInfo property, object value, string typeName, bool isNullable)
         {
@@ -397,7 +400,7 @@ namespace boilersExtensions.Generators
             }
 
             // Nullableの場合、基本型を取得
-            string baseTypeName = typeName;
+            var baseTypeName = typeName;
             if (isNullable && typeName == "Nullable" && !string.IsNullOrEmpty(property.UnderlyingTypeName))
             {
                 baseTypeName = property.UnderlyingTypeName;
@@ -411,10 +414,12 @@ namespace boilersExtensions.Generators
                     {
                         return $"new Guid(\"{guidValue}\")";
                     }
-                    else if (Guid.TryParse(value.ToString(), out Guid parsedGuid))
+
+                    if (Guid.TryParse(value.ToString(), out var parsedGuid))
                     {
                         return $"new Guid(\"{parsedGuid}\")";
                     }
+
                     // 変換できなければ新しいGUIDを生成
                     return $"new Guid(\"{Guid.NewGuid()}\")";
 
@@ -423,90 +428,101 @@ namespace boilersExtensions.Generators
 
                 case "Int64":
                 case "Long":
-                    if (long.TryParse(value.ToString(), out long longValue))
+                    if (long.TryParse(value.ToString(), out var longValue))
                     {
                         return $"{longValue}L";
                     }
+
                     return "1L";
 
                 case "Int16":
                 case "Short":
-                    if (short.TryParse(value.ToString(), out short shortValue))
+                    if (short.TryParse(value.ToString(), out var shortValue))
                     {
                         return $"(short){shortValue}";
                     }
+
                     return "(short)1";
 
                 case "Byte":
-                    if (byte.TryParse(value.ToString(), out byte byteValue))
+                    if (byte.TryParse(value.ToString(), out var byteValue))
                     {
                         return $"(byte){byteValue}";
                     }
+
                     return "(byte)1";
 
                 case "Decimal":
-                    if (decimal.TryParse(value.ToString(), out decimal decimalValue))
+                    if (decimal.TryParse(value.ToString(), out var decimalValue))
                     {
                         return $"{decimalValue}m";
                     }
+
                     return "1m";
 
                 case "Double":
-                    if (double.TryParse(value.ToString(), out double doubleValue))
+                    if (double.TryParse(value.ToString(), out var doubleValue))
                     {
                         return $"{doubleValue}d";
                     }
+
                     return "1.0d";
 
                 case "Single":
                 case "Float":
-                    if (float.TryParse(value.ToString(), out float floatValue))
+                    if (float.TryParse(value.ToString(), out var floatValue))
                     {
                         return $"{floatValue}f";
                     }
+
                     return "1.0f";
 
                 case "DateTime":
-                    if (DateTime.TryParse(value.ToString(), out DateTime dateTimeValue))
+                    if (DateTime.TryParse(value.ToString(), out var dateTimeValue))
                     {
-                        return $"new DateTime({dateTimeValue.Year}, {dateTimeValue.Month}, {dateTimeValue.Day}, {dateTimeValue.Hour}, {dateTimeValue.Minute}, {dateTimeValue.Second})";
+                        return
+                            $"new DateTime({dateTimeValue.Year}, {dateTimeValue.Month}, {dateTimeValue.Day}, {dateTimeValue.Hour}, {dateTimeValue.Minute}, {dateTimeValue.Second})";
                     }
+
                     return "new DateTime(2023, 1, 1)";
 
                 case "DateTimeOffset":
-                    if (DateTimeOffset.TryParse(value.ToString(), out DateTimeOffset dateTimeOffsetValue))
+                    if (DateTimeOffset.TryParse(value.ToString(), out var dateTimeOffsetValue))
                     {
-                        return $"new DateTimeOffset({dateTimeOffsetValue.Year}, {dateTimeOffsetValue.Month}, {dateTimeOffsetValue.Day}, {dateTimeOffsetValue.Hour}, {dateTimeOffsetValue.Minute}, {dateTimeOffsetValue.Second}, TimeSpan.Zero)";
+                        return
+                            $"new DateTimeOffset({dateTimeOffsetValue.Year}, {dateTimeOffsetValue.Month}, {dateTimeOffsetValue.Day}, {dateTimeOffsetValue.Hour}, {dateTimeOffsetValue.Minute}, {dateTimeOffsetValue.Second}, TimeSpan.Zero)";
                     }
+
                     return "new DateTimeOffset(2023, 1, 1, 0, 0, 0, TimeSpan.Zero)";
 
                 case "Int32":
                 case "Int":
                 default:
-                    if (int.TryParse(value.ToString(), out int intValue))
+                    if (int.TryParse(value.ToString(), out var intValue))
                     {
                         return intValue.ToString();
                     }
+
                     return "1";
             }
         }
 
         /// <summary>
-        /// 予測可能なGUID値を生成します
+        ///     予測可能なGUID値を生成します
         /// </summary>
         private string GenerateDeterministicGuid(string entityName, int index)
         {
             // エンティティ名とインデックスに基づいて決定論的なGUIDを生成
             var inputString = $"{entityName}_{index}";
-            var md5 = System.Security.Cryptography.MD5.Create();
-            var inputBytes = System.Text.Encoding.ASCII.GetBytes(inputString);
+            var md5 = MD5.Create();
+            var inputBytes = Encoding.ASCII.GetBytes(inputString);
             var hashBytes = md5.ComputeHash(inputBytes);
 
             return new Guid(hashBytes).ToString();
         }
 
         /// <summary>
-        /// エンティティ間の依存関係を解決し、適切な順序で処理できるようにします
+        ///     エンティティ間の依存関係を解決し、適切な順序で処理できるようにします
         /// </summary>
         protected List<EntityInfo> ResolveDependencyOrder(List<EntityInfo> entities)
         {
@@ -530,7 +546,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// エンティティ間の依存関係をマップします
+        ///     エンティティ間の依存関係をマップします
         /// </summary>
         private Dictionary<string, List<string>> BuildDependencyMap(List<EntityInfo> entities)
         {
@@ -557,7 +573,7 @@ namespace boilersExtensions.Generators
         }
 
         /// <summary>
-        /// 依存関係の解決に使用する再帰関数
+        ///     依存関係の解決に使用する再帰関数
         /// </summary>
         private void VisitEntity(
             EntityInfo entity,

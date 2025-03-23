@@ -12,152 +12,28 @@ using boilersExtensions.Analyzers;
 using boilersExtensions.Generators;
 using boilersExtensions.Models;
 using boilersExtensions.Utils;
+using EnvDTE;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.Win32;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
+using Document = EnvDTE.Document;
+using TextDocument = EnvDTE.TextDocument;
+using Window = System.Windows.Window;
 
 namespace boilersExtensions.ViewModels
 {
     /// <summary>
-    /// シードデータ設定ダイアログのViewModel（改修版）
+    ///     シードデータ設定ダイアログのViewModel（改修版）
     /// </summary>
     public class SeedDataConfigViewModel : ViewModelBase
     {
-        #region プロパティ
-
-        // 対象ファイル情報
-        public ReactivePropertySlim<string> TargetFileName { get; } = new ReactivePropertySlim<string>();
-        public ReactivePropertySlim<string> TargetType { get; } = new ReactivePropertySlim<string>();
-
-        // 生成データ設定
-        public ReactivePropertySlim<int> DataCount { get; } = new ReactivePropertySlim<int>(10);
-
-        // プロパティ一覧
-        public ObservableCollection<PropertyViewModel> Properties { get; } =
-            new ObservableCollection<PropertyViewModel>();
-
-        public ReactivePropertySlim<PropertyViewModel> SelectedProperty { get; } =
-            new ReactivePropertySlim<PropertyViewModel>();
-
-        // エンティティ関連
-        public ObservableCollection<EntityViewModel> Entities { get; } = new ObservableCollection<EntityViewModel>();
-
-        public ReactivePropertySlim<EntityViewModel> SelectedEntity { get; } =
-            new ReactivePropertySlim<EntityViewModel>();
-
-        public ReactivePropertySlim<RelationshipViewModel> SelectedRelationship { get; } =
-            new ReactivePropertySlim<RelationshipViewModel>();
-
-        public List<string> EntityNames => Entities.Select(e => e.Name.Value).ToList();
-
-        public List<RelationshipType> RelationshipTypes { get; } =
-            Enum.GetValues(typeof(RelationshipType)).Cast<RelationshipType>().ToList();
-
-        public ReactivePropertySlim<string> RecordCountInfoText { get; } = new ReactivePropertySlim<string>("10件");
-        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
-
-        // エンティティ依存関係
-        public ReactivePropertySlim<bool> ShowRelationshipVisualization { get; } = new ReactivePropertySlim<bool>(true);
-        public ReactivePropertySlim<bool> AutoDetectRelationships { get; } = new ReactivePropertySlim<bool>(true);
-
-        // UI表示用コレクション
-        public ObservableCollection<EntityRelationshipInfo> EntityRelationships { get; } =
-            new ObservableCollection<EntityRelationshipInfo>();
-
-        // データ形式関連
-        public List<string> DataFormats { get; } = new List<string>
-        {
-            "C#クラス",
-            "JSON配列",
-            "CSV形式",
-            "SQL INSERT文",
-            "XML形式"
-        };
-
-        public ReactivePropertySlim<string> SelectedDataFormat { get; } = new ReactivePropertySlim<string>("C#クラス");
-
-        // 各形式の設定
-        public ReactivePropertySlim<bool> IsCSharpFormat { get; } = new ReactivePropertySlim<bool>(true);
-        public ReactivePropertySlim<bool> IsJsonFormat { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<bool> IsCsvFormat { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<bool> IsSqlFormat { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<bool> IsXmlFormat { get; } = new ReactivePropertySlim<bool>(false);
-
-        // C#形式設定
-        public ReactivePropertySlim<string> ClassName { get; } = new ReactivePropertySlim<string>("TestData");
-        public ReactivePropertySlim<bool> UsePropertyInitializer { get; } = new ReactivePropertySlim<bool>(true);
-        public ReactivePropertySlim<bool> IsStaticMethod { get; } = new ReactivePropertySlim<bool>(true);
-
-        // SQL形式設定
-        public ReactivePropertySlim<string> TableName { get; } = new ReactivePropertySlim<string>("TestTable");
-        public ReactivePropertySlim<bool> IncludeTransaction { get; } = new ReactivePropertySlim<bool>(true);
-
-        // XML形式設定
-        public ReactivePropertySlim<string> RootElementName { get; } = new ReactivePropertySlim<string>("TestData");
-        public ReactivePropertySlim<string> ItemElementName { get; } = new ReactivePropertySlim<string>("Item");
-
-        // 詳細設定
-        public ReactivePropertySlim<bool> UseRandomValues { get; } = new ReactivePropertySlim<bool>(true);
-        public ReactivePropertySlim<bool> AutoGenerateIds { get; } = new ReactivePropertySlim<bool>(true);
-        public ReactivePropertySlim<bool> IncludeNullValues { get; } = new ReactivePropertySlim<bool>(false);
-
-        public ReactivePropertySlim<DateTime?> StartDate { get; } =
-            new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(-1));
-
-        public ReactivePropertySlim<DateTime?> EndDate { get; } =
-            new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(1));
-
-        public ReactivePropertySlim<string> MinNumericValue { get; } = new ReactivePropertySlim<string>("1");
-        public ReactivePropertySlim<string> MaxNumericValue { get; } = new ReactivePropertySlim<string>("100");
-
-        // プレビュー
-        public ReactivePropertySlim<string> PreviewText { get; } = new ReactivePropertySlim<string>();
-
-        // 使用可能なデータタイプ
-        public List<string> DataTypes { get; } = new List<string>
-        {
-            "標準",
-            "ID/連番",
-            "名前",
-            "Email",
-            "電話番号",
-            "住所",
-            "日付",
-            "ブール値",
-            "GUID",
-            "価格/金額",
-            "カスタム"
-        };
-
-        // 対象ドキュメント
-        private EnvDTE.Document _targetDocument;
-
-        #endregion
-
-        #region コマンド
-
-        // コマンド
-        public ReactiveCommand AddPropertyCommand { get; }
-        public ReactiveCommand RemovePropertyCommand { get; }
-        public ReactiveCommand MoveUpPropertyCommand { get; }
-        public ReactiveCommand MoveDownPropertyCommand { get; }
-        public ReactiveCommand LoadSchemaCommand { get; }
-        public ReactiveCommand GenerateSeedDataCommand { get; }
-        public ReactiveCommand CancelCommand { get; }
-        public ReactiveCommand LoadAdditionalEntityCommand { get; }
-        public ReactiveCommand AddRelationshipCommand { get; }
-        public ReactiveCommand RemoveRelationshipCommand { get; }
-        public ReactiveCommand DetectRelationshipsCommand { get; }
-        public ReactiveCommand UpdateRecordCountsCommand { get; }
-
-        #endregion
-
         /// <summary>
-        /// コンストラクタ
+        ///     コンストラクタ
         /// </summary>
         public SeedDataConfigViewModel()
         {
@@ -253,7 +129,7 @@ namespace boilersExtensions.ViewModels
             CancelCommand = new ReactiveCommand()
                 .WithSubscribe(() =>
                 {
-                    var window = Application.Current.Windows.OfType<System.Windows.Window>()
+                    var window = Application.Current.Windows.OfType<Window>()
                         .FirstOrDefault(w => w.DataContext == this);
                     window?.Close();
                 })
@@ -261,7 +137,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// プロパティを追加
+        ///     プロパティを追加
         /// </summary>
         private void AddProperty()
         {
@@ -280,7 +156,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 選択されたプロパティを削除
+        ///     選択されたプロパティを削除
         /// </summary>
         private void RemoveProperty()
         {
@@ -295,13 +171,13 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 選択されたプロパティを上に移動
+        ///     選択されたプロパティを上に移動
         /// </summary>
         private void MoveUpProperty()
         {
             if (SelectedProperty.Value != null)
             {
-                int index = Properties.IndexOf(SelectedProperty.Value);
+                var index = Properties.IndexOf(SelectedProperty.Value);
                 if (index > 0)
                 {
                     Properties.Move(index, index - 1);
@@ -313,13 +189,13 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 選択されたプロパティを下に移動
+        ///     選択されたプロパティを下に移動
         /// </summary>
         private void MoveDownProperty()
         {
             if (SelectedProperty.Value != null)
             {
-                int index = Properties.IndexOf(SelectedProperty.Value);
+                var index = Properties.IndexOf(SelectedProperty.Value);
                 if (index < Properties.Count - 1)
                 {
                     Properties.Move(index, index + 1);
@@ -331,7 +207,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// ファイルからスキーマ情報を読み込み
+        ///     ファイルからスキーマ情報を読み込み
         /// </summary>
         private void LoadSchema()
         {
@@ -386,7 +262,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// C#ファイルのスキーマを読み込み
+        ///     C#ファイルのスキーマを読み込み
         /// </summary>
         private async Task LoadCSharpSchema()
         {
@@ -394,21 +270,24 @@ namespace boilersExtensions.ViewModels
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
-            if (textDocument == null) return;
+            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            if (textDocument == null)
+            {
+                return;
+            }
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
             var documentText = editPoint.GetText(textDocument.EndPoint);
 
             // 簡易的なクラス名の取得（実際にはRoslynなどでより正確に解析する）
-            var classNameMatch = System.Text.RegularExpressions.Regex.Match(documentText, @"class\s+(\w+)");
+            var classNameMatch = Regex.Match(documentText, @"class\s+(\w+)");
             if (classNameMatch.Success)
             {
                 ClassName.Value = classNameMatch.Groups[1].Value;
             }
 
             // 簡易的なプロパティ取得（単純な実装なのでリアルな環境では不十分）
-            var propertyMatches = System.Text.RegularExpressions.Regex.Matches(
+            var propertyMatches = Regex.Matches(
                 documentText,
                 @"public\s+(\w+(?:<\w+>)?)\s+(\w+)\s*\{");
 
@@ -422,7 +301,7 @@ namespace boilersExtensions.ViewModels
                 SelectedEntity.Value.PropertyConfigs.Clear();
             }
 
-            foreach (System.Text.RegularExpressions.Match match in propertyMatches)
+            foreach (Match match in propertyMatches)
             {
                 var type = match.Groups[1].Value;
                 var name = match.Groups[2].Value;
@@ -444,11 +323,7 @@ namespace boilersExtensions.ViewModels
                     SelectedEntity.Value.Properties.Add(property);
 
                     // PropertyConfigViewModelも作成して追加
-                    var propConfig = new PropertyConfigViewModel
-                    {
-                        PropertyName = name,
-                        PropertyTypeName = type
-                    };
+                    var propConfig = new PropertyConfigViewModel { PropertyName = name, PropertyTypeName = type };
 
                     SelectedEntity.Value.PropertyConfigs.Add(propConfig);
                 }
@@ -456,15 +331,18 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// JSONファイルのスキーマを読み込み
+        ///     JSONファイルのスキーマを読み込み
         /// </summary>
         private async Task LoadJsonSchema()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
-            if (textDocument == null) return;
+            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            if (textDocument == null)
+            {
+                return;
+            }
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
             var jsonText = editPoint.GetText(textDocument.EndPoint);
@@ -504,7 +382,7 @@ namespace boilersExtensions.ViewModels
 
                             // プロパティの値から型を推測
                             var value = parts[1].Trim();
-                            string type = "string";
+                            var type = "string";
 
                             if (value.StartsWith("\"") && value.EndsWith("\""))
                             {
@@ -542,15 +420,18 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// CSVファイルのスキーマを読み込み
+        ///     CSVファイルのスキーマを読み込み
         /// </summary>
         private async Task LoadCsvSchema()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
-            if (textDocument == null) return;
+            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            if (textDocument == null)
+            {
+                return;
+            }
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
             var csvText = editPoint.GetText(textDocument.EndPoint);
@@ -575,11 +456,11 @@ namespace boilersExtensions.ViewModels
                         }
 
                         // 2行目があればデータ型を推測、なければstring
-                        string type = "string";
+                        var type = "string";
                         if (lines.Length > 1)
                         {
                             var values = lines[1].Split(',');
-                            int index = Array.IndexOf(headers, header);
+                            var index = Array.IndexOf(headers, header);
                             if (index >= 0 && index < values.Length)
                             {
                                 var value = values[index].Trim();
@@ -616,15 +497,18 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// SQLファイルのスキーマを読み込み
+        ///     SQLファイルのスキーマを読み込み
         /// </summary>
         private async Task LoadSqlSchema()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
-            if (textDocument == null) return;
+            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            if (textDocument == null)
+            {
+                return;
+            }
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
             var sqlText = editPoint.GetText(textDocument.EndPoint);
@@ -632,10 +516,10 @@ namespace boilersExtensions.ViewModels
             try
             {
                 // CREATE TABLE文からスキーマを解析（簡易実装）
-                var createTableMatch = System.Text.RegularExpressions.Regex.Match(
+                var createTableMatch = Regex.Match(
                     sqlText,
                     @"CREATE\s+TABLE\s+(\w+)\s*\((.*?)\)",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+                    RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
                 if (createTableMatch.Success)
                 {
@@ -643,7 +527,7 @@ namespace boilersExtensions.ViewModels
                     TableName.Value = createTableMatch.Groups[1].Value;
 
                     // カラム定義を解析
-                    string columnDefs = createTableMatch.Groups[2].Value;
+                    var columnDefs = createTableMatch.Groups[2].Value;
                     var columns = columnDefs.Split(',')
                         .Select(c => c.Trim())
                         .Where(c => !string.IsNullOrWhiteSpace(c))
@@ -666,8 +550,8 @@ namespace boilersExtensions.ViewModels
                         var parts = column.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length >= 2)
                         {
-                            string name = parts[0];
-                            string sqlType = parts[1];
+                            var name = parts[0];
+                            var sqlType = parts[1];
 
                             // SQL型をC#型に変換
                             string csharpType;
@@ -721,10 +605,10 @@ namespace boilersExtensions.ViewModels
                 else
                 {
                     // INSERT文からスキーマを推測（簡易実装）
-                    var insertMatch = System.Text.RegularExpressions.Regex.Match(
+                    var insertMatch = Regex.Match(
                         sqlText,
                         @"INSERT\s+INTO\s+(\w+)\s*\((.*?)\)",
-                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                        RegexOptions.IgnoreCase);
 
                     if (insertMatch.Success)
                     {
@@ -732,7 +616,7 @@ namespace boilersExtensions.ViewModels
                         TableName.Value = insertMatch.Groups[1].Value;
 
                         // カラム名を抽出
-                        string columnNames = insertMatch.Groups[2].Value;
+                        var columnNames = insertMatch.Groups[2].Value;
                         var columns = columnNames.Split(',')
                             .Select(c => c.Trim())
                             .Where(c => !string.IsNullOrWhiteSpace(c))
@@ -762,15 +646,18 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// XMLファイルのスキーマを読み込み
+        ///     XMLファイルのスキーマを読み込み
         /// </summary>
         private async Task LoadXmlSchema()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             // TextDocumentからテキストを取得
-            var textDocument = _targetDocument.Object("TextDocument") as EnvDTE.TextDocument;
-            if (textDocument == null) return;
+            var textDocument = _targetDocument.Object("TextDocument") as TextDocument;
+            if (textDocument == null)
+            {
+                return;
+            }
 
             var editPoint = textDocument.StartPoint.CreateEditPoint();
             var xmlText = editPoint.GetText(textDocument.EndPoint);
@@ -780,13 +667,13 @@ namespace boilersExtensions.ViewModels
                 // XMLの構造を簡易的に解析（実際にはXDocument等を使用すべき）
 
                 // ルート要素名を取得
-                var rootMatch = System.Text.RegularExpressions.Regex.Match(xmlText, @"<(\w+)[^>]*>");
+                var rootMatch = Regex.Match(xmlText, @"<(\w+)[^>]*>");
                 if (rootMatch.Success)
                 {
                     RootElementName.Value = rootMatch.Groups[1].Value;
 
                     // 最初の子要素名を取得
-                    var childMatch = System.Text.RegularExpressions.Regex.Match(
+                    var childMatch = Regex.Match(
                         xmlText.Substring(rootMatch.Index + rootMatch.Length),
                         @"<(\w+)[^>]*>");
 
@@ -795,24 +682,24 @@ namespace boilersExtensions.ViewModels
                         ItemElementName.Value = childMatch.Groups[1].Value;
 
                         // 子要素の属性を取得
-                        var attributesMatch = System.Text.RegularExpressions.Regex.Match(
+                        var attributesMatch = Regex.Match(
                             childMatch.Value,
                             @"<\w+\s+(.*?)(?:>|/>)");
 
                         if (attributesMatch.Success)
                         {
-                            string attributesText = attributesMatch.Groups[1].Value;
-                            var attributes = System.Text.RegularExpressions.Regex.Matches(
+                            var attributesText = attributesMatch.Groups[1].Value;
+                            var attributes = Regex.Matches(
                                 attributesText,
                                 @"(\w+)\s*=\s*[""']([^""']*)[""']");
 
                             // プロパティリストをクリア
                             Properties.Clear();
 
-                            foreach (System.Text.RegularExpressions.Match attrMatch in attributes)
+                            foreach (Match attrMatch in attributes)
                             {
-                                string name = attrMatch.Groups[1].Value;
-                                string value = attrMatch.Groups[2].Value;
+                                var name = attrMatch.Groups[1].Value;
+                                var value = attrMatch.Groups[2].Value;
 
                                 // 値から型を推測
                                 string type;
@@ -858,7 +745,10 @@ namespace boilersExtensions.ViewModels
 
         private void AddRelationship()
         {
-            if (SelectedEntity.Value == null || Entities.Count < 2) return;
+            if (SelectedEntity.Value == null || Entities.Count < 2)
+            {
+                return;
+            }
 
             var relationship = new RelationshipViewModel
             {
@@ -874,20 +764,23 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// リレーションシップ削除メソッド
+        ///     リレーションシップ削除メソッド
         /// </summary>
         private void RemoveRelationship()
         {
-            if (SelectedEntity.Value == null || SelectedRelationship.Value == null) return;
+            if (SelectedEntity.Value == null || SelectedRelationship.Value == null)
+            {
+                return;
+            }
 
             SelectedEntity.Value.Relationships.Remove(SelectedRelationship.Value);
             SelectedRelationship.Value = null;
         }
 
         /// <summary>
-        /// 対象ドキュメントを設定
+        ///     対象ドキュメントを設定
         /// </summary>
-        public void SetTargetDocument(EnvDTE.Document document, string documentType)
+        public void SetTargetDocument(Document document, string documentType)
         {
             _targetDocument = document;
             TargetFileName.Value = Path.GetFileName(document.FullName);
@@ -921,15 +814,15 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 全プロパティの固定値の組み合わせ数を計算して表示を更新するメソッド
+        ///     全プロパティの固定値の組み合わせ数を計算して表示を更新するメソッド
         /// </summary>
         internal void CalculateAndUpdateTotalRecordCount()
         {
-            int baseCount = DataCount.Value;
-            int totalCombinations = CalculateTotalCombinations();
+            var baseCount = DataCount.Value;
+            var totalCombinations = CalculateTotalCombinations();
 
             // 基本のレコード数と組み合わせ数を掛けて総レコード数を計算
-            int totalRecords = baseCount * Math.Max(1, totalCombinations);
+            var totalRecords = baseCount * Math.Max(1, totalCombinations);
 
             // UIの表示を更新
             if (totalCombinations > 1)
@@ -950,11 +843,11 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 全プロパティの固定値の組み合わせ総数を計算
+        ///     全プロパティの固定値の組み合わせ総数を計算
         /// </summary>
         private int CalculateTotalCombinations()
         {
-            int combinations = 1;
+            var combinations = 1;
 
             // アクティブなエンティティの固定値を持つプロパティを検索
             var entity = SelectedEntity.Value;
@@ -962,7 +855,7 @@ namespace boilersExtensions.ViewModels
             {
                 foreach (var prop in entity.Properties)
                 {
-                    int fixedValueCount = prop.FixedValues.Count;
+                    var fixedValueCount = prop.FixedValues.Count;
                     if (fixedValueCount > 0)
                     {
                         combinations *= fixedValueCount;
@@ -974,7 +867,7 @@ namespace boilersExtensions.ViewModels
                 // 古いUI（単一エンティティ）のための処理
                 foreach (var prop in Properties)
                 {
-                    int fixedValueCount = prop.FixedValues.Count;
+                    var fixedValueCount = prop.FixedValues.Count;
                     if (fixedValueCount > 0)
                     {
                         combinations *= fixedValueCount;
@@ -986,8 +879,8 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 命名規則に基づいて外部キー関係を検出します
-        /// （例: EntityId, EntityXId は Entity または EntityX への外部キーとして検出）
+        ///     命名規則に基づいて外部キー関係を検出します
+        ///     （例: EntityId, EntityXId は Entity または EntityX への外部キーとして検出）
         /// </summary>
         private void DetectRelationshipsByNamingConvention()
         {
@@ -1011,7 +904,7 @@ namespace boilersExtensions.ViewModels
                     if (propertyName.EndsWith("Id") && propertyName != "Id")
                     {
                         // "Id"を除いた部分を取得
-                        string possibleEntityName = propertyName.Substring(0, propertyName.Length - 2);
+                        var possibleEntityName = propertyName.Substring(0, propertyName.Length - 2);
 
                         // EntityRefId の場合、"Ref"も除去
                         if (possibleEntityName.EndsWith("Ref"))
@@ -1025,8 +918,8 @@ namespace boilersExtensions.ViewModels
                         {
                             // 既に関係が定義されていないかチェック
                             if (!entity.Relationships.Any(r =>
-                                r.TargetEntityName.Value == targetEntity.Name.Value &&
-                                r.SourceProperty.Value == propertyName))
+                                    r.TargetEntityName.Value == targetEntity.Name.Value &&
+                                    r.SourceProperty.Value == propertyName))
                             {
                                 // 新しいリレーションシップを追加
                                 var relationship = new RelationshipViewModel
@@ -1040,7 +933,8 @@ namespace boilersExtensions.ViewModels
 
                                 entity.Relationships.Add(relationship);
 
-                                Debug.WriteLine($"外部キー命名規則に基づいて関係を検出: {entityName}.{propertyName} -> {targetEntity.Name.Value}.Id");
+                                Debug.WriteLine(
+                                    $"外部キー命名規則に基づいて関係を検出: {entityName}.{propertyName} -> {targetEntity.Name.Value}.Id");
                             }
                         }
                     }
@@ -1049,7 +943,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// プロパティの型の一致に基づいて関係を検出します
+        ///     プロパティの型の一致に基づいて関係を検出します
         /// </summary>
         private void DetectRelationshipsByPropertyTypes()
         {
@@ -1095,8 +989,8 @@ namespace boilersExtensions.ViewModels
                             {
                                 // 既に関係が定義されていないかチェック
                                 if (!entity.Relationships.Any(r =>
-                                    r.TargetEntityName.Value == keyEntity.Key &&
-                                    r.SourceProperty.Value == property.Name.Value))
+                                        r.TargetEntityName.Value == keyEntity.Key &&
+                                        r.SourceProperty.Value == property.Name.Value))
                                 {
                                     // 新しいリレーションシップを追加
                                     var relationship = new RelationshipViewModel
@@ -1110,7 +1004,8 @@ namespace boilersExtensions.ViewModels
 
                                     entity.Relationships.Add(relationship);
 
-                                    Debug.WriteLine($"プロパティ型の一致に基づいて関係を検出: {entityName}.{property.Name.Value} -> {keyEntity.Key}.Id");
+                                    Debug.WriteLine(
+                                        $"プロパティ型の一致に基づいて関係を検出: {entityName}.{property.Name.Value} -> {keyEntity.Key}.Id");
                                 }
                             }
                         }
@@ -1120,8 +1015,8 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// ナビゲーションプロパティに基づいて関係を検出します
-        /// （コレクション型プロパティや参照型プロパティを探す）
+        ///     ナビゲーションプロパティに基づいて関係を検出します
+        ///     （コレクション型プロパティや参照型プロパティを探す）
         /// </summary>
         private void DetectRelationshipsByNavigationProperties()
         {
@@ -1149,8 +1044,9 @@ namespace boilersExtensions.ViewModels
                         {
                             // 既に関係が定義されていないかチェック
                             if (!entity.Relationships.Any(r =>
-                                r.TargetEntityName.Value == elementType &&
-                                (string.IsNullOrEmpty(r.SourceProperty.Value) || r.SourceProperty.Value == propertyName)))
+                                    r.TargetEntityName.Value == elementType &&
+                                    (string.IsNullOrEmpty(r.SourceProperty.Value) ||
+                                     r.SourceProperty.Value == propertyName)))
                             {
                                 // 新しいリレーションシップを追加 - 1対多（1側がこのエンティティ）
                                 var relationship = new RelationshipViewModel
@@ -1164,7 +1060,8 @@ namespace boilersExtensions.ViewModels
 
                                 entity.Relationships.Add(relationship);
 
-                                Debug.WriteLine($"コレクションプロパティに基づいて関係を検出: {entityName}.{propertyName} -> {elementType} (1対多)");
+                                Debug.WriteLine(
+                                    $"コレクションプロパティに基づいて関係を検出: {entityName}.{propertyName} -> {elementType} (1対多)");
                             }
                         }
                     }
@@ -1176,15 +1073,15 @@ namespace boilersExtensions.ViewModels
                     {
                         // 既に関係が定義されていないかチェック
                         if (!entity.Relationships.Any(r =>
-                            r.TargetEntityName.Value == propertyType &&
-                            r.SourceProperty.Value == propertyName))
+                                r.TargetEntityName.Value == propertyType &&
+                                r.SourceProperty.Value == propertyName))
                         {
                             // このエンティティに対応する外部キープロパティを探す
                             var foreignKeyProperty = entity.Properties.FirstOrDefault(p =>
                                 p.Name.Value == $"{propertyType}Id" ||
                                 p.Name.Value == $"{propertyName}Id");
 
-                            string sourceProperty = foreignKeyProperty?.Name.Value ?? propertyName;
+                            var sourceProperty = foreignKeyProperty?.Name.Value ?? propertyName;
 
                             // 新しいリレーションシップを追加 - 多対1（多側がこのエンティティ）
                             var relationship = new RelationshipViewModel
@@ -1206,7 +1103,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 見つかった関係に基づいてエンティティの親子関係を設定します
+        ///     見つかった関係に基づいてエンティティの親子関係を設定します
         /// </summary>
         private void SetupEntityParentChildRelationships()
         {
@@ -1222,13 +1119,14 @@ namespace boilersExtensions.ViewModels
             foreach (var entity in Entities)
             {
                 foreach (var relationship in entity.Relationships.Where(r =>
-                    r.RelationType.Value == RelationshipType.ManyToOne))
+                             r.RelationType.Value == RelationshipType.ManyToOne))
                 {
-                    string targetEntity = relationship.TargetEntityName.Value;
+                    var targetEntity = relationship.TargetEntityName.Value;
                     if (!referenceCounts.ContainsKey(targetEntity))
                     {
                         referenceCounts[targetEntity] = 0;
                     }
+
                     referenceCounts[targetEntity]++;
                 }
             }
@@ -1266,22 +1164,38 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 型名がプリミティブ型かどうかをチェックします
+        ///     型名がプリミティブ型かどうかをチェックします
         /// </summary>
         private bool IsSimpleType(string typeName)
         {
             var simpleTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "string", "int", "long", "double", "float", "decimal", "bool", "byte", "char",
-                "short", "uint", "ulong", "ushort", "sbyte", "guid", "datetime", "datetimeoffset",
-                "timespan", "object"
+                "string",
+                "int",
+                "long",
+                "double",
+                "float",
+                "decimal",
+                "bool",
+                "byte",
+                "char",
+                "short",
+                "uint",
+                "ulong",
+                "ushort",
+                "sbyte",
+                "guid",
+                "datetime",
+                "datetimeoffset",
+                "timespan",
+                "object"
             };
 
             return simpleTypes.Contains(typeName) || typeName.StartsWith("System.");
         }
 
         /// <summary>
-        /// エンティティの親子関係に基づいてレコード数を更新
+        ///     エンティティの親子関係に基づいてレコード数を更新
         /// </summary>
         private void UpdateEntityRecordCounts()
         {
@@ -1295,7 +1209,9 @@ namespace boilersExtensions.ViewModels
                 var entity = entitiesToProcess.Dequeue();
 
                 if (processedEntities.Contains(entity.Name.Value))
+                {
                     continue;
+                }
 
                 processedEntities.Add(entity.Name.Value);
 
@@ -1326,7 +1242,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// エンティティの親子関係情報を更新
+        ///     エンティティの親子関係情報を更新
         /// </summary>
         private void UpdateEntityRelationshipInfo()
         {
@@ -1387,10 +1303,7 @@ namespace boilersExtensions.ViewModels
         private void LoadAdditionalEntity()
         {
             // ファイル選択ダイアログを表示
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "C# Files (*.cs)|*.cs", Title = "関連エンティティファイルを選択"
-            };
+            var dialog = new OpenFileDialog { Filter = "C# Files (*.cs)|*.cs", Title = "関連エンティティファイルを選択" };
 
             if (dialog.ShowDialog() == true)
             {
@@ -1401,8 +1314,8 @@ namespace boilersExtensions.ViewModels
                     {
                         SetProcessing(true, "関連エンティティを解析中...");
                         // DTEからファイルを開く
-                        var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
-                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, dialog.FileName);
+                        var dte = (DTE)AsyncPackage.GetGlobalService(typeof(DTE));
+                        var documentWindow = dte.OpenFile(Constants.vsViewKindCode, dialog.FileName);
 
                         var document = documentWindow?.Document;
 
@@ -1451,7 +1364,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 名前と型からデータタイプを推測
+        ///     名前と型からデータタイプを推測
         /// </summary>
         private string DetermineDataType(string name, string type)
         {
@@ -1522,9 +1435,9 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// ドキュメントからエンティティ情報を解析して読み込む
+        ///     ドキュメントからエンティティ情報を解析して読み込む
         /// </summary>
-        private async Task<EntityInfo> LoadEntityFromDocument(EnvDTE.Document document)
+        private async Task<EntityInfo> LoadEntityFromDocument(Document document)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -1532,7 +1445,10 @@ namespace boilersExtensions.ViewModels
             {
                 // Roslynドキュメントを取得
                 var roslynDoc = await GetRoslynDocumentFromActiveDocumentAsync(document);
-                if (roslynDoc == null) return null;
+                if (roslynDoc == null)
+                {
+                    return null;
+                }
 
                 // 以下はコードの一部を省略（既存のコードを引き継ぎ）
                 // EntityAnalyzerを使用してエンティティ情報を取得する処理
@@ -1554,11 +1470,14 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 循環参照を検出し、必要に応じて解消します
+        ///     循環参照を検出し、必要に応じて解消します
         /// </summary>
         private void DetectAndSetupRelationships()
         {
-            if (Entities.Count <= 1) return;
+            if (Entities.Count <= 1)
+            {
+                return;
+            }
 
             SetProcessing(true, "リレーションシップを検出中...");
 
@@ -1608,7 +1527,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 循環参照を検出し、必要に応じて解消します
+        ///     循環参照を検出し、必要に応じて解消します
         /// </summary>
         private void DetectAndBreakCircularDependencies()
         {
@@ -1653,7 +1572,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 深さ優先探索で循環参照を検出
+        ///     深さ優先探索で循環参照を検出
         /// </summary>
         private bool DetectCycle(
             string current,
@@ -1695,7 +1614,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// 検出された循環参照を解消
+        ///     検出された循環参照を解消
         /// </summary>
         private void BreakCycle(List<string> cyclePath, Dictionary<string, HashSet<string>> graph)
         {
@@ -1705,8 +1624,8 @@ namespace boilersExtensions.ViewModels
             }
 
             // 循環の最後から2番目と最後のノードの関係を解除
-            string last = cyclePath[0]; // スタックから取得した順序が逆なので、最初が最後
-            string secondLast = cyclePath[1];
+            var last = cyclePath[0]; // スタックから取得した順序が逆なので、最初が最後
+            var secondLast = cyclePath[1];
 
             // 関係をグラフから削除
             if (graph.TryGetValue(secondLast, out var dependencies))
@@ -1731,7 +1650,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// シードデータを生成して挿入
+        ///     シードデータを生成して挿入
         /// </summary>
         private void GenerateSeedData()
         {
@@ -1761,13 +1680,13 @@ namespace boilersExtensions.ViewModels
                     foreach (var entity in Entities.Where(e => e.IsSelected.Value))
                     {
                         // DTEからファイルを開く
-                        var dte = (EnvDTE.DTE)AsyncPackage.GetGlobalService(typeof(EnvDTE.DTE));
-                        var documentWindow = dte.OpenFile(EnvDTE.Constants.vsViewKindCode, entity.FilePath.Value);
+                        var dte = (DTE)AsyncPackage.GetGlobalService(typeof(DTE));
+                        var documentWindow = dte.OpenFile(Constants.vsViewKindCode, entity.FilePath.Value);
 
                         var envDTEDocument = documentWindow?.Document;
 
                         // EntityAnalyzerを使用してC#クラスを解析
-                        var analyzer = new Analyzers.EntityAnalyzer();
+                        var analyzer = new EntityAnalyzer();
 
                         // アクティブなドキュメントをRoslynのDocumentに変換する
                         var document = await GetRoslynDocumentFromActiveDocumentAsync(envDTEDocument);
@@ -1797,7 +1716,7 @@ namespace boilersExtensions.ViewModels
                     if (entityInfos.Count == 0)
                     {
                         MessageBox.Show(
-                            $"出力可能なエンティティクラスが見つかりませんでした。",
+                            "出力可能なエンティティクラスが見つかりませんでした。",
                             "エラー",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
@@ -1812,9 +1731,13 @@ namespace boilersExtensions.ViewModels
                     {
                         // 対応するEntityViewModelを探す
                         var entityVm = Entities.FirstOrDefault(e => e.Name.Value == entity.Name);
-                        if (entityVm == null || !entityVm.IsSelected.Value) continue;
+                        if (entityVm == null || !entityVm.IsSelected.Value)
+                        {
+                            continue;
+                        }
 
-                        var entityConfig = new EntityConfigViewModel { EntityName = entity.Name, IsSelected = { Value = true } };
+                        var entityConfig =
+                            new EntityConfigViewModel { EntityName = entity.Name, IsSelected = { Value = true } };
 
                         // RecordCount値とRecordsPerParent値を設定
                         entityConfig.RecordCount.Value = entityVm.RecordCount.Value;
@@ -1832,7 +1755,9 @@ namespace boilersExtensions.ViewModels
                         foreach (var prop in entity.Properties)
                         {
                             if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                            {
                                 continue;
+                            }
 
                             // UIから該当するプロパティ設定を検索
                             var uiPropConfig = entityVm.GetPropertyConfig(prop.Name);
@@ -1897,7 +1822,7 @@ namespace boilersExtensions.ViewModels
 
                     // 生成したコードを挿入
                     var executor = new SeedDataInsertExecutor(Package);
-                    bool result =
+                    var result =
                         await executor.InsertGeneratedCodeToDocument(_targetDocument, ClassName.Value, generatedCode);
 
                     UpdateProgress(100, "完了");
@@ -1905,7 +1830,7 @@ namespace boilersExtensions.ViewModels
                     // 結果に応じたメッセージを表示
                     if (result)
                     {
-                        int totalRecords = Entities.Where(e => e.IsSelected.Value)
+                        var totalRecords = Entities.Where(e => e.IsSelected.Value)
                             .Sum(e => e.TotalRecordCount.Value);
 
                         MessageBox.Show(
@@ -1915,7 +1840,7 @@ namespace boilersExtensions.ViewModels
                             MessageBoxImage.Information);
 
                         // ダイアログを閉じる
-                        var window = Application.Current.Windows.OfType<System.Windows.Window>()
+                        var window = Application.Current.Windows.OfType<Window>()
                             .FirstOrDefault(w => w.DataContext == this);
                         window?.Close();
                     }
@@ -1943,18 +1868,19 @@ namespace boilersExtensions.ViewModels
             });
         }
 
-        private async Task<Microsoft.CodeAnalysis.Document> GetRoslynDocumentFromActiveDocumentAsync(EnvDTE.Document activeDocument)
+        private async Task<Microsoft.CodeAnalysis.Document> GetRoslynDocumentFromActiveDocumentAsync(
+            Document activeDocument)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             try
             {
                 // ComponentModelサービスを取得
-                var componentModel = (await Package.GetServiceAsync(typeof(SComponentModel))) as IComponentModel;
+                var componentModel = await Package.GetServiceAsync(typeof(SComponentModel)) as IComponentModel;
                 var workspace = componentModel.GetService<VisualStudioWorkspace>();
 
                 // アクティブなドキュメントのパスを取得
-                string documentPath = activeDocument.FullName;
+                var documentPath = activeDocument.FullName;
 
                 // ソリューション内のすべてのプロジェクトからドキュメントを検索
                 foreach (var _project in workspace.CurrentSolution.Projects)
@@ -1970,7 +1896,7 @@ namespace boilersExtensions.ViewModels
 
                 // ドキュメントが見つからない場合の処理
                 // 可能であればAdHocWorkspaceを使用して新しいドキュメントを作成
-                var textDocument = activeDocument.Object("TextDocument") as EnvDTE.TextDocument;
+                var textDocument = activeDocument.Object("TextDocument") as TextDocument;
                 var text = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
 
                 var adhocWorkspace = new AdhocWorkspace();
@@ -2018,7 +1944,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// プレビューテキストを更新
+        ///     プレビューテキストを更新
         /// </summary>
         private void UpdatePreview()
         {
@@ -2067,12 +1993,13 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// C#クラスのプレビューを生成
+        ///     C#クラスのプレビューを生成
         /// </summary>
         private void GenerateCSharpPreview(StringBuilder sb)
         {
             sb.AppendLine($"// {DataCount.Value}件のテストデータを生成するメソッド");
-            sb.AppendLine($"public {(IsStaticMethod.Value ? "static " : "")}List<{ClassName.Value}> GenerateSeedData()");
+            sb.AppendLine(
+                $"public {(IsStaticMethod.Value ? "static " : "")}List<{ClassName.Value}> GenerateSeedData()");
             sb.AppendLine("{");
             sb.AppendLine($"    var result = new List<{ClassName.Value}>();");
             sb.AppendLine("    var random = new Random();");
@@ -2085,10 +2012,11 @@ namespace boilersExtensions.ViewModels
                 sb.AppendLine($"        var item = new {ClassName.Value}");
                 sb.AppendLine("        {");
 
-                for (int i = 0; i < Math.Min(5, Properties.Count); i++)
+                for (var i = 0; i < Math.Min(5, Properties.Count); i++)
                 {
                     var property = Properties[i];
-                    string value = GetSampleValueForType(property.Type.Value, property.Name.Value, property.DataType.Value);
+                    var value = GetSampleValueForType(property.Type.Value, property.Name.Value,
+                        property.DataType.Value);
 
                     if (i < Properties.Count - 1)
                     {
@@ -2111,10 +2039,11 @@ namespace boilersExtensions.ViewModels
             {
                 sb.AppendLine($"        var item = new {ClassName.Value}();");
 
-                for (int i = 0; i < Math.Min(5, Properties.Count); i++)
+                for (var i = 0; i < Math.Min(5, Properties.Count); i++)
                 {
                     var property = Properties[i];
-                    string value = GetSampleValueForType(property.Type.Value, property.Name.Value, property.DataType.Value);
+                    var value = GetSampleValueForType(property.Type.Value, property.Name.Value,
+                        property.DataType.Value);
                     sb.AppendLine($"        item.{property.Name.Value} = {value};");
                 }
 
@@ -2132,21 +2061,21 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// JSON配列のプレビューを生成
+        ///     JSON配列のプレビューを生成
         /// </summary>
         private void GenerateJsonPreview(StringBuilder sb)
         {
             sb.AppendLine("[");
 
             // 先頭の2件を表示
-            for (int i = 0; i < Math.Min(2, DataCount.Value); i++)
+            for (var i = 0; i < Math.Min(2, DataCount.Value); i++)
             {
                 sb.AppendLine("  {");
 
-                for (int j = 0; j < Properties.Count; j++)
+                for (var j = 0; j < Properties.Count; j++)
                 {
                     var property = Properties[j];
-                    string value = GetSampleJsonValue(property.Name.Value, property.Type.Value, property.DataType.Value);
+                    var value = GetSampleJsonValue(property.Name.Value, property.Type.Value, property.DataType.Value);
 
                     if (j < Properties.Count - 1)
                     {
@@ -2179,10 +2108,10 @@ namespace boilersExtensions.ViewModels
 
                 sb.AppendLine("  {");
 
-                for (int j = 0; j < Properties.Count; j++)
+                for (var j = 0; j < Properties.Count; j++)
                 {
                     var property = Properties[j];
-                    string value = GetSampleJsonValue(property.Name.Value, property.Type.Value, property.DataType.Value);
+                    var value = GetSampleJsonValue(property.Name.Value, property.Type.Value, property.DataType.Value);
 
                     if (j < Properties.Count - 1)
                     {
@@ -2201,7 +2130,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// CSV形式のプレビューを生成
+        ///     CSV形式のプレビューを生成
         /// </summary>
         private void GenerateCsvPreview(StringBuilder sb)
         {
@@ -2209,13 +2138,13 @@ namespace boilersExtensions.ViewModels
             sb.AppendLine(string.Join(",", Properties.Select(p => p.Name.Value)));
 
             // データ行（最初の3件だけ表示）
-            for (int i = 0; i < Math.Min(3, DataCount.Value); i++)
+            for (var i = 0; i < Math.Min(3, DataCount.Value); i++)
             {
                 var values = new List<string>();
 
                 foreach (var property in Properties)
                 {
-                    string value = GetSampleCsvValue(property.Name.Value, property.Type.Value, property.DataType.Value);
+                    var value = GetSampleCsvValue(property.Name.Value, property.Type.Value, property.DataType.Value);
                     values.Add(value);
                 }
 
@@ -2230,7 +2159,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// SQL INSERT文のプレビューを生成
+        ///     SQL INSERT文のプレビューを生成
         /// </summary>
         private void GenerateSqlPreview(StringBuilder sb)
         {
@@ -2245,20 +2174,20 @@ namespace boilersExtensions.ViewModels
             }
 
             // カラム名の一覧
-            string columns = string.Join(", ", Properties.Select(p => p.Name.Value));
+            var columns = string.Join(", ", Properties.Select(p => p.Name.Value));
 
             // 先頭の2件のみ表示
-            for (int i = 0; i < Math.Min(2, DataCount.Value); i++)
+            for (var i = 0; i < Math.Min(2, DataCount.Value); i++)
             {
                 var values = new List<string>();
 
                 foreach (var property in Properties)
                 {
-                    string value = GetSampleSqlValue(property.Name.Value, property.Type.Value, property.DataType.Value);
+                    var value = GetSampleSqlValue(property.Name.Value, property.Type.Value, property.DataType.Value);
                     values.Add(value);
                 }
 
-                string valueList = string.Join(", ", values);
+                var valueList = string.Join(", ", values);
 
                 sb.AppendLine($"INSERT INTO {TableName.Value} ({columns}) VALUES ({valueList});");
             }
@@ -2277,7 +2206,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// XML形式のプレビューを生成
+        ///     XML形式のプレビューを生成
         /// </summary>
         private void GenerateXmlPreview(StringBuilder sb)
         {
@@ -2285,13 +2214,13 @@ namespace boilersExtensions.ViewModels
             sb.AppendLine($"<{RootElementName.Value}>");
 
             // 先頭の3件のみ表示
-            for (int i = 0; i < Math.Min(3, DataCount.Value); i++)
+            for (var i = 0; i < Math.Min(3, DataCount.Value); i++)
             {
                 sb.Append($"  <{ItemElementName.Value}");
 
                 foreach (var property in Properties)
                 {
-                    string value = GetSampleXmlValue(property.Name.Value, property.Type.Value, property.DataType.Value);
+                    var value = GetSampleXmlValue(property.Name.Value, property.Type.Value, property.DataType.Value);
                     sb.Append($" {property.Name.Value}=\"{value}\"");
                 }
 
@@ -2308,7 +2237,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// C#のプロパティ型に応じたサンプル値を取得
+        ///     C#のプロパティ型に応じたサンプル値を取得
         /// </summary>
         private string GetSampleValueForType(string typeName, string propertyName, string dataType)
         {
@@ -2320,9 +2249,15 @@ namespace boilersExtensions.ViewModels
 
                 case "名前":
                     if (propertyName.ToLowerInvariant().Contains("first"))
+                    {
                         return "\"FirstName\" + i";
+                    }
+
                     if (propertyName.ToLowerInvariant().Contains("last"))
+                    {
                         return "\"LastName\" + i";
+                    }
+
                     return "\"Name\" + i";
 
                 case "Email":
@@ -2378,7 +2313,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// JSONプロパティ用のサンプル値を取得
+        ///     JSONプロパティ用のサンプル値を取得
         /// </summary>
         private string GetSampleJsonValue(string propertyName, string typeName, string dataType)
         {
@@ -2390,9 +2325,15 @@ namespace boilersExtensions.ViewModels
 
                 case "名前":
                     if (propertyName.ToLowerInvariant().Contains("first"))
+                    {
                         return "\"FirstName1\"";
+                    }
+
                     if (propertyName.ToLowerInvariant().Contains("last"))
+                    {
                         return "\"LastName1\"";
+                    }
+
                     return "\"Name1\"";
 
                 case "Email":
@@ -2448,7 +2389,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// CSV値用のサンプル値を取得
+        ///     CSV値用のサンプル値を取得
         /// </summary>
         private string GetSampleCsvValue(string headerName, string typeName, string dataType)
         {
@@ -2462,9 +2403,15 @@ namespace boilersExtensions.ViewModels
 
                 case "名前":
                     if (headerName.ToLowerInvariant().Contains("first"))
+                    {
                         return "\"FirstName1\"";
+                    }
+
                     if (headerName.ToLowerInvariant().Contains("last"))
+                    {
                         return "\"LastName1\"";
+                    }
+
                     return "\"Name1\"";
 
                 case "Email":
@@ -2520,7 +2467,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// SQL値用のサンプル値を取得
+        ///     SQL値用のサンプル値を取得
         /// </summary>
         private string GetSampleSqlValue(string columnName, string typeName, string dataType)
         {
@@ -2532,9 +2479,15 @@ namespace boilersExtensions.ViewModels
 
                 case "名前":
                     if (columnName.ToLowerInvariant().Contains("first"))
+                    {
                         return "'FirstName1'";
+                    }
+
                     if (columnName.ToLowerInvariant().Contains("last"))
+                    {
                         return "'LastName1'";
+                    }
+
                     return "'Name1'";
 
                 case "Email":
@@ -2590,7 +2543,7 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// XML属性用のサンプル値を取得
+        ///     XML属性用のサンプル値を取得
         /// </summary>
         private string GetSampleXmlValue(string attributeName, string typeName, string dataType)
         {
@@ -2604,9 +2557,15 @@ namespace boilersExtensions.ViewModels
 
                 case "名前":
                     if (attributeName.ToLowerInvariant().Contains("first"))
+                    {
                         return "FirstName1";
+                    }
+
                     if (attributeName.ToLowerInvariant().Contains("last"))
+                    {
                         return "LastName1";
+                    }
+
                     return "Name1";
 
                 case "Email":
@@ -2660,40 +2619,169 @@ namespace boilersExtensions.ViewModels
                     return $"Sample {attributeName}";
             }
         }
+
+        #region プロパティ
+
+        // 対象ファイル情報
+        public ReactivePropertySlim<string> TargetFileName { get; } = new ReactivePropertySlim<string>();
+        public ReactivePropertySlim<string> TargetType { get; } = new ReactivePropertySlim<string>();
+
+        // 生成データ設定
+        public ReactivePropertySlim<int> DataCount { get; } = new ReactivePropertySlim<int>(10);
+
+        // プロパティ一覧
+        public ObservableCollection<PropertyViewModel> Properties { get; } =
+            new ObservableCollection<PropertyViewModel>();
+
+        public ReactivePropertySlim<PropertyViewModel> SelectedProperty { get; } =
+            new ReactivePropertySlim<PropertyViewModel>();
+
+        // エンティティ関連
+        public ObservableCollection<EntityViewModel> Entities { get; } = new ObservableCollection<EntityViewModel>();
+
+        public ReactivePropertySlim<EntityViewModel> SelectedEntity { get; } =
+            new ReactivePropertySlim<EntityViewModel>();
+
+        public ReactivePropertySlim<RelationshipViewModel> SelectedRelationship { get; } =
+            new ReactivePropertySlim<RelationshipViewModel>();
+
+        public List<string> EntityNames => Entities.Select(e => e.Name.Value).ToList();
+
+        public List<RelationshipType> RelationshipTypes { get; } =
+            Enum.GetValues(typeof(RelationshipType)).Cast<RelationshipType>().ToList();
+
+        public ReactivePropertySlim<string> RecordCountInfoText { get; } = new ReactivePropertySlim<string>("10件");
+        public ReactivePropertySlim<int> TotalRecordCount { get; } = new ReactivePropertySlim<int>(10);
+
+        // エンティティ依存関係
+        public ReactivePropertySlim<bool> ShowRelationshipVisualization { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> AutoDetectRelationships { get; } = new ReactivePropertySlim<bool>(true);
+
+        // UI表示用コレクション
+        public ObservableCollection<EntityRelationshipInfo> EntityRelationships { get; } =
+            new ObservableCollection<EntityRelationshipInfo>();
+
+        // データ形式関連
+        public List<string> DataFormats { get; } = new List<string>
+        {
+            "C#クラス",
+            "JSON配列",
+            "CSV形式",
+            "SQL INSERT文",
+            "XML形式"
+        };
+
+        public ReactivePropertySlim<string> SelectedDataFormat { get; } = new ReactivePropertySlim<string>("C#クラス");
+
+        // 各形式の設定
+        public ReactivePropertySlim<bool> IsCSharpFormat { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> IsJsonFormat { get; } = new ReactivePropertySlim<bool>();
+        public ReactivePropertySlim<bool> IsCsvFormat { get; } = new ReactivePropertySlim<bool>();
+        public ReactivePropertySlim<bool> IsSqlFormat { get; } = new ReactivePropertySlim<bool>();
+        public ReactivePropertySlim<bool> IsXmlFormat { get; } = new ReactivePropertySlim<bool>();
+
+        // C#形式設定
+        public ReactivePropertySlim<string> ClassName { get; } = new ReactivePropertySlim<string>("TestData");
+        public ReactivePropertySlim<bool> UsePropertyInitializer { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> IsStaticMethod { get; } = new ReactivePropertySlim<bool>(true);
+
+        // SQL形式設定
+        public ReactivePropertySlim<string> TableName { get; } = new ReactivePropertySlim<string>("TestTable");
+        public ReactivePropertySlim<bool> IncludeTransaction { get; } = new ReactivePropertySlim<bool>(true);
+
+        // XML形式設定
+        public ReactivePropertySlim<string> RootElementName { get; } = new ReactivePropertySlim<string>("TestData");
+        public ReactivePropertySlim<string> ItemElementName { get; } = new ReactivePropertySlim<string>("Item");
+
+        // 詳細設定
+        public ReactivePropertySlim<bool> UseRandomValues { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> AutoGenerateIds { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> IncludeNullValues { get; } = new ReactivePropertySlim<bool>();
+
+        public ReactivePropertySlim<DateTime?> StartDate { get; } =
+            new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(-1));
+
+        public ReactivePropertySlim<DateTime?> EndDate { get; } =
+            new ReactivePropertySlim<DateTime?>(DateTime.Now.AddMonths(1));
+
+        public ReactivePropertySlim<string> MinNumericValue { get; } = new ReactivePropertySlim<string>("1");
+        public ReactivePropertySlim<string> MaxNumericValue { get; } = new ReactivePropertySlim<string>("100");
+
+        // プレビュー
+        public ReactivePropertySlim<string> PreviewText { get; } = new ReactivePropertySlim<string>();
+
+        // 使用可能なデータタイプ
+        public List<string> DataTypes { get; } = new List<string>
+        {
+            "標準",
+            "ID/連番",
+            "名前",
+            "Email",
+            "電話番号",
+            "住所",
+            "日付",
+            "ブール値",
+            "GUID",
+            "価格/金額",
+            "カスタム"
+        };
+
+        // 対象ドキュメント
+        private Document _targetDocument;
+
+        #endregion
+
+        #region コマンド
+
+        // コマンド
+        public ReactiveCommand AddPropertyCommand { get; }
+        public ReactiveCommand RemovePropertyCommand { get; }
+        public ReactiveCommand MoveUpPropertyCommand { get; }
+        public ReactiveCommand MoveDownPropertyCommand { get; }
+        public ReactiveCommand LoadSchemaCommand { get; }
+        public ReactiveCommand GenerateSeedDataCommand { get; }
+        public ReactiveCommand CancelCommand { get; }
+        public ReactiveCommand LoadAdditionalEntityCommand { get; }
+        public ReactiveCommand AddRelationshipCommand { get; }
+        public ReactiveCommand RemoveRelationshipCommand { get; }
+        public ReactiveCommand DetectRelationshipsCommand { get; }
+        public ReactiveCommand UpdateRecordCountsCommand { get; }
+
+        #endregion
     }
 
     /// <summary>
-    /// エンティティ関係情報を表示するためのクラス
+    ///     エンティティ関係情報を表示するためのクラス
     /// </summary>
     public class EntityRelationshipInfo
     {
         /// <summary>
-        /// 親エンティティ名
+        ///     親エンティティ名
         /// </summary>
         public string ParentEntityName { get; set; }
 
         /// <summary>
-        /// エンティティ名
+        ///     エンティティ名
         /// </summary>
         public string ThisEntityName { get; set; }
 
         /// <summary>
-        /// リレーションシップの種類
+        ///     リレーションシップの種類
         /// </summary>
         public string RelationshipType { get; set; }
 
         /// <summary>
-        /// 親1件あたりの子レコード数
+        ///     親1件あたりの子レコード数
         /// </summary>
         public int RecordsPerParent { get; set; }
 
         /// <summary>
-        /// 合計レコード数
+        ///     合計レコード数
         /// </summary>
         public int TotalRecords { get; set; }
 
         /// <summary>
-        /// 表示用文字列
+        ///     表示用文字列
         /// </summary>
         public override string ToString()
         {
@@ -2707,20 +2795,10 @@ namespace boilersExtensions.ViewModels
     }
 
     /// <summary>
-    /// プロパティ情報を保持するViewModel
+    ///     プロパティ情報を保持するViewModel
     /// </summary>
     public class PropertyViewModel : ViewModelBase
     {
-        public ReactivePropertySlim<string> Name { get; } = new ReactivePropertySlim<string>();
-        public ReactivePropertySlim<string> Type { get; } = new ReactivePropertySlim<string>();
-        public ReactivePropertySlim<string> DataType { get; } = new ReactivePropertySlim<string>();
-
-        // 固定値リストを保持するプロパティを追加
-        public ReactiveCollection<string> FixedValues { get; } = new ReactiveCollection<string>();
-
-        // 固定値があるかどうかを示すプロパティ
-        public ReactivePropertySlim<bool> HasFixedValues { get; } = new ReactivePropertySlim<bool>(false);
-
         public PropertyViewModel()
         {
             // ReactivePropertyをDisposablesコレクションに追加
@@ -2736,11 +2814,23 @@ namespace boilersExtensions.ViewModels
             };
         }
 
+        public ReactivePropertySlim<string> Name { get; } = new ReactivePropertySlim<string>();
+        public ReactivePropertySlim<string> Type { get; } = new ReactivePropertySlim<string>();
+        public ReactivePropertySlim<string> DataType { get; } = new ReactivePropertySlim<string>();
+
+        // 固定値リストを保持するプロパティを追加
+        public ReactiveCollection<string> FixedValues { get; } = new ReactiveCollection<string>();
+
+        // 固定値があるかどうかを示すプロパティ
+        public ReactivePropertySlim<bool> HasFixedValues { get; } = new ReactivePropertySlim<bool>();
+
         // 固定値の文字列表現（表示用）
         public string GetFixedValuesDisplayText()
         {
             if (FixedValues.Count == 0)
+            {
                 return string.Empty;
+            }
 
             return FixedValues.Count == 1
                 ? FixedValues[0]
