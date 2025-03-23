@@ -1908,40 +1908,40 @@ namespace boilersExtensions.ViewModels
                     var config = new SeedDataConfig();
 
                     // 選択されているエンティティの設定を取得
-                    var entity = entityInfos.First(x => x.Name == ClassName.Value);
-                    var entityConfig = new EntityConfigViewModel
+                    //var entity = entityInfos.First(x => x.Name == ClassName.Value);
+                    foreach (var entity in entityInfos)
                     {
-                        EntityName = entity.Name,
-                        RecordCount = TotalRecordCount.Value,
-                        IsSelected = true
-                    };
-
-                    // プロパティ設定をコピー
-                    foreach (var prop in entity.Properties)
-                    {
-                        if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
-                            continue;
-
-                        // UIから該当するプロパティ設定を検索
-                        var uiPropConfig = SelectedEntity.Value.GetPropertyConfig(prop.Name);
-                        if (uiPropConfig != null)
+                        var entityConfig = new EntityConfigViewModel
                         {
-                            // 設定をコピー
-                            entityConfig.PropertyConfigs.Add(uiPropConfig);
-                        }
-                        else
+                            EntityName = entity.Name, RecordCount = TotalRecordCount.Value, IsSelected = true
+                        };
+
+                        // プロパティ設定をコピー
+                        foreach (var prop in entity.Properties)
                         {
-                            // 新しい設定を作成
-                            entityConfig.PropertyConfigs.Add(new PropertyConfigViewModel
+                            if (prop.ExcludeFromSeed || prop.IsNavigationProperty || prop.IsCollection)
+                                continue;
+
+                            // UIから該当するプロパティ設定を検索
+                            var uiPropConfig = SelectedEntity.Value.GetPropertyConfig(prop.Name);
+                            if (uiPropConfig != null)
                             {
-                                PropertyName = prop.Name,
-                                PropertyTypeName = prop.TypeName
-                            });
+                                // 設定をコピー
+                                entityConfig.PropertyConfigs.Add(uiPropConfig);
+                            }
+                            else
+                            {
+                                // 新しい設定を作成
+                                entityConfig.PropertyConfigs.Add(new PropertyConfigViewModel
+                                {
+                                    PropertyName = prop.Name, PropertyTypeName = prop.TypeName
+                                });
+                            }
                         }
-                    }
 
-                    // 設定を保存
-                    config.UpdateEntityConfig(entityConfig);
+                        // 設定を保存
+                        config.UpdateEntityConfig(entityConfig);
+                    }
 
                     UpdateProgress(50, "コード生成中...");
 
