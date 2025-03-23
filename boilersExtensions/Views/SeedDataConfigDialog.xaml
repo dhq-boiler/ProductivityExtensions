@@ -272,8 +272,7 @@
                                     <Style TargetType="ComboBox">
                                         <Setter Property="Background" Value="#333333" />
                                         <Setter Property="Foreground" Value="White" />
-                                        <Setter Property="ItemsSource"
-                                                Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                         <Style.Resources>
                                             <Style TargetType="ComboBoxItem">
                                                 <Setter Property="Background" Value="#333333" />
@@ -285,8 +284,7 @@
                                 <DataGridComboBoxColumn.EditingElementStyle>
                                     <Style TargetType="ComboBox">
                                         <Setter Property="Foreground" Value="Black" />
-                                        <Setter Property="ItemsSource"
-                                                Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                         <Style.Resources>
                                             <Style TargetType="ComboBoxItem">
                                                 <Setter Property="Foreground" Value="Black" />
@@ -346,10 +344,10 @@
 
                         <!--  エンティティ情報  -->
                         <StackPanel Grid.Row="0">
-                            <TextBlock FontWeight="Bold"
-                                       Text="{Binding SelectedEntity.Value.Name.Value, StringFormat='エンティティ: {0}'}" />
+                            <TextBlock FontWeight="Bold" Text="{Binding SelectedEntity.Value.Name.Value, StringFormat='エンティティ: {0}'}" />
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
@@ -372,22 +370,22 @@
 
                                 <!--  親エンティティがある場合の設定  -->
                                 <TextBlock
-                                    Grid.Column="1"
+                                    Grid.Column="2"
                                     Text="親エンティティ:"
                                     Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}" />
                                 <TextBlock
-                                    Grid.Column="2"
+                                    Grid.Column="3"
                                     Margin="5,0"
                                     Text="{Binding SelectedEntity.Value.ParentEntity.Value.Name.Value}"
                                     Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}" />
 
                                 <TextBlock
-                                    Grid.Column="3"
+                                    Grid.Column="4"
                                     Margin="10,0,0,0"
                                     Text="親1件あたりのレコード数:"
                                     Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}" />
                                 <TextBox
-                                    Grid.Column="4"
+                                    Grid.Column="5"
                                     Width="60"
                                     Margin="5,0"
                                     Text="{Binding SelectedEntity.Value.RecordsPerParent.Value, UpdateSourceTrigger=PropertyChanged}"
@@ -395,7 +393,7 @@
 
                                 <!--  共通  -->
                                 <TextBlock
-                                    Grid.Column="5"
+                                    Grid.Column="6"
                                     Margin="10,0,0,0"
                                     HorizontalAlignment="Right"
                                     Text="{Binding SelectedEntity.Value.TotalRecordCount.Value, StringFormat='合計: {0}件'}" />
@@ -486,8 +484,7 @@
                                             <Style TargetType="ComboBox">
                                                 <Setter Property="Background" Value="#333333" />
                                                 <Setter Property="Foreground" Value="White" />
-                                                <Setter Property="ItemsSource"
-                                                        Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                                 <Style.Resources>
                                                     <Style TargetType="ComboBoxItem">
                                                         <Setter Property="Background" Value="#333333" />
@@ -499,8 +496,7 @@
                                         <DataGridComboBoxColumn.EditingElementStyle>
                                             <Style TargetType="ComboBox">
                                                 <Setter Property="Foreground" Value="Black" />
-                                                <Setter Property="ItemsSource"
-                                                        Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                                 <Style.Resources>
                                                     <Style TargetType="ComboBoxItem">
                                                         <Setter Property="Foreground" Value="Black" />
@@ -520,10 +516,8 @@
                                                     -->
                                                     <TextBlock>
                                                         <TextBlock.Text>
-                                                            <MultiBinding
-                                                                Converter="{StaticResource PropertyWithNameConverter}">
-                                                                <Binding Path="DataContext.SelectedEntity.Value"
-                                                                         RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                            <MultiBinding Converter="{StaticResource PropertyWithNameConverter}">
+                                                                <Binding Path="DataContext.SelectedEntity.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
                                                                 <Binding Path="Name.Value" />
                                                             </MultiBinding>
                                                         </TextBlock.Text>
@@ -595,14 +589,12 @@
                                             <ComboBox Style="{StaticResource ImprovedDataTypeComboBox}">
                                                 <ComboBox.ItemsSource>
                                                     <MultiBinding Converter="{StaticResource EntityPropertyConverter}">
-                                                        <Binding Path="DataContext"
-                                                                 RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
                                                         <Binding Path="SourceEntityName.Value" />
                                                     </MultiBinding>
                                                 </ComboBox.ItemsSource>
                                                 <ComboBox.SelectedItem>
-                                                    <Binding Path="SourceProperty.Value"
-                                                             UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Path="SourceProperty.Value" UpdateSourceTrigger="PropertyChanged" />
                                                 </ComboBox.SelectedItem>
                                             </ComboBox>
                                         </DataTemplate>
@@ -656,14 +648,12 @@
                                             <ComboBox Style="{StaticResource ImprovedDataTypeComboBox}">
                                                 <ComboBox.ItemsSource>
                                                     <MultiBinding Converter="{StaticResource EntityPropertyConverter}">
-                                                        <Binding Path="DataContext"
-                                                                 RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
                                                         <Binding Path="TargetEntityName.Value" />
                                                     </MultiBinding>
                                                 </ComboBox.ItemsSource>
                                                 <ComboBox.SelectedItem>
-                                                    <Binding Path="TargetProperty.Value"
-                                                             UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Path="TargetProperty.Value" UpdateSourceTrigger="PropertyChanged" />
                                                 </ComboBox.SelectedItem>
                                             </ComboBox>
                                         </DataTemplate>
@@ -693,8 +683,7 @@
                             SelectedItem="{Binding SelectedDataFormat.Value}" />
 
                         <!--  C#形式の追加設定  -->
-                        <StackPanel
-                            Visibility="{Binding IsCSharpFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Visibility="{Binding IsCSharpFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="クラス名" />
                             <TextBox Text="{Binding ClassName.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Content="プロパティ初期化子構文を使用する" IsChecked="{Binding UsePropertyInitializer.Value}" />
@@ -702,16 +691,14 @@
                         </StackPanel>
 
                         <!--  SQL形式の追加設定  -->
-                        <StackPanel
-                            Visibility="{Binding IsSqlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Visibility="{Binding IsSqlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="テーブル名" />
                             <TextBox Text="{Binding TableName.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <CheckBox Content="Transaction処理を含める" IsChecked="{Binding IncludeTransaction.Value}" />
                         </StackPanel>
 
                         <!--  XML形式の追加設定  -->
-                        <StackPanel
-                            Visibility="{Binding IsXmlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Visibility="{Binding IsXmlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="ルート要素名" />
                             <TextBox Text="{Binding RootElementName.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <TextBlock Text="項目要素名" />
@@ -770,14 +757,12 @@
                             Text="数値範囲" />
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Width="50" Text="最小値:" />
-                            <TextBox Width="80"
-                                     Text="{Binding MinNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="80" Text="{Binding MinNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <TextBlock
                                 Width="50"
                                 Margin="10,0,0,0"
                                 Text="最大値:" />
-                            <TextBox Width="80"
-                                     Text="{Binding MaxNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="80" Text="{Binding MaxNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </StackPanel>
 
