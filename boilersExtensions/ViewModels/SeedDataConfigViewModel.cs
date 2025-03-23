@@ -5,28 +5,20 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Analyzers;
+using boilersExtensions.Generators;
 using boilersExtensions.Models;
 using boilersExtensions.Utils;
-using EnvDTE;
-using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
-using Project = Microsoft.CodeAnalysis.Project;
-using Solution = Microsoft.CodeAnalysis.Solution;
-using System.Reflection.Metadata;
-using System.Text.RegularExpressions;
-using Document = EnvDTE.Document;
-using TextDocument = EnvDTE.TextDocument;
-using static boilersExtensions.Generators.FixedValueCombinationGenerator;
-using boilersExtensions.Generators;
 
 namespace boilersExtensions.ViewModels
 {
@@ -994,96 +986,298 @@ namespace boilersExtensions.ViewModels
         }
 
         /// <summary>
-        /// エンティティ間のリレーションシップを自動検出して設定
+        /// 命名規則に基づいて外部キー関係を検出します
+        /// （例: EntityId, EntityXId は Entity または EntityX への外部キーとして検出）
         /// </summary>
-        private void DetectAndSetupRelationships()
+        private void DetectRelationshipsByNamingConvention()
         {
-            if (Entities.Count <= 1) return;
+            // エンティティ名のマップを構築（大文字小文字を区別しない）
+            var entityNameMap = Entities.ToDictionary(
+                e => e.Name.Value.ToLowerInvariant(),
+                e => e,
+                StringComparer.OrdinalIgnoreCase);
 
-            // エンティティの親子関係を検出
-            var entityConfigs = new List<EntityConfigViewModel>();
-
-            // EntityViewModelからEntityConfigViewModelを作成
+            // 各エンティティのプロパティを調査
             foreach (var entity in Entities)
             {
-                var config = new EntityConfigViewModel
-                {
-                    EntityName = entity.Name.Value, IsSelected = { Value = entity.IsSelected.Value }
-                };
+                var entityName = entity.Name.Value;
 
-                // RecordCountをコピー
-                config.RecordCount.Value = entity.RecordCount.Value;
-
-                // プロパティ設定をコピー
-                foreach (var prop in entity.Properties)
+                // 対象のプロパティを検査
+                foreach (var property in entity.Properties)
                 {
-                    config.PropertyConfigs.Add(new PropertyConfigViewModel
+                    var propertyName = property.Name.Value;
+
+                    // 典型的な外部キーパターン: EntityId, EntityRefId, EntityXId など
+                    if (propertyName.EndsWith("Id") && propertyName != "Id")
                     {
-                        PropertyName = prop.Name.Value, PropertyTypeName = prop.Type.Value
-                    });
-                }
+                        // "Id"を除いた部分を取得
+                        string possibleEntityName = propertyName.Substring(0, propertyName.Length - 2);
 
-                entityConfigs.Add(config);
-            }
-
-            // リレーションシップを解決
-            foreach (var config in entityConfigs)
-            {
-                config.ResolveEntityRelationships(entityConfigs);
-            }
-
-            // EntityViewModelの関係を更新
-            foreach (var entity in Entities)
-            {
-                var config = entityConfigs.FirstOrDefault(c => c.EntityName == entity.Name.Value);
-                if (config != null)
-                {
-                    // 親がある場合は設定を反映
-                    if (config.HasParent.Value && config.ParentEntity.Value != null)
-                    {
-                        var parentName = config.ParentEntity.Value.EntityName;
-                        var parentEntity = Entities.FirstOrDefault(e => e.Name.Value == parentName);
-
-                        if (parentEntity != null)
+                        // EntityRefId の場合、"Ref"も除去
+                        if (possibleEntityName.EndsWith("Ref"))
                         {
-                            // 親1件あたりの子レコード数を設定（デフォルト値）
-                            entity.RecordsPerParent.Value = 2;
-                            entity.ParentEntity.Value = parentEntity;
+                            possibleEntityName = possibleEntityName.Substring(0, possibleEntityName.Length - 3);
+                        }
 
-                            // リレーションシップを追加
-                            var relationship = entity.Relationships.FirstOrDefault(r =>
-                                r.TargetEntityName.Value == parentName);
-
-                            if (relationship == null)
+                        // 対応するエンティティを検索（大文字小文字を区別しない）
+                        if (entityNameMap.TryGetValue(possibleEntityName.ToLowerInvariant(), out var targetEntity) &&
+                            targetEntity != entity) // 自己参照でない場合
+                        {
+                            // 既に関係が定義されていないかチェック
+                            if (!entity.Relationships.Any(r =>
+                                r.TargetEntityName.Value == targetEntity.Name.Value &&
+                                r.SourceProperty.Value == propertyName))
                             {
-                                // 外部キーフィールドを探す
-                                string fkField = entity.Properties
-                                    .FirstOrDefault(p => p.Name.Value == parentName + "Id")?.Name.Value;
-
-                                if (!string.IsNullOrEmpty(fkField))
+                                // 新しいリレーションシップを追加
+                                var relationship = new RelationshipViewModel
                                 {
-                                    relationship = new RelationshipViewModel
+                                    SourceEntityName = { Value = entityName },
+                                    SourceProperty = { Value = propertyName },
+                                    TargetEntityName = { Value = targetEntity.Name.Value },
+                                    TargetProperty = { Value = "Id" }, // 通常、ターゲットはIDフィールド
+                                    RelationType = { Value = RelationshipType.ManyToOne } // 外部キーは多対一関係を示す
+                                };
+
+                                entity.Relationships.Add(relationship);
+
+                                Debug.WriteLine($"外部キー命名規則に基づいて関係を検出: {entityName}.{propertyName} -> {targetEntity.Name.Value}.Id");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// プロパティの型の一致に基づいて関係を検出します
+        /// </summary>
+        private void DetectRelationshipsByPropertyTypes()
+        {
+            return; // 一時的に無効化
+
+            // 主キーを持つエンティティを収集
+            var entitiesWithKeys = new Dictionary<string, (EntityViewModel Entity, PropertyViewModel KeyProperty)>();
+
+            foreach (var entity in Entities)
+            {
+                // Id プロパティを持つエンティティを収集
+                var keyProperty = entity.Properties.FirstOrDefault(p => p.Name.Value == "Id");
+                if (keyProperty != null)
+                {
+                    entitiesWithKeys[entity.Name.Value] = (entity, keyProperty);
+                }
+            }
+
+            // 各エンティティのプロパティを調査して型の一致を検索
+            foreach (var entity in Entities)
+            {
+                var entityName = entity.Name.Value;
+
+                foreach (var property in entity.Properties)
+                {
+                    // 既に主キーまたは検出された外部キーの場合はスキップ
+                    if (property.Name.Value == "Id" ||
+                        entity.Relationships.Any(r => r.SourceProperty.Value == property.Name.Value))
+                    {
+                        continue;
+                    }
+
+                    // プロパティの型が他のエンティティの主キー型と一致するか検査
+                    foreach (var keyEntity in entitiesWithKeys)
+                    {
+                        if (keyEntity.Key != entityName && // 自分自身でない
+                            property.Type.Value == keyEntity.Value.KeyProperty.Type.Value) // 型が一致
+                        {
+                            // 命名規則に一致する場合（EntityTypeId、EntityTypeKey など）
+                            if (property.Name.Value.Contains(keyEntity.Key) ||
+                                property.Name.Value.EndsWith("Key") ||
+                                property.Name.Value.EndsWith("Id"))
+                            {
+                                // 既に関係が定義されていないかチェック
+                                if (!entity.Relationships.Any(r =>
+                                    r.TargetEntityName.Value == keyEntity.Key &&
+                                    r.SourceProperty.Value == property.Name.Value))
+                                {
+                                    // 新しいリレーションシップを追加
+                                    var relationship = new RelationshipViewModel
                                     {
-                                        SourceEntityName = { Value = entity.Name.Value },
-                                        SourceProperty = { Value = fkField },
-                                        TargetEntityName = { Value = parentName },
+                                        SourceEntityName = { Value = entityName },
+                                        SourceProperty = { Value = property.Name.Value },
+                                        TargetEntityName = { Value = keyEntity.Key },
                                         TargetProperty = { Value = "Id" },
                                         RelationType = { Value = RelationshipType.ManyToOne }
                                     };
 
                                     entity.Relationships.Add(relationship);
+
+                                    Debug.WriteLine($"プロパティ型の一致に基づいて関係を検出: {entityName}.{property.Name.Value} -> {keyEntity.Key}.Id");
                                 }
                             }
                         }
                     }
                 }
             }
+        }
 
-            // レコード数を更新
-            UpdateEntityRecordCounts();
+        /// <summary>
+        /// ナビゲーションプロパティに基づいて関係を検出します
+        /// （コレクション型プロパティや参照型プロパティを探す）
+        /// </summary>
+        private void DetectRelationshipsByNavigationProperties()
+        {
+            // エンティティ名のマップを構築
+            var entityNameMap = Entities.ToDictionary(e => e.Name.Value, e => e);
 
-            // リレーションシップ表示を更新
-            UpdateEntityRelationshipInfo();
+            foreach (var entity in Entities)
+            {
+                var entityName = entity.Name.Value;
+
+                foreach (var property in entity.Properties)
+                {
+                    var propertyType = property.Type.Value;
+                    var propertyName = property.Name.Value;
+
+                    // コレクション型のプロパティを検出（例: List<EntityType>, IEnumerable<EntityType> など）
+                    var collectionMatch = Regex.Match(propertyType, @"(?:List|IList|ICollection|IEnumerable)<(\w+)>");
+                    if (collectionMatch.Success)
+                    {
+                        var elementType = collectionMatch.Groups[1].Value;
+
+                        // 対応するエンティティが存在するか
+                        if (entityNameMap.TryGetValue(elementType, out var targetEntity) &&
+                            targetEntity != entity) // 自己参照でない場合
+                        {
+                            // 既に関係が定義されていないかチェック
+                            if (!entity.Relationships.Any(r =>
+                                r.TargetEntityName.Value == elementType &&
+                                (string.IsNullOrEmpty(r.SourceProperty.Value) || r.SourceProperty.Value == propertyName)))
+                            {
+                                // 新しいリレーションシップを追加 - 1対多（1側がこのエンティティ）
+                                var relationship = new RelationshipViewModel
+                                {
+                                    SourceEntityName = { Value = entityName },
+                                    SourceProperty = { Value = propertyName },
+                                    TargetEntityName = { Value = elementType },
+                                    TargetProperty = { Value = "Id" },
+                                    RelationType = { Value = RelationshipType.OneToMany }
+                                };
+
+                                entity.Relationships.Add(relationship);
+
+                                Debug.WriteLine($"コレクションプロパティに基づいて関係を検出: {entityName}.{propertyName} -> {elementType} (1対多)");
+                            }
+                        }
+                    }
+                    // 参照型プロパティを検出
+                    else if (!propertyType.Contains("<") && // ジェネリック型でない
+                             !IsSimpleType(propertyType) && // プリミティブ型でない
+                             entityNameMap.TryGetValue(propertyType, out var refEntity) &&
+                             refEntity != entity) // 自己参照でない場合
+                    {
+                        // 既に関係が定義されていないかチェック
+                        if (!entity.Relationships.Any(r =>
+                            r.TargetEntityName.Value == propertyType &&
+                            r.SourceProperty.Value == propertyName))
+                        {
+                            // このエンティティに対応する外部キープロパティを探す
+                            var foreignKeyProperty = entity.Properties.FirstOrDefault(p =>
+                                p.Name.Value == $"{propertyType}Id" ||
+                                p.Name.Value == $"{propertyName}Id");
+
+                            string sourceProperty = foreignKeyProperty?.Name.Value ?? propertyName;
+
+                            // 新しいリレーションシップを追加 - 多対1（多側がこのエンティティ）
+                            var relationship = new RelationshipViewModel
+                            {
+                                SourceEntityName = { Value = entityName },
+                                SourceProperty = { Value = sourceProperty },
+                                TargetEntityName = { Value = propertyType },
+                                TargetProperty = { Value = "Id" },
+                                RelationType = { Value = RelationshipType.ManyToOne }
+                            };
+
+                            entity.Relationships.Add(relationship);
+
+                            Debug.WriteLine($"参照プロパティに基づいて関係を検出: {entityName}.{propertyName} -> {propertyType} (多対1)");
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 見つかった関係に基づいてエンティティの親子関係を設定します
+        /// </summary>
+        private void SetupEntityParentChildRelationships()
+        {
+            // まず既存の親子関係をクリア
+            foreach (var entity in Entities)
+            {
+                entity.ParentEntity.Value = null;
+            }
+
+            // 優先度の高い親エンティティを選択するために、各エンティティが参照している他のエンティティをカウント
+            var referenceCounts = new Dictionary<string, int>();
+
+            foreach (var entity in Entities)
+            {
+                foreach (var relationship in entity.Relationships.Where(r =>
+                    r.RelationType.Value == RelationshipType.ManyToOne))
+                {
+                    string targetEntity = relationship.TargetEntityName.Value;
+                    if (!referenceCounts.ContainsKey(targetEntity))
+                    {
+                        referenceCounts[targetEntity] = 0;
+                    }
+                    referenceCounts[targetEntity]++;
+                }
+            }
+
+            // 各エンティティに親を設定（ManyToOne関係に基づいて）
+            foreach (var entity in Entities)
+            {
+                // ManyToOne関係を探す（このエンティティが「多」側）
+                var manyToOneRelationships = entity.Relationships
+                    .Where(r => r.RelationType.Value == RelationshipType.ManyToOne)
+                    .OrderByDescending(r => referenceCounts[r.TargetEntityName.Value]) // 多く参照されているエンティティを優先
+                    .ToList();
+
+                if (manyToOneRelationships.Any())
+                {
+                    // 最初のリレーションシップを親として使用
+                    var parentRelationship = manyToOneRelationships.First();
+                    var parentName = parentRelationship.TargetEntityName.Value;
+
+                    // 親エンティティを検索
+                    var parentEntity = Entities.FirstOrDefault(e => e.Name.Value == parentName);
+
+                    if (parentEntity != null)
+                    {
+                        // 親エンティティを設定
+                        entity.ParentEntity.Value = parentEntity;
+
+                        // 親1件あたりの子レコード数を設定（デフォルト値）
+                        entity.RecordsPerParent.Value = 2;
+
+                        Debug.WriteLine($"親子関係を設定: {entity.Name.Value} -> {parentName}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 型名がプリミティブ型かどうかをチェックします
+        /// </summary>
+        private bool IsSimpleType(string typeName)
+        {
+            var simpleTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "string", "int", "long", "double", "float", "decimal", "bool", "byte", "char",
+                "short", "uint", "ulong", "ushort", "sbyte", "guid", "datetime", "datetimeoffset",
+                "timespan", "object"
+            };
+
+            return simpleTypes.Contains(typeName) || typeName.StartsWith("System.");
         }
 
         /// <summary>
@@ -1359,8 +1553,182 @@ namespace boilersExtensions.ViewModels
             return null;
         }
 
-        // 以下は既存のメソッドの省略
-        // ...
+        /// <summary>
+        /// 循環参照を検出し、必要に応じて解消します
+        /// </summary>
+        private void DetectAndSetupRelationships()
+        {
+            if (Entities.Count <= 1) return;
+
+            SetProcessing(true, "リレーションシップを検出中...");
+
+            try
+            {
+                // 1. 外部キー命名規則に基づいて関係を検出
+                DetectRelationshipsByNamingConvention();
+                UpdateProgress(20, "外部キー命名規則による検出完了");
+
+                // 2. プロパティの型の一致に基づいて関係を検出
+                DetectRelationshipsByPropertyTypes();
+                UpdateProgress(40, "プロパティ型による検出完了");
+
+                // 3. 既存のナビゲーションプロパティに基づいて関係を検出
+                DetectRelationshipsByNavigationProperties();
+                UpdateProgress(60, "ナビゲーションプロパティによる検出完了");
+
+                // 4. 循環参照を検出して解消
+                DetectAndBreakCircularDependencies();
+                UpdateProgress(70, "循環参照チェック完了");
+
+                // 5. 見つかった関係に基づいてエンティティの親子関係を設定
+                SetupEntityParentChildRelationships();
+                UpdateProgress(80, "親子関係の設定完了");
+
+                // 6. レコード数を更新
+                UpdateEntityRecordCounts();
+                UpdateProgress(90, "レコード数の計算完了");
+
+                // 7. リレーションシップ表示を更新
+                UpdateEntityRelationshipInfo();
+                UpdateProgress(100, "リレーションシップ表示の更新完了");
+
+                // 処理成功メッセージ
+                ShowMessage("リレーションシップの検出が完了しました。");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error detecting relationships: {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
+                ShowMessage($"リレーションシップの検出中にエラーが発生しました: {ex.Message}");
+            }
+            finally
+            {
+                SetProcessing(false);
+            }
+        }
+
+        /// <summary>
+        /// 循環参照を検出し、必要に応じて解消します
+        /// </summary>
+        private void DetectAndBreakCircularDependencies()
+        {
+            // 関係に基づいて依存グラフを構築
+            var dependencyGraph = new Dictionary<string, HashSet<string>>();
+
+            foreach (var entity in Entities)
+            {
+                var entityName = entity.Name.Value;
+
+                if (!dependencyGraph.ContainsKey(entityName))
+                {
+                    dependencyGraph[entityName] = new HashSet<string>();
+                }
+
+                // このエンティティが依存している他のエンティティを追加
+                foreach (var relationship in entity.Relationships.Where(r =>
+                             r.RelationType.Value == RelationshipType.ManyToOne))
+                {
+                    dependencyGraph[entityName].Add(relationship.TargetEntityName.Value);
+                }
+            }
+
+            // 循環参照を検出して解消
+            foreach (var entity in Entities)
+            {
+                var entityName = entity.Name.Value;
+
+                if (dependencyGraph.ContainsKey(entityName))
+                {
+                    var visited = new HashSet<string>();
+                    var path = new Stack<string>();
+
+                    // このエンティティを起点に循環参照を検索
+                    if (DetectCycle(entityName, dependencyGraph, visited, path))
+                    {
+                        // 循環参照が見つかった場合、一部の関係を解除して循環を解消
+                        BreakCycle(path.ToList(), dependencyGraph);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 深さ優先探索で循環参照を検出
+        /// </summary>
+        private bool DetectCycle(
+            string current,
+            Dictionary<string, HashSet<string>> graph,
+            HashSet<string> visited,
+            Stack<string> path)
+        {
+            if (path.Contains(current))
+            {
+                // 現在のノードが既にパス上にある場合は循環
+                path.Push(current);
+                return true;
+            }
+
+            if (visited.Contains(current))
+            {
+                // 既に訪問済みで循環がなかった場合
+                return false;
+            }
+
+            visited.Add(current);
+            path.Push(current);
+
+            // 依存先を再帰的に探索
+            if (graph.TryGetValue(current, out var dependencies))
+            {
+                foreach (var dependency in dependencies)
+                {
+                    if (DetectCycle(dependency, graph, visited, path))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // このパスでは循環が見つからなかったのでポップ
+            path.Pop();
+            return false;
+        }
+
+        /// <summary>
+        /// 検出された循環参照を解消
+        /// </summary>
+        private void BreakCycle(List<string> cyclePath, Dictionary<string, HashSet<string>> graph)
+        {
+            if (cyclePath.Count < 2)
+            {
+                return;
+            }
+
+            // 循環の最後から2番目と最後のノードの関係を解除
+            string last = cyclePath[0]; // スタックから取得した順序が逆なので、最初が最後
+            string secondLast = cyclePath[1];
+
+            // 関係をグラフから削除
+            if (graph.TryGetValue(secondLast, out var dependencies))
+            {
+                dependencies.Remove(last);
+            }
+
+            // 実際のエンティティの関係も更新
+            var secondLastEntity = Entities.FirstOrDefault(e => e.Name.Value == secondLast);
+            if (secondLastEntity != null)
+            {
+                var relationshipToRemove = secondLastEntity.Relationships.FirstOrDefault(r =>
+                    r.TargetEntityName.Value == last &&
+                    r.RelationType.Value == RelationshipType.ManyToOne);
+
+                if (relationshipToRemove != null)
+                {
+                    secondLastEntity.Relationships.Remove(relationshipToRemove);
+                    Debug.WriteLine($"循環参照を解消: {secondLast} -> {last} の関係を削除");
+                }
+            }
+        }
 
         /// <summary>
         /// シードデータを生成して挿入
