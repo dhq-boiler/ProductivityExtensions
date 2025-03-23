@@ -6,7 +6,7 @@
     xmlns:converters="clr-namespace:boilersExtensions.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="テストデータ生成設定"
+    Title="Seed Generator for EFCore"
     Width="700"
     Height="600"
     Background="#1F1F1F"
@@ -193,7 +193,7 @@
                 <TextBlock
                     FontSize="16"
                     FontWeight="Bold"
-                    Text="テストデータ生成設定" />
+                    Text="Seed Generator for EFCore" />
                 <TextBlock Margin="0,5,0,0" Text="{Binding TargetFileName.Value}" />
                 <TextBlock Text="{Binding TargetType.Value}" />
             </StackPanel>
