@@ -101,12 +101,6 @@ namespace boilersExtensions.Commands
                     // #endregion から対応する #region にジャンプ
                     JumpToMatchingStartRegion(textView, currentLine);
                 }
-                else
-                {
-                    Debug.WriteLine("Not on a region directive, looking for nearest one");
-                    // カーソル行が #region/#endregion でなければ最も近い region/endregion を検索
-                    FindAndJumpToNearestRegion(textView, currentLine);
-                }
             }
             catch (Exception ex)
             {
