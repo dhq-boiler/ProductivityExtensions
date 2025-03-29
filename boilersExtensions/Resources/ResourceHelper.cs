@@ -12,8 +12,8 @@ namespace boilersExtensions.Resources
 
         internal static void InitializeCurrentCulture()
         {
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.CurrentUICulture;
-            Debug.WriteLine($"CurrentUICulture: {Thread.CurrentThread.CurrentUICulture}");
+            Resources.Culture = CultureInfo.CurrentUICulture;
+            Debug.WriteLine($"CurrentUICulture: {Resources.Culture}");
         }
 
         internal static string GetString(string name)
@@ -27,7 +27,7 @@ namespace boilersExtensions.Resources
 
             try
             {
-                string result = resourceMan.GetString(name, Thread.CurrentThread.CurrentUICulture);
+                string result = resourceMan.GetString(name, Resources.Culture);
                 Debug.WriteLine($"GetString({name}) -> {result}");
                 return result ?? name;
             }

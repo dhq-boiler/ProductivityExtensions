@@ -117,11 +117,89 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BatchUpdateGuid" xml:space="preserve">
+    <value>Guidを一括更新する</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
   <data name="Caption_Cancel" xml:space="preserve">
     <value>キャンセル</value>
   </data>
   <data name="Caption_Rename" xml:space="preserve">
     <value>リネーム</value>
+  </data>
+  <data name="ChangeTypeFromTypeHierarchy" xml:space="preserve">
+    <value>型階層から型を選択</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>コード</value>
+  </data>
+  <data name="File" xml:space="preserve">
+    <value>ファイル</value>
+  </data>
+  <data name="FixedValuesDialog_Header" xml:space="preserve">
+    <value>固定値の設定</value>
+  </data>
+  <data name="FixedValuesDialog_Property" xml:space="preserve">
+    <value>プロパティ名: </value>
+  </data>
+  <data name="FixedValuesDialog_Title" xml:space="preserve">
+    <value>固定値の編集</value>
+  </data>
+  <data name="GuidSelectionDialog_Description" xml:space="preserve">
+    <value>選択したGUIDを一括で新しいGUIDに置き換えます。</value>
+  </data>
+  <data name="GuidSelectionDialog_GenerateNewGuid" xml:space="preserve">
+    <value>新しいGuidを生成</value>
+  </data>
+  <data name="GuidSelectionDialog_NewGuid" xml:space="preserve">
+    <value>新しいGuid</value>
+  </data>
+  <data name="GuidSelectionDialog_Occurrences" xml:space="preserve">
+    <value>出現回数</value>
+  </data>
+  <data name="GuidSelectionDialog_OriginalGuid" xml:space="preserve">
+    <value>元のGuid</value>
+  </data>
+  <data name="GuidSelectionDialog_Title" xml:space="preserve">
+    <value>Guid一括更新</value>
+  </data>
+  <data name="ImpactAnalysisDialog_AffectedFiles" xml:space="preserve">
+    <value>影響を受けるファイル</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Bookmark" xml:space="preserve">
+    <value>ブックマーク</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Description" xml:space="preserve">
+    <value> 箇所の参照が影響を受ける可能性があります。</value>
+  </data>
+  <data name="ImpactAnalysisDialog_DetailedProblemAreas" xml:space="preserve">
+    <value>詳細な問題箇所</value>
+  </data>
+  <data name="ImpactAnalysisDialog_NewType" xml:space="preserve">
+    <value>新しい型</value>
+  </data>
+  <data name="ImpactAnalysisDialog_OriginalType" xml:space="preserve">
+    <value>元の型</value>
+  </data>
+  <data name="ImpactAnalysisDialog_PotentialProblems" xml:space="preserve">
+    <value>潜在的な問題</value>
+  </data>
+  <data name="ImpactAnalysisDialog_ReferencePoint" xml:space="preserve">
+    <value>参照箇所</value>
+  </data>
+  <data name="ImpactAnalysisDialog_SuggestedModifications" xml:space="preserve">
+    <value>修正の提案</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Total" xml:space="preserve">
+    <value>合計</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Title" xml:space="preserve">
+    <value>型置換の影響範囲分析</value>
+  </data>
+  <data name="Kind" xml:space="preserve">
+    <value>種類</value>
   </data>
   <data name="Label_NewProjectName" xml:space="preserve">
     <value>リネーム後のプロジェクト名：</value>
@@ -132,10 +210,67 @@
   <data name="Label_WillRenameParentDir" xml:space="preserve">
     <value>ソリューションの親ディレクトリをリネームする</value>
   </data>
+  <data name="Line" xml:space="preserve">
+    <value>行</value>
+  </data>
+  <data name="MoveBetweenRegionAndEndRegion" xml:space="preserve">
+    <value>#region/#endregion間を移動</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="OpenGitHubLine" xml:space="preserve">
+    <value>GitHubホスティングリポジトリの該当行を開く</value>
+  </data>
+  <data name="Preferences" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="PreviewChanges" xml:space="preserve">
+    <value>変更をプレビュー</value>
+  </data>
+  <data name="RenameProject" xml:space="preserve">
+    <value>プロジェクトをリネームする</value>
+  </data>
+  <data name="RenameSolution" xml:space="preserve">
+    <value>ソリューションをリネームする</value>
+  </data>
+  <data name="SeedGeneratorForEFCore" xml:space="preserve">
+    <value>Seed Generator for EFCore</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>選択</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
   <data name="Title_RenameProject" xml:space="preserve">
     <value>プロジェクトのリネーム</value>
   </data>
   <data name="Title_RenameSolution" xml:space="preserve">
     <value>ソリューションのリネーム</value>
+  </data>
+  <data name="UnselectAll" xml:space="preserve">
+    <value>すべて選択解除</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="UpdateSelectedGuidString" xml:space="preserve">
+    <value>選択したGuid文字列を更新する</value>
+  </data>
+  <data name="ViewInSolutionExplorer" xml:space="preserve">
+    <value>ソリューションエクスプローラーで表示</value>
+  </data>
+  <data name="FixedValuesDialog_Description" xml:space="preserve">
+    <value>各行に1つの値を入力してください。生成するレコードは値ごとに作成されます。</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="CountKasho" xml:space="preserve">
+    <value>箇所</value>
+  </data>
+  <data name="Original" xml:space="preserve">
+    <value>元</value>
   </data>
 </root>

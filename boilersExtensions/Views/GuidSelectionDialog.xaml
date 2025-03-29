@@ -5,8 +5,9 @@
     xmlns:controls="clr-namespace:boilersExtensions.Controls"
     xmlns:converters="clr-namespace:boilersExtensions.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="clr-namespace:boilersExtensions.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="GUID一括更新"
+    Title="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.GuidSelectionDialog_Title, Mode=OneWay}"
     Width="800"
     Height="600"
     Background="#1F1F1F"
@@ -123,22 +124,22 @@
             <Button
                 Margin="5"
                 Command="{Binding SelectAllCommand}"
-                Content="すべて選択"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SelectAll, Mode=OneWay}"
                 IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
             <Button
                 Margin="5"
                 Command="{Binding UnselectAllCommand}"
-                Content="すべて選択解除"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.UnselectAll, Mode=OneWay}"
                 IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
             <Button
                 Margin="5"
                 Command="{Binding GenerateNewGuidsCommand}"
-                Content="新しいGUIDを生成"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.GuidSelectionDialog_GenerateNewGuid, Mode=OneWay}"
                 IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
             <CheckBox
                 Margin="10,0"
                 VerticalAlignment="Center"
-                Content="変更をプレビュー"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.PreviewChanges, Mode=OneWay}"
                 IsChecked="{Binding PreviewChanges.Value}"
                 IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
         </StackPanel>
@@ -153,15 +154,15 @@
                 <DataGridCheckBoxColumn
                     Width="50"
                     Binding="{Binding IsSelected.Value}"
-                    Header="選択" />
+                    Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Select, Mode=OneWay}" />
                 <DataGridTextColumn
                     Width="*"
                     Binding="{Binding OriginalGuid.Value}"
-                    Header="元のGUID" />
+                    Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.GuidSelectionDialog_OriginalGuid, Mode=OneWay}" />
                 <DataGridTextColumn
                     Width="*"
                     Binding="{Binding NewGuid.Value}"
-                    Header="新しいGUID">
+                    Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.GuidSelectionDialog_NewGuid, Mode=OneWay}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="#76B9ED" />
@@ -171,7 +172,7 @@
                 <DataGridTextColumn
                     Width="80"
                     Binding="{Binding Occurrences.Value}"
-                    Header="出現回数">
+                    Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.GuidSelectionDialog_Occurrences, Mode=OneWay}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -186,7 +187,7 @@
             <TextBlock
                 VerticalAlignment="Center"
                 DockPanel.Dock="Left"
-                Text="選択したGUIDを一括で新しいGUIDに置き換えます。" />
+                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.GuidSelectionDialog_Description, Mode=OneWay}" />
             <StackPanel
                 HorizontalAlignment="Right"
                 DockPanel.Dock="Right"
@@ -194,12 +195,12 @@
                 <Button
                     Margin="5"
                     Command="{Binding UpdateGuidsCommand}"
-                    Content="更新"
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Update, Mode=OneWay}"
                     IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
                 <Button
                     Margin="5"
                     Command="{Binding CancelCommand}"
-                    Content="キャンセル"
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Cancel, Mode=OneWay}"
                     IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
             </StackPanel>
         </DockPanel>

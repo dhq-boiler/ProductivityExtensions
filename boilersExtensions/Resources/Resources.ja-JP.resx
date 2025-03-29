@@ -120,11 +120,29 @@
   <data name="BatchUpdateGuid" xml:space="preserve">
     <value>GUIDを一括更新する</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
   <data name="ChangeTypeFromTypeHierarchy" xml:space="preserve">
     <value>型階層から型を選択</value>
   </data>
+  <data name="FixedValuesDialog_Description" xml:space="preserve">
+    <value>各行に1つの値を入力してください。生成するレコードは値ごとに作成されます。</value>
+  </data>
+  <data name="FixedValuesDialog_Header" xml:space="preserve">
+    <value>固定値の設定</value>
+  </data>
+  <data name="FixedValuesDialog_Property" xml:space="preserve">
+    <value>プロパティ名: </value>
+  </data>
+  <data name="FixedValuesDialog_Title" xml:space="preserve">
+    <value>固定値の編集</value>
+  </data>
   <data name="MoveBetweenRegionAndEndRegion" xml:space="preserve">
     <value>#region/#endregion間を移動</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
   </data>
   <data name="OpenGitHubLine" xml:space="preserve">
     <value>GitHubホスティングリポジトリの該当行を開く</value>

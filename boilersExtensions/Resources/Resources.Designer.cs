@@ -70,6 +70,15 @@ namespace boilersExtensions.Resources {
         }
         
         /// <summary>
+        ///   Cancel に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string Cancel {
+            get {
+                return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Change type from type hierarchy に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string ChangeTypeFromTypeHierarchy {
@@ -79,11 +88,56 @@ namespace boilersExtensions.Resources {
         }
         
         /// <summary>
+        ///   Enter one value on each line. The records to be generated are created per value. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string FixedValuesDialog_Description {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Fixed value setting に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string FixedValuesDialog_Header {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property name:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string FixedValuesDialog_Property {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Property", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Edit Fixed Values に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string FixedValuesDialog_Title {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Move between #region/#endregion に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string MoveBetweenRegionAndEndRegion {
             get {
                 return ResourceManager.GetString("MoveBetweenRegionAndEndRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
             }
         }
         

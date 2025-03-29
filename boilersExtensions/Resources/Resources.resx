@@ -120,11 +120,29 @@
   <data name="BatchUpdateGuid" xml:space="preserve">
     <value>Batch update Guid</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="ChangeTypeFromTypeHierarchy" xml:space="preserve">
     <value>Change type from type hierarchy</value>
   </data>
+  <data name="FixedValuesDialog_Description" xml:space="preserve">
+    <value>Enter one value on each line. The records to be generated are created per value.</value>
+  </data>
+  <data name="FixedValuesDialog_Header" xml:space="preserve">
+    <value>Fixed value setting</value>
+  </data>
+  <data name="FixedValuesDialog_Property" xml:space="preserve">
+    <value>Property name: </value>
+  </data>
+  <data name="FixedValuesDialog_Title" xml:space="preserve">
+    <value>Edit Fixed Values</value>
+  </data>
   <data name="MoveBetweenRegionAndEndRegion" xml:space="preserve">
     <value>Move between #region/#endregion</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
   </data>
   <data name="OpenGitHubLine" xml:space="preserve">
     <value>Open the corresponding line in the GitHub hosting repository</value>
