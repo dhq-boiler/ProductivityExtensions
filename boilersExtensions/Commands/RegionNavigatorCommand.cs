@@ -45,6 +45,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new RegionNavigatorCommand();
+            menuItem.Text = Resources.ResourceService.GetString("MoveBetweenRegionAndEndRegion");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("RegionNavigatorCommand initialized successfully with keyboard shortcut Ctrl+F2");

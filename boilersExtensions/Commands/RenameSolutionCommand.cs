@@ -55,6 +55,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new RenameSolutionCommand();
+            menuItem.Text = Resources.ResourceService.GetString("RenameSolution");
             commandService.AddCommand(Instance);
         }
 

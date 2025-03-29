@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using boilersExtensions.DialogPages;
+using boilersExtensions.Resources;
 using Microsoft.VisualStudio.Shell;
 
 /// <summary>
@@ -19,7 +20,8 @@ internal sealed class BoilersExtensionsSettingsCommand
         commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
         var menuCommandID = new CommandID(CommandSet, CommandId);
-        var menuItem = new MenuCommand(ExecuteSettings, menuCommandID);
+        var menuItem = new OleMenuCommand(ExecuteSettings, menuCommandID);
+        menuItem.Text = ResourceService.GetString("Preferences");
         commandService.AddCommand(menuItem);
     }
 

@@ -38,6 +38,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new SyncToSolutionExplorerCommand();
+            menuItem.Text = Resources.ResourceService.GetString("ViewInSolutionExplorer");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("SyncToSolutionExplorerCommand initialized successfully");

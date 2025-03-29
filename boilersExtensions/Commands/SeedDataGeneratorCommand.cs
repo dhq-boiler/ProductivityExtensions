@@ -47,6 +47,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new SeedDataGeneratorCommand();
+            menuItem.Text = Resources.ResourceService.GetString("SeedGeneratorForEFCore");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("SeedDataGeneratorCommand initialized successfully");

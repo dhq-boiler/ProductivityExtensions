@@ -54,6 +54,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new UpdateGuidCommand();
+            menuItem.Text = Resources.ResourceService.GetString("UpdateSelectedGuidString");
             commandService.AddCommand(Instance);
         }
 

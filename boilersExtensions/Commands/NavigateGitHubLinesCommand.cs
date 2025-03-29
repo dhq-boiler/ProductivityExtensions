@@ -96,6 +96,7 @@ namespace boilersExtensions
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new NavigateGitHubLinesCommand();
+            menuItem.Text = Resources.ResourceService.GetString("OpenGitHubLine");
             commandService.AddCommand(Instance);
         }
 

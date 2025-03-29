@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using boilersExtensions.Commands;
 using boilersExtensions.DialogPages;
+using boilersExtensions.Resources;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
@@ -44,6 +45,8 @@ namespace boilersExtensions
             IProgress<ServiceProgressData> progress)
         {
             await base.InitializeAsync(cancellationToken, progress);
+
+            ResourceService.InitializeCurrentCulture();
 
             // UI threadに切り替え
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);

@@ -60,6 +60,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new BatchUpdateGuidCommand();
+            menuItem.Text = Resources.ResourceService.GetString("BatchUpdateGuid");
             commandService.AddCommand(Instance);
         }
 
