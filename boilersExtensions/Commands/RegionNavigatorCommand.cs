@@ -332,13 +332,17 @@ namespace boilersExtensions.Commands
                 }
 
                 // 機能が有効な場合は通常の条件で表示/非表示を決定
-                command.Visible = true;
 
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
+                //テキストエディタ上のカーソル位置にある行のテキストを取得
+                var textDocument = dte.ActiveDocument.Object("TextDocument") as TextDocument;
+                var selection = textDocument.Selection as TextSelection;
+                var currentLineText = selection.ActivePoint.CreateEditPoint().GetLines(selection.ActivePoint.Line, selection.ActivePoint.Line + 1).Trim();
+
                 // アクティブなドキュメントがある場合のみ有効化
-                command.Enabled = dte.ActiveDocument != null;
+                command.Visible = command.Enabled = dte.ActiveDocument != null && (IsRegionStart(currentLineText) || IsRegionEnd(currentLineText));
             }
         }
 

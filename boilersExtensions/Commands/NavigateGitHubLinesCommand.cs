@@ -76,9 +76,7 @@ namespace boilersExtensions
                 }
 
                 // 機能が有効な場合は通常の条件で表示/非表示を決定
-                command.Visible = true;
-
-                command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
+                command.Visible = command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
             }
         }
 

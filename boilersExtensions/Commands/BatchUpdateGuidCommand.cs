@@ -127,14 +127,29 @@ namespace boilersExtensions.Commands
                     return;
                 }
 
-                // 機能が有効な場合は通常の条件で表示/非表示を決定
-                command.Visible = true;
-
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
-                // アクティブなドキュメントがある場合のみ有効化
-                command.Enabled = dte.ActiveDocument != null;
+                // デフォルトで非表示・無効化
+                command.Visible = command.Enabled = false;
+
+                // アクティブなドキュメントがある場合のみチェック
+                if (dte.ActiveDocument != null)
+                {
+                    var textDocument = dte.ActiveDocument.Object("TextDocument") as TextDocument;
+                    if (textDocument != null)
+                    {
+                        // ドキュメント内のGUIDを検索
+                        var editPoint = textDocument.StartPoint.CreateEditPoint();
+                        var documentText = editPoint.GetText(textDocument.EndPoint);
+
+                        // GUIDパターンの正規表現
+                        var guidPattern = @"(\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?)";
+
+                        // GUIDが見つかれば有効化
+                        command.Visible = command.Enabled = Regex.IsMatch(documentText, guidPattern);
+                    }
+                }
             }
         }
 

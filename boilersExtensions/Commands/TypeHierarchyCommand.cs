@@ -277,8 +277,72 @@ namespace boilersExtensions.Commands
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
-                // アクティブなドキュメントがある場合のみ有効化
-                command.Enabled = dte.ActiveDocument != null;
+                // デフォルトで無効化
+                command.Enabled = false;
+
+                // アクティブなドキュメントがある場合のみチェック
+                if (dte.ActiveDocument != null)
+                {
+                    try
+                    {
+                        // 現在のテキストビューを取得
+                        var textView = GetCurrentTextView();
+                        if (textView != null)
+                        {
+                            // 選択またはカーソル位置のワードを取得
+                            var selectedSpan = GetSelectedWordSpan(textView);
+                            if (selectedSpan != null && !selectedSpan.Value.IsEmpty)
+                            {
+                                // ドキュメントを取得
+                                var document = GetDocumentFromTextView(textView);
+                                if (document != null)
+                                {
+                                    // Roslynを使って型名かどうかを非同期で確認する
+                                    // BeforeQueryStatusは同期メソッドなため、工夫が必要
+                                    var task = Task.Run(async () => {
+                                        try
+                                        {
+                                            // カーソル位置の型シンボルを取得
+                                            var result = await TypeHierarchyAnalyzer.GetTypeSymbolAtPositionAsync(
+                                                document, selectedSpan.Value.Start.Position);
+
+                                            // 型シンボルが取得できたかどうかを確認
+                                            var isValidType = result.typeSymbol != null;
+
+                                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                                            // 型シンボルが取得できた場合のみコマンドを有効化
+                                            command.Enabled = isValidType;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Debug.WriteLine($"Error checking symbol type: {ex.Message}");
+                                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                                            command.Enabled = false;
+                                        }
+                                    });
+
+                                    // タスクの完了を待つ（タイムアウト付き）
+                                    // BeforeQueryStatusがブロックしすぎないよう短めのタイムアウトを設定
+                                    if (task.Wait(100))
+                                    {
+                                        // タスクが完了した場合、結果はすでに反映されている
+                                    }
+                                    else
+                                    {
+                                        // タイムアウトした場合、安全側に倒して有効にする
+                                        // Executeメソッドで詳細チェックするため
+                                        command.Enabled = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error in BeforeQueryStatus: {ex.Message}");
+                    }
+                }
             }
         }
 

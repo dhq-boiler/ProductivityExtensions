@@ -171,10 +171,7 @@ namespace boilersExtensions.Commands
                     command.Enabled = false;
                     return;
                 }
-
-                // 機能が有効な場合は通常の条件で表示/非表示を決定
-                command.Visible = true;
-
+                
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
@@ -186,13 +183,13 @@ namespace boilersExtensions.Commands
                     {
                         var selection = textDocument.Selection;
                         // テキストが選択されていて、それがGUIDフォーマットの場合のみ有効化
-                        command.Enabled = !string.IsNullOrEmpty(selection.Text) && IsGuid(selection.Text);
+                        command.Visible = command.Enabled = !string.IsNullOrEmpty(selection.Text) && IsGuid(selection.Text);
                         return;
                     }
                 }
 
                 // それ以外の場合は無効化
-                command.Enabled = false;
+                command.Visible = command.Enabled = false;
             }
         }
 
