@@ -18,15 +18,16 @@ jobs:
     - name: Get version from tag
       id: get_version
       run: |
-        try {
-          $tag = git describe --tags --abbrev=0
-          # タグからvプレフィックスを削除する (例: v3.2.1 → 3.2.1)
-          $version = $tag -replace "^v", ""
-        } catch {
-          # タグが存在しない場合のデフォルトバージョン
-          $version = "1.0.0"
+        $version = "1.0.0"  # デフォルト値
+        $tagOutput = $(git tag --list)
+        if ($tagOutput) {
+          $tag = $(git describe --tags --abbrev=0 2>$null)
+          if ($tag) {
+            $version = $tag -replace "^v", ""
+          }
         }
         echo "version=$version" >> $env:GITHUB_OUTPUT
+      shell: pwsh
     - name: Update version
       run: |
         $version = "${{ steps.get_version.outputs.version }}"
