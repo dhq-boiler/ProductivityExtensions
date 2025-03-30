@@ -97,6 +97,7 @@
     <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
     <Compile Include="Utils\IssueGroupViewModel.cs" />
     <Compile Include="Utils\LanguageChangeManager.cs" />
+    <Compile Include="Utils\MenuTextUpdater.cs" />
     <Compile Include="Utils\RazorFileUtility.cs" />
     <Compile Include="Utils\RazorMappingHelper.cs" />
     <Compile Include="Utils\SeedDataInsertExecutor.cs" />

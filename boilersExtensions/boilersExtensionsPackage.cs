@@ -5,6 +5,7 @@ using System.Threading;
 using boilersExtensions.Commands;
 using boilersExtensions.DialogPages;
 using boilersExtensions.Helpers;
+using boilersExtensions.Utils;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
@@ -45,20 +46,16 @@ namespace boilersExtensions
             IProgress<ServiceProgressData> progress)
         {
             await base.InitializeAsync(cancellationToken, progress);
-
-            ResourceService.InitializeCurrentCulture();
-
+            
             // UI threadに切り替え
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             // 新しい拡張機能設定コマンドを初期化
             await BoilersExtensionsSettingsCommand.InitializeAsync(this);
 
+
             // 言語設定を適用
             ResourceService.InitializeCurrentCulture();
-
-            // 言語変更マネージャーを初期化
-            Utils.LanguageChangeManager.Initialize(this);
 
             // 他の初期化処理
             await NavigateGitHubLinesCommand.InitializeAsync(this);
@@ -75,6 +72,11 @@ namespace boilersExtensions
             Debug.WriteLine("Initializing RegionNavigator extensions manually");
             ManualExtensionInitializer.Initialize(this);
             Debug.WriteLine("Manual initialization completed");
+
+            MenuTextUpdater.UpdateAllCommandTexts();
+
+            // 言語変更マネージャーを初期化
+            Utils.LanguageChangeManager.Initialize(this);
         }
     }
 }

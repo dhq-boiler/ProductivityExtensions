@@ -69,6 +69,9 @@ namespace boilersExtensions.Utils
                             // リソースサービスに通知して再ロード
                             ResourceService.ApplyLanguageSetting();
 
+                            // Update all command texts
+                            MenuTextUpdater.UpdateAllCommandTexts();
+
                             Debug.WriteLine($"Language changed from {currentLanguage} to {settingLanguage}");
                         }
                         catch (Exception ex)

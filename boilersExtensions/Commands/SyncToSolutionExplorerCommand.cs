@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using boilersExtensions.Helpers;
+using boilersExtensions.Utils;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Task = System.Threading.Tasks.Task;
@@ -40,6 +41,7 @@ namespace boilersExtensions.Commands
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new SyncToSolutionExplorerCommand();
             menuItem.Text = ResourceService.GetString("ViewInSolutionExplorer");
+            MenuTextUpdater.RegisterCommand(menuItem, "ViewInSolutionExplorer");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("SyncToSolutionExplorerCommand initialized successfully");

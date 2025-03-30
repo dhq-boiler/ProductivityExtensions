@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using boilersExtensions.Helpers;
+using boilersExtensions.Utils;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -56,6 +57,7 @@ namespace boilersExtensions.Commands
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new UpdateGuidCommand();
             menuItem.Text = ResourceService.GetString("UpdateSelectedGuidString");
+            MenuTextUpdater.RegisterCommand(menuItem, "UpdateSelectedGuidString");
             commandService.AddCommand(Instance);
         }
 

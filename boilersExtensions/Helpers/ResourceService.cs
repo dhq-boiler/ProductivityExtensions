@@ -66,6 +66,7 @@ namespace boilersExtensions.Helpers
 
                     // カルチャを設定
                     Thread.CurrentThread.CurrentUICulture = culture;
+                    Properties.Resource.Culture = culture;
                     Debug.WriteLine($"Culture set to {culture.Name}");
                 });
             }
@@ -93,7 +94,7 @@ namespace boilersExtensions.Helpers
                 int retryCount = 0;
                 while (result == null && retryCount < 3)
                 {
-                    result = resourceMan.GetString(name, Resources.Culture);
+                    result = resourceMan.GetString(name, boilersExtensions.Properties.Resource.Culture);
                     if (result == null)
                     {
                         retryCount++;

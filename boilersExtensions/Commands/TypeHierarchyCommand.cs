@@ -56,6 +56,7 @@ namespace boilersExtensions.Commands
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new TypeHierarchyCommand();
             menuItem.Text = ResourceService.GetString("ChangeTypeFromTypeHierarchy");
+            MenuTextUpdater.RegisterCommand(menuItem, "ChangeTypeFromTypeHierarchy");
             commandService.AddCommand(Instance);
         }
 

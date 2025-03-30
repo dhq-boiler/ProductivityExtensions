@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using boilersExtensions;
 using boilersExtensions.DialogPages;
 using boilersExtensions.Helpers;
+using boilersExtensions.Properties;
+using boilersExtensions.Utils;
 using Microsoft.VisualStudio.Shell;
 
 /// <summary>
@@ -46,7 +48,9 @@ internal sealed class BoilersExtensionsSettingsCommand
         if (commandService != null)
         {
             var menuCommandID = new CommandID(CommandSet, CommandId);
-            var menuItem = new MenuCommand(ShowSettings, menuCommandID);
+            var menuItem = new OleMenuCommand(ShowSettings, menuCommandID);
+            menuItem.Text = ResourceService.GetString("Preferences");
+            MenuTextUpdater.RegisterCommand(menuItem, "Preferences");
             commandService.AddCommand(menuItem);
         }
     }
