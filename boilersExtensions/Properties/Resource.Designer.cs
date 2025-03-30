@@ -70,6 +70,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Apply に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Apply {
+            get {
+                return ResourceManager.GetString("Apply", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Batch update Guid に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string BatchUpdateGuid {
@@ -1101,6 +1110,69 @@ namespace boilersExtensions.Properties {
         public static string Type {
             get {
                 return ResourceManager.GetString("Type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Analyze scope of impact に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_AnalyzeScopeOfImpact {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_AnalyzeScopeOfImpact", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Replaced by the selected type. A using statement is also added if necessary. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_Description {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Original type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_OriginalType {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_OriginalType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show base type/interface に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_ShowBaseTypesAndInterfaces {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_ShowBaseTypesAndInterfaces", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show Derivative Types に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_ShowDerivativeTypes {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_ShowDerivativeTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show related types に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_ShowRelatedTypes {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_ShowRelatedTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type hierarchy selection に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_Title {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_Title", resourceCulture);
             }
         }
         

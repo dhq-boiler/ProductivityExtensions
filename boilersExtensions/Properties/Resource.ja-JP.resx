@@ -480,4 +480,28 @@
   <data name="Property" xml:space="preserve">
     <value>プロパティ</value>
   </data>
+  <data name="TypeHierarchyDialog_Title" xml:space="preserve">
+    <value>型階層選択</value>
+  </data>
+  <data name="TypeHierarchyDialog_Description" xml:space="preserve">
+    <value>選択した型で置き換えます。必要に応じてusing文も追加されます。</value>
+  </data>
+  <data name="TypeHierarchyDialog_OriginalType" xml:space="preserve">
+    <value>元の型</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowBaseTypesAndInterfaces" xml:space="preserve">
+    <value>ベース型/インターフェースを表示</value>
+  </data>
+  <data name="TypeHierarchyDialog_AnalyzeScopeOfImpact" xml:space="preserve">
+    <value>影響範囲を分析</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowDerivativeTypes" xml:space="preserve">
+    <value>派生型を表示</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowRelatedTypes" xml:space="preserve">
+    <value>関連型を表示</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>適用</value>
+  </data>
 </root>

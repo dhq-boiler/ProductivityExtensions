@@ -480,4 +480,28 @@
   <data name="Property" xml:space="preserve">
     <value>Property</value>
   </data>
+  <data name="TypeHierarchyDialog_Title" xml:space="preserve">
+    <value>Type hierarchy selection</value>
+  </data>
+  <data name="TypeHierarchyDialog_Description" xml:space="preserve">
+    <value>Replaced by the selected type. A using statement is also added if necessary.</value>
+  </data>
+  <data name="TypeHierarchyDialog_OriginalType" xml:space="preserve">
+    <value>Original type</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowBaseTypesAndInterfaces" xml:space="preserve">
+    <value>Show base type/interface</value>
+  </data>
+  <data name="TypeHierarchyDialog_AnalyzeScopeOfImpact" xml:space="preserve">
+    <value>Analyze scope of impact</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowDerivativeTypes" xml:space="preserve">
+    <value>Show Derivative Types</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowRelatedTypes" xml:space="preserve">
+    <value>Show related types</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
 </root>
