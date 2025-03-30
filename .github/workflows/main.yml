@@ -37,9 +37,6 @@ jobs:
         (Get-Content -Path boilersExtensions\Properties\AssemblyInfo.cs) |
           ForEach-Object {$_ -Replace '1.0.0', $version} |
             Set-Content -Path boilersExtensions\Properties\AssemblyInfo.cs
-        (Get-Content -Path boilersExtensions\boilersExtensions.cs) |
-          ForEach-Object {$_ -Replace '1.0.0', $version} |
-            Set-Content -Path boilersExtensions\boilersExtensions.cs
     - name: Restore
       run: nuget restore
     - name: Build
