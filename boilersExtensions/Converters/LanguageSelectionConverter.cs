@@ -7,30 +7,25 @@ using System.Linq;
 namespace boilersExtensions.Converters
 {
     /// <summary>
-    /// TypeConverter for language selection in settings
+    ///     TypeConverter for language selection in settings
     /// </summary>
     public class LanguageSelectionConverter : TypeConverter
     {
         // Dictionary to map language codes to display names
         private static readonly Dictionary<string, string> _languageOptions = new Dictionary<string, string>
         {
-            { "en-US", "English (US)" },
-            { "ja-JP", "日本語 (Japanese)" }
+            { "en-US", "English (US)" }, { "ja-JP", "日本語 (Japanese)" }
         };
 
         public override bool GetStandardValuesSupported(ITypeDescriptorContext context) => true;
 
         public override bool GetStandardValuesExclusive(ITypeDescriptorContext context) => true;
 
-        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
-        {
-            return new StandardValuesCollection(_languageOptions.Keys.ToList());
-        }
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context) =>
+            new StandardValuesCollection(_languageOptions.Keys.ToList());
 
-        public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
-        {
-            return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
-        }
+        public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) =>
+            sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
@@ -52,7 +47,8 @@ namespace boilersExtensions.Converters
             return base.ConvertFrom(context, culture, value);
         }
 
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value,
+            Type destinationType)
         {
             if (destinationType == typeof(string) && value is string languageCode)
             {
@@ -61,6 +57,7 @@ namespace boilersExtensions.Converters
                 {
                     return displayName;
                 }
+
                 return languageCode;
             }
 

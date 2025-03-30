@@ -104,7 +104,8 @@
             Orientation="Vertical">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left" FontWeight="Bold">
-                    <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_OriginalType, Mode=OneWay}" />
+                    <Run
+                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_OriginalType, Mode=OneWay}" />
                     <Run Text=":" />
                 </TextBlock>
                 <TextBlock FontFamily="Consolas" Text="{Binding OriginalTypeName.Value}" />
@@ -120,7 +121,9 @@
                 Margin="0,0,10,0"
                 Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowBaseTypesAndInterfaces, Mode=OneWay}"
                 IsChecked="{Binding ShowBaseTypes.Value}" />
-            <CheckBox Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowDerivativeTypes, Mode=OneWay}" IsChecked="{Binding ShowDerivedTypes.Value}" />
+            <CheckBox
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowDerivativeTypes, Mode=OneWay}"
+                IsChecked="{Binding ShowDerivedTypes.Value}" />
             <CheckBox
                 Margin="10,0,0,0"
                 Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowRelatedTypes, Mode=OneWay}"

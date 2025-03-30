@@ -174,7 +174,7 @@ namespace boilersExtensions.Commands
                     command.Enabled = false;
                     return;
                 }
-                
+
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
@@ -186,7 +186,8 @@ namespace boilersExtensions.Commands
                     {
                         var selection = textDocument.Selection;
                         // テキストが選択されていて、それがGUIDフォーマットの場合のみ有効化
-                        command.Visible = command.Enabled = !string.IsNullOrEmpty(selection.Text) && IsGuid(selection.Text);
+                        command.Visible = command.Enabled =
+                            !string.IsNullOrEmpty(selection.Text) && IsGuid(selection.Text);
                         return;
                     }
                 }

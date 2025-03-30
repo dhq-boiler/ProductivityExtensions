@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using boilersExtensions.Helpers;
 using Microsoft.VisualStudio.Shell;
 
@@ -16,7 +12,7 @@ namespace boilersExtensions.Utils
         // Register a command to be updated when language changes
         public static void RegisterCommand(OleMenuCommand command, string resourceKey)
         {
-            command.AutomationName = resourceKey;  // Store the resource key in the AutomationName property
+            command.AutomationName = resourceKey; // Store the resource key in the AutomationName property
             _registeredCommands.Add(command);
 
             // Update the command text with current language

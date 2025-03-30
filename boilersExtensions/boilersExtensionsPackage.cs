@@ -46,7 +46,7 @@ namespace boilersExtensions
             IProgress<ServiceProgressData> progress)
         {
             await base.InitializeAsync(cancellationToken, progress);
-            
+
             // UI threadに切り替え
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
@@ -76,7 +76,7 @@ namespace boilersExtensions
             MenuTextUpdater.UpdateAllCommandTexts();
 
             // 言語変更マネージャーを初期化
-            Utils.LanguageChangeManager.Initialize(this);
+            LanguageChangeManager.Initialize(this);
         }
     }
 }

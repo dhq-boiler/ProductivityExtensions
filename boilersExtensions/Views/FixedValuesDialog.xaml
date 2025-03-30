@@ -48,9 +48,12 @@
 
         <!--  ヘッダー説明  -->
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock FontWeight="Bold" Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.FixedValuesDialog_Header, Mode=OneWay}" />
-            <TextBlock Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.FixedValuesDialog_Description, Mode=OneWay}" />
-            <TextBlock FontWeight="Bold" Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.FixedValuesDialog_Property, Mode=OneWay}">
+            <TextBlock FontWeight="Bold"
+                       Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.FixedValuesDialog_Header, Mode=OneWay}" />
+            <TextBlock
+                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.FixedValuesDialog_Description, Mode=OneWay}" />
+            <TextBlock FontWeight="Bold"
+                       Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.FixedValuesDialog_Property, Mode=OneWay}">
                 <Run FontWeight="Normal" Text="{Binding PropertyName}" />
             </TextBlock>
         </StackPanel>

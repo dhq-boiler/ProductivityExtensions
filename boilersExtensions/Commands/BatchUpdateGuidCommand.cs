@@ -147,7 +147,8 @@ namespace boilersExtensions.Commands
                         var documentText = editPoint.GetText(textDocument.EndPoint);
 
                         // GUIDパターンの正規表現
-                        var guidPattern = @"(\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?)";
+                        var guidPattern =
+                            @"(\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?)";
 
                         // GUIDが見つかれば有効化
                         command.Visible = command.Enabled = Regex.IsMatch(documentText, guidPattern);

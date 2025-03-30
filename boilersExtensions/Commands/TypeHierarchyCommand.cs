@@ -301,7 +301,8 @@ namespace boilersExtensions.Commands
                                 {
                                     // Roslynを使って型名かどうかを非同期で確認する
                                     // BeforeQueryStatusは同期メソッドなため、工夫が必要
-                                    var task = Task.Run(async () => {
+                                    var task = Task.Run(async () =>
+                                    {
                                         try
                                         {
                                             // カーソル位置の型シンボルを取得

@@ -1,13 +1,11 @@
-﻿using System.Diagnostics;
-using System;
+﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Resources;
 using System.Threading;
 using boilersExtensions.Properties;
-using Microsoft.VisualStudio.PlatformUI.Search;
-using Prism.Mvvm;
 using Microsoft.VisualStudio.Shell;
-using System.Xml.Linq;
+using Prism.Mvvm;
 
 namespace boilersExtensions.Helpers
 {
@@ -16,11 +14,10 @@ namespace boilersExtensions.Helpers
     /// </summary>
     public class ResourceService : BindableBase
     {
+        private static ResourceManager resourceMan;
         public static ResourceService Current { get; } = new ResourceService();
 
         public Resource Resource { get; } = new Resource();
-
-        private static ResourceManager resourceMan;
 
         /// <summary>
         ///     リソースのカルチャーを変更
@@ -33,7 +30,7 @@ namespace boilersExtensions.Helpers
         }
 
         /// <summary>
-        /// 現在のカルチャを初期化
+        ///     現在のカルチャを初期化
         /// </summary>
         public static void InitializeCurrentCulture()
         {
@@ -44,7 +41,7 @@ namespace boilersExtensions.Helpers
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                     // 設定から言語を取得
-                    string languageSetting = "en-US";
+                    var languageSetting = "en-US";
 
                     // パッケージがロードされた後に設定を取得
                     if (BoilersExtensionsSettingsCommand.Instance?.Package != null)
@@ -66,7 +63,7 @@ namespace boilersExtensions.Helpers
 
                     // カルチャを設定
                     Thread.CurrentThread.CurrentUICulture = culture;
-                    Properties.Resource.Culture = culture;
+                    Resource.Culture = culture;
                     Debug.WriteLine($"Culture set to {culture.Name}");
                 });
             }
@@ -83,7 +80,7 @@ namespace boilersExtensions.Helpers
             if (resourceMan == null)
             {
                 // 正しいリソース名とアセンブリを指定
-                resourceMan = new ResourceManager("boilersExtensions.Properties.Resource", typeof(boilersExtensions.Properties.Resource).Assembly);
+                resourceMan = new ResourceManager("boilersExtensions.Properties.Resource", typeof(Resource).Assembly);
                 Debug.WriteLine($"ResourceManager initialized with {resourceMan.BaseName}");
             }
 
@@ -91,10 +88,10 @@ namespace boilersExtensions.Helpers
             {
                 // 再試行メカニズムを追加
                 string result = null;
-                int retryCount = 0;
+                var retryCount = 0;
                 while (result == null && retryCount < 3)
                 {
-                    result = resourceMan.GetString(name, boilersExtensions.Properties.Resource.Culture);
+                    result = resourceMan.GetString(name, Resource.Culture);
                     if (result == null)
                     {
                         retryCount++;
@@ -114,7 +111,7 @@ namespace boilersExtensions.Helpers
         }
 
         /// <summary>
-        /// 現在の言語設定を再適用します
+        ///     現在の言語設定を再適用します
         /// </summary>
         public static void ApplyLanguageSetting()
         {
@@ -125,7 +122,7 @@ namespace boilersExtensions.Helpers
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                     // 設定から言語を取得
-                    string languageSetting = BoilersExtensionsSettings.Language;
+                    var languageSetting = BoilersExtensionsSettings.Language;
 
                     // 対応する CultureInfo を作成
                     CultureInfo culture;

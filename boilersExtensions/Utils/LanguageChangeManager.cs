@@ -5,18 +5,19 @@ using System.Threading;
 using boilersExtensions.DialogPages;
 using boilersExtensions.Helpers;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace boilersExtensions.Utils
 {
     /// <summary>
-    /// 言語変更のためのユーティリティクラス
+    ///     言語変更のためのユーティリティクラス
     /// </summary>
     public static class LanguageChangeManager
     {
         private static AsyncPackage _package;
 
         /// <summary>
-        /// 言語変更マネージャーを初期化し、言語変更イベントを購読します
+        ///     言語変更マネージャーを初期化し、言語変更イベントを購読します
         /// </summary>
         public static void Initialize(AsyncPackage package)
         {
@@ -27,7 +28,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 言語変更イベントのハンドラー
+        ///     言語変更イベントのハンドラー
         /// </summary>
         private static void OnLanguageChanged(object sender, LanguageChangedEventArgs args)
         {
@@ -42,8 +43,9 @@ namespace boilersExtensions.Utils
                 ShowLanguageChangeNotification(_package);
             }
         }
+
         /// <summary>
-        /// 言語設定を適用し、必要なリソースをリロードします
+        ///     言語設定を適用し、必要なリソースをリロードします
         /// </summary>
         public static void ApplyLanguageChange()
         {
@@ -54,8 +56,8 @@ namespace boilersExtensions.Utils
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                     // 現在のカルチャと設定されたカルチャを比較
-                    string currentLanguage = Thread.CurrentThread.CurrentUICulture.Name;
-                    string settingLanguage = BoilersExtensionsSettings.Language;
+                    var currentLanguage = Thread.CurrentThread.CurrentUICulture.Name;
+                    var settingLanguage = BoilersExtensionsSettings.Language;
 
                     // 言語設定が異なる場合のみ処理
                     if (currentLanguage != settingLanguage)
@@ -88,7 +90,7 @@ namespace boilersExtensions.Utils
         }
 
         /// <summary>
-        /// 言語設定変更後に通知を表示
+        ///     言語設定変更後に通知を表示
         /// </summary>
         public static void ShowLanguageChangeNotification(AsyncPackage package)
         {
@@ -99,8 +101,8 @@ namespace boilersExtensions.Utils
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                     // 現在の言語に基づいてメッセージを選択
-                    string settingLanguage = BoilersExtensionsSettings.Language;
-                    string message = (settingLanguage == "ja-JP")
+                    var settingLanguage = BoilersExtensionsSettings.Language;
+                    var message = settingLanguage == "ja-JP"
                         ? "言語設定が変更されました。完全に適用するには Visual Studio を再起動してください。"
                         : "Language setting has been changed. Please restart Visual Studio for full effect.";
 
@@ -108,9 +110,9 @@ namespace boilersExtensions.Utils
                         package,
                         message,
                         string.Empty,
-                        Microsoft.VisualStudio.Shell.Interop.OLEMSGICON.OLEMSGICON_INFO,
-                        Microsoft.VisualStudio.Shell.Interop.OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                        Microsoft.VisualStudio.Shell.Interop.OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                        OLEMSGICON.OLEMSGICON_INFO,
+                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
                 });
             }
             catch (Exception ex)

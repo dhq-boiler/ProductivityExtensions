@@ -54,30 +54,35 @@
                 Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Title, Mode=OneWay}" />
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <TextBlock FontWeight="Bold">
-                    <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_OriginalType, Mode=OneWay}" />
+                    <Run
+                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_OriginalType, Mode=OneWay}" />
                     <Run Text=":" />
                 </TextBlock>
                 <TextBlock Text="{Binding OriginalTypeName}" />
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock FontWeight="Bold">
-                    <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_NewType, Mode=OneWay}" />
+                    <Run
+                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_NewType, Mode=OneWay}" />
                     <Run Text=":" />
                 </TextBlock>
                 <TextBlock Foreground="#0078D7" Text="{Binding NewTypeName}" />
             </StackPanel>
             <TextBlock Margin="0,5,0,0">
-                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Total, Mode=OneWay}" />
+                <Run
+                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Total, Mode=OneWay}" />
                 <Run Text=" " />
                 <Run FontWeight="Bold" Text="{Binding ReferencesCount}" />
                 <Run Text=" " />
-                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Description, Mode=OneWay}" />
+                <Run
+                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Description, Mode=OneWay}" />
             </TextBlock>
         </StackPanel>
 
         <!--  参照箇所と潜在的な問題をタブで切り替え  -->
         <TabControl Grid.Row="2" Margin="10">
-            <TabItem Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_ReferencePoint, Mode=OneWay}">
+            <TabItem
+                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_ReferencePoint, Mode=OneWay}">
                 <DataGrid
                     AutoGenerateColumns="False"
                     Background="#222222"
@@ -113,7 +118,8 @@
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Width="80" Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Bookmark, Mode=OneWay}">
+                        <DataGridTemplateColumn Width="80"
+                                                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_Bookmark, Mode=OneWay}">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox
@@ -136,7 +142,8 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                             <DataGridTextColumn.Visibility>
-                                <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                <Binding Path="DataContext.IsRazorFile.Value"
+                                         RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
                                     <Binding.Converter>
                                         <BooleanToVisibilityConverter />
                                     </Binding.Converter>
@@ -171,7 +178,8 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                             <DataGridTextColumn.Visibility>
-                                <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                <Binding Path="DataContext.IsRazorFile.Value"
+                                         RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
                                     <Binding.Converter>
                                         <BooleanToVisibilityConverter />
                                     </Binding.Converter>
@@ -204,12 +212,15 @@
             </TabItem>
 
             <!--  グループ化された潜在的な問題のタブ  -->
-            <TabItem Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_PotentialProblems, Mode=OneWay}" Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TabItem
+                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_PotentialProblems, Mode=OneWay}"
+                Visibility="{Binding HasPotentialIssues.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ScrollViewer Background="#222222">
                     <ItemsControl ItemsSource="{Binding GroupedIssues}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}" Style="{StaticResource IssueExpanderStyle}">
+                                <Expander IsExpanded="{Binding IsExpanded.Value, Mode=TwoWay}"
+                                          Style="{StaticResource IssueExpanderStyle}">
                                     <Expander.Header>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -230,15 +241,18 @@
                                                 <Run Text="(" />
                                                 <Run Text="{Binding UniqueIssueCount, Mode=OneWay}" />
                                                 <Run Text=" " />
-                                                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.CountKasho, Mode=OneWay}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.CountKasho, Mode=OneWay}" />
                                                 <Run Text=" [" />
-                                                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Original, Mode=OneWay}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Original, Mode=OneWay}" />
                                                 <Run Text=": " />
                                                 <Run Text="{Binding TotalIssueCount, Mode=OneWay}" />
                                                 <Run Text="], " />
                                                 <Run Text="{Binding AffectedFileCount, Mode=OneWay}" />
                                                 <Run Text=" " />
-                                                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.File, Mode=OneWay}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.File, Mode=OneWay}" />
                                                 <Run Text=")" />
                                             </TextBlock>
                                         </Grid>
@@ -270,7 +284,8 @@
                                         <!--  提案  -->
                                         <StackPanel Grid.Row="1" Margin="0,0,0,10">
                                             <TextBlock FontWeight="Bold">
-                                                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_SuggestedModifications, Mode=OneWay}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_SuggestedModifications, Mode=OneWay}" />
                                                 <Run Text=":" />
                                             </TextBlock>
                                             <TextBlock
@@ -283,7 +298,8 @@
                                         <!--  影響を受けるファイル一覧  -->
                                         <StackPanel Grid.Row="2" Margin="0,0,0,10">
                                             <TextBlock FontWeight="Bold">
-                                                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_AffectedFiles, Mode=OneWay}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_AffectedFiles, Mode=OneWay}" />
                                                 <Run Text=":" />
                                             </TextBlock>
                                             <ItemsControl Margin="10,5,0,0" ItemsSource="{Binding AffectedFiles}">
@@ -298,7 +314,8 @@
                                         <!--  詳細な問題リスト  -->
                                         <StackPanel Grid.Row="3">
                                             <TextBlock FontWeight="Bold">
-                                                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_DetailedProblemAreas, Mode=OneWay}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ImpactAnalysisDialog_DetailedProblemAreas, Mode=OneWay}" />
                                                 <Run Text=":" />
                                             </TextBlock>
                                             <DataGrid
@@ -364,7 +381,8 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                         <DataGridTextColumn.Visibility>
-                                                            <Binding Path="DataContext.IsRazorFile.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
+                                                            <Binding Path="DataContext.IsRazorFile.Value"
+                                                                     RelativeSource="{RelativeSource AncestorType={x:Type Window}}">
                                                                 <Binding.Converter>
                                                                     <BooleanToVisibilityConverter />
                                                                 </Binding.Converter>
@@ -395,7 +413,8 @@
                                                                 <Setter Property="HorizontalAlignment" Value="Center" />
                                                                 <!--  Razorの行が0の場合は表示を調整  -->
                                                                 <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding RazorLineNumber}" Value="0">
+                                                                    <DataTrigger Binding="{Binding RazorLineNumber}"
+                                                                        Value="0">
                                                                         <Setter Property="Text" Value="-" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
@@ -403,7 +422,8 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTemplateColumn Width="*" Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Code, Mode=OneWay}">
+                                                    <DataGridTemplateColumn Width="*"
+                                                                            Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Code, Mode=OneWay}">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <Button
@@ -439,7 +459,8 @@
             Margin="10"
             HorizontalAlignment="Right"
             Orientation="Horizontal">
-            <Button Command="{Binding CloseCommand}" Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Close, Mode=OneWay}" />
+            <Button Command="{Binding CloseCommand}"
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Close, Mode=OneWay}" />
         </StackPanel>
     </Grid>
 </Window>

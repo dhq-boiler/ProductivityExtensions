@@ -35,15 +35,20 @@
     <DockPanel>
         <DockPanel Dock="Bottom">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Command="{Binding RenameProjectCommand}" Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Caption_Rename, Mode=OneWay}" />
-                <Button Command="{Binding CancelCommand}" Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Caption_Cancel, Mode=OneWay}" />
+                <Button Command="{Binding RenameProjectCommand}"
+                        Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Caption_Rename, Mode=OneWay}" />
+                <Button Command="{Binding CancelCommand}"
+                        Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Caption_Cancel, Mode=OneWay}" />
             </StackPanel>
             <Grid />
         </DockPanel>
         <StackPanel Orientation="Vertical">
             <DockPanel>
-                <Label Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_NewProjectName, Mode=OneWay}" DockPanel.Dock="Left" />
-                <controls:EasyEnterTextBox x:Name="projectNameTextBox" Text="{Binding NewProjectName.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Label
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Label_NewProjectName, Mode=OneWay}"
+                    DockPanel.Dock="Left" />
+                <controls:EasyEnterTextBox x:Name="projectNameTextBox"
+                                           Text="{Binding NewProjectName.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </DockPanel>
             <Label Content="※プロジェクトのリネーム後に再読み込みが必要になります。" Foreground="#FF0000" />
         </StackPanel>

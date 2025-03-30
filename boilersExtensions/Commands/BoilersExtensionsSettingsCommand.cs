@@ -2,10 +2,8 @@
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using boilersExtensions;
 using boilersExtensions.DialogPages;
 using boilersExtensions.Helpers;
-using boilersExtensions.Properties;
 using boilersExtensions.Utils;
 using Microsoft.VisualStudio.Shell;
 
@@ -20,22 +18,22 @@ internal sealed class BoilersExtensionsSettingsCommand
     private static AsyncPackage _package;
 
     /// <summary>
-    /// シングルトンインスタンス
+    ///     シングルトンインスタンス
     /// </summary>
     public static BoilersExtensionsSettingsCommand Instance { get; private set; }
 
     /// <summary>
-    /// パッケージへの参照を提供
+    ///     パッケージへの参照を提供
     /// </summary>
     public AsyncPackage Package => _package;
 
     /// <summary>
-    /// サービスプロバイダーへの参照
+    ///     サービスプロバイダーへの参照
     /// </summary>
     private static IAsyncServiceProvider ServiceProvider => _package;
 
     /// <summary>
-    /// コマンドを初期化
+    ///     コマンドを初期化
     /// </summary>
     public static async Task InitializeAsync(AsyncPackage package)
     {
@@ -56,7 +54,7 @@ internal sealed class BoilersExtensionsSettingsCommand
     }
 
     /// <summary>
-    /// 設定ダイアログを表示
+    ///     設定ダイアログを表示
     /// </summary>
     private static void ShowSettings(object sender, EventArgs e)
     {

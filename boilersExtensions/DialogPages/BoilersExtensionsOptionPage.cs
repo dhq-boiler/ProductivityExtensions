@@ -11,14 +11,6 @@ namespace boilersExtensions.DialogPages
     [ComVisible(true)]
     public class BoilersExtensionsOptionPage : DialogPage
     {
-        // PropertyChanged イベント
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        // PropertyChanged イベントを発火
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
         private string _language = "en-US";
 
         [LocalizedCategory("BoilersExtensionsOptionPage_GeneralSettings")]
@@ -32,7 +24,7 @@ namespace boilersExtensions.DialogPages
             {
                 if (_language != value)
                 {
-                    string oldValue = _language;
+                    var oldValue = _language;
                     _language = value;
                     OnPropertyChanged(nameof(Language));
 
@@ -45,9 +37,6 @@ namespace boilersExtensions.DialogPages
             }
         }
 
-        // 言語変更イベント
-        public static event EventHandler<LanguageChangedEventArgs> LanguageChanged;
-        
         [LocalizedCategory("BoilersExtensionsOptionPage_EnableDisableFunction")]
         [LocalizedDisplayName("BoilersExtensionsOptionPage_EnableTypeHierarchy")]
         [LocalizedDescription("BoilersExtensionsOptionPage_EnableTypeHierarchy_Description")]
@@ -92,5 +81,15 @@ namespace boilersExtensions.DialogPages
         [LocalizedDisplayName("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore")]
         [LocalizedDescription("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description")]
         public bool EnableSeedDataGenerator { get; set; } = true;
+
+        // PropertyChanged イベント
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        // PropertyChanged イベントを発火
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        // 言語変更イベント
+        public static event EventHandler<LanguageChangedEventArgs> LanguageChanged;
     }
 }

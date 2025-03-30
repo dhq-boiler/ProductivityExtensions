@@ -341,11 +341,13 @@ namespace boilersExtensions.Commands
 
                 //テキストエディタ上のカーソル位置にある行のテキストを取得
                 var textDocument = dte.ActiveDocument.Object("TextDocument") as TextDocument;
-                var selection = textDocument.Selection as TextSelection;
-                var currentLineText = selection.ActivePoint.CreateEditPoint().GetLines(selection.ActivePoint.Line, selection.ActivePoint.Line + 1).Trim();
+                var selection = textDocument.Selection;
+                var currentLineText = selection.ActivePoint.CreateEditPoint()
+                    .GetLines(selection.ActivePoint.Line, selection.ActivePoint.Line + 1).Trim();
 
                 // アクティブなドキュメントがある場合のみ有効化
-                command.Visible = command.Enabled = dte.ActiveDocument != null && (IsRegionStart(currentLineText) || IsRegionEnd(currentLineText));
+                command.Visible = command.Enabled = dte.ActiveDocument != null &&
+                                                    (IsRegionStart(currentLineText) || IsRegionEnd(currentLineText));
             }
         }
 
