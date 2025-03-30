@@ -273,4 +273,211 @@
   <data name="Original" xml:space="preserve">
     <value>Original</value>
   </data>
+  <data name="SeedGenerator_NumberOfReferenceData" xml:space="preserve">
+    <value>Number of reference data</value>
+  </data>
+  <data name="SeedGenerator_SchemaSetting" xml:space="preserve">
+    <value>Schema setting</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Up" xml:space="preserve">
+    <value>↑</value>
+  </data>
+  <data name="Down" xml:space="preserve">
+    <value>↓</value>
+  </data>
+  <data name="SeedGenerator_LoadSchema" xml:space="preserve">
+    <value>Load schema</value>
+  </data>
+  <data name="SeedGenerator_PropertyName" xml:space="preserve">
+    <value>Property name</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="DataType" xml:space="preserve">
+    <value>Data type</value>
+  </data>
+  <data name="SeedGenerator_AddEntity" xml:space="preserve">
+    <value>Add entity</value>
+  </data>
+  <data name="SeedGenerator_DetectRelationship" xml:space="preserve">
+    <value>Detect relationship</value>
+  </data>
+  <data name="Entity" xml:space="preserve">
+    <value>Entity</value>
+  </data>
+  <data name="SeedGenerator_NumberOfRecords" xml:space="preserve">
+    <value>Number of records</value>
+  </data>
+  <data name="SeedGenerator_ParentOfEntity" xml:space="preserve">
+    <value>Parent entity</value>
+  </data>
+  <data name="SeedGenerator_NumberOfRecordsPerParent" xml:space="preserve">
+    <value>Number of records per parent</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="CountKen" xml:space="preserve">
+    <value>cases</value>
+  </data>
+  <data name="SeedGenerator_EntityRelationDiagram" xml:space="preserve">
+    <value>Entity relation diagram</value>
+  </data>
+  <data name="SeedGenerator_FixedValue" xml:space="preserve">
+    <value>Fixed value</value>
+  </data>
+  <data name="SeedGenerator_EditFixedValue" xml:space="preserve">
+    <value>Edit fixed value</value>
+  </data>
+  <data name="Relationship" xml:space="preserve">
+    <value>Relationship</value>
+  </data>
+  <data name="SeedGenerator_SourceEntity" xml:space="preserve">
+    <value>Source entity</value>
+  </data>
+  <data name="SeedGenerator_SourceProperty" xml:space="preserve">
+    <value>Source property</value>
+  </data>
+  <data name="SeedGenerator_RelationType" xml:space="preserve">
+    <value>Relation type</value>
+  </data>
+  <data name="SeedGenerator_TargetEntity" xml:space="preserve">
+    <value>Target entity</value>
+  </data>
+  <data name="SeedGenerator_TargetProperty" xml:space="preserve">
+    <value>Target property</value>
+  </data>
+  <data name="SeedGenerator_DataFormat" xml:space="preserve">
+    <value>Data format</value>
+  </data>
+  <data name="SeedGenerator_ClassName" xml:space="preserve">
+    <value>Class name</value>
+  </data>
+  <data name="SeedGenerator_UsePropertyInitializerSyntax" xml:space="preserve">
+    <value>Use property initializer syntax</value>
+  </data>
+  <data name="SeedGenerator_CreateAsStaticMethod" xml:space="preserve">
+    <value>Create as a static method</value>
+  </data>
+  <data name="SeedGenerator_TableName" xml:space="preserve">
+    <value>Table name</value>
+  </data>
+  <data name="SeedGenerator_IncludeTransactionProcessing" xml:space="preserve">
+    <value>Include Transaction processing</value>
+  </data>
+  <data name="SeedGenerator_RootElementName" xml:space="preserve">
+    <value>Root element name</value>
+  </data>
+  <data name="SeedGenerator_ItemElementName" xml:space="preserve">
+    <value>Item element name</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="SeedGenerator_AdvancedSettings" xml:space="preserve">
+    <value>Advanced Settings</value>
+  </data>
+  <data name="SeedGenerator_DataGenerationOptions" xml:space="preserve">
+    <value>Data generation options</value>
+  </data>
+  <data name="SeedGenerator_UseRandomValue" xml:space="preserve">
+    <value>Use random value</value>
+  </data>
+  <data name="SeedGenerator_AutomaticIDNumbering" xml:space="preserve">
+    <value>Automatic ID numbering</value>
+  </data>
+  <data name="SeedGenerator_IncludeNullValues" xml:space="preserve">
+    <value>Include NULL values</value>
+  </data>
+  <data name="SeedGenerator_AutomaticRelationshipDetection" xml:space="preserve">
+    <value>Automatic relationship detection</value>
+  </data>
+  <data name="SeedGenerator_DateRange" xml:space="preserve">
+    <value>Date range</value>
+  </data>
+  <data name="StartDate" xml:space="preserve">
+    <value>Start Date</value>
+  </data>
+  <data name="EndDate" xml:space="preserve">
+    <value>End Date</value>
+  </data>
+  <data name="NumericRange" xml:space="preserve">
+    <value>Numeric range</value>
+  </data>
+  <data name="MinumumValue" xml:space="preserve">
+    <value>Minimum value</value>
+  </data>
+  <data name="MaximumValue" xml:space="preserve">
+    <value>Maximum value</value>
+  </data>
+  <data name="SeedGenerator_SupportInformation" xml:space="preserve">
+    <value>Support information</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText1" xml:space="preserve">
+    <value>This tool assists in the generation of test data.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText2" xml:space="preserve">
+    <value>How to generate data with parent-child relationships:</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText3" xml:space="preserve">
+    <value>1. Register multiple entities with the “Add Entity” button</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText5" xml:space="preserve">
+    <value>3. set the “number of records” for the parent entity</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText6" xml:space="preserve">
+    <value>4. set “number of records per parent” for child entities</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText7" xml:space="preserve">
+    <value>5. the total number of records is automatically calculated</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText8" xml:space="preserve">
+    <value>Supported data types:</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText9" xml:space="preserve">
+    <value>- String: usually text, email, phone number, address, etc.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText10" xml:space="preserve">
+    <value>- Numbers: integers, decimals, currency, etc.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText11" xml:space="preserve">
+    <value>- Date: Date, time, date and time</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText12" xml:space="preserve">
+    <value>- Boolean: true/false</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText13" xml:space="preserve">
+    <value>- GUID: unique identifier</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText14" xml:space="preserve">
+    <value>Hint:</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText15" xml:space="preserve">
+    <value>- If you include “Id”, ‘Name’, “Email”, etc. in the name, it will automatically generate the appropriate value.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText16" xml:space="preserve">
+    <value>- Preview tab allows you to check the result before generating</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText17" xml:space="preserve">
+    <value>- Fixed values can be edited using the “...” button.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText4" xml:space="preserve">
+    <value>2. automatic setting of parent-child relationship with “Detect Relationship” button</value>
+  </data>
+  <data name="Generate" xml:space="preserve">
+    <value>Generate</value>
+  </data>
+  <data name="SeedGenerator_EntityRelated" xml:space="preserve">
+    <value>Entity-related</value>
+  </data>
+  <data name="Property" xml:space="preserve">
+    <value>Property</value>
+  </data>
 </root>
