@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using boilersExtensions.Helpers;
 using EnvDTE;
 using LibGit2Sharp;
 using Microsoft.VisualStudio.Shell;
@@ -94,7 +95,7 @@ namespace boilersExtensions
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new NavigateGitHubLinesCommand();
-            menuItem.Text = Resources.ResourceService.GetString("OpenGitHubLine");
+            menuItem.Text = ResourceService.GetString("OpenGitHubLine");
             commandService.AddCommand(Instance);
         }
 

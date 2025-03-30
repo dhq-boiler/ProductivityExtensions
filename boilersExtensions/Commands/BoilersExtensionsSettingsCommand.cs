@@ -3,7 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using boilersExtensions.DialogPages;
-using boilersExtensions.Resources;
+using boilersExtensions.Helpers;
 using Microsoft.VisualStudio.Shell;
 
 /// <summary>

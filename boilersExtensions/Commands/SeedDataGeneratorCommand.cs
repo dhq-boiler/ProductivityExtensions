@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using boilersExtensions.Dialogs;
+using boilersExtensions.Helpers;
 using boilersExtensions.Models;
 using boilersExtensions.ViewModels;
 using EnvDTE;
@@ -47,7 +48,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new SeedDataGeneratorCommand();
-            menuItem.Text = Resources.ResourceService.GetString("SeedGeneratorForEFCore");
+            menuItem.Text = ResourceService.GetString("SeedGeneratorForEFCore");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("SeedDataGeneratorCommand initialized successfully");

@@ -88,6 +88,177 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Enable/Disable function に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableDisableFunction {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableDisableFunction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable GitHub link navigation に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGitHubLinkNavigation {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGitHubLinkNavigation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to open the corresponding line in the GitHub hosting repository. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable GUID batch update に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDBatchUpdate {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDBatchUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to batch update GUIDs. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable GUID update に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDUpdate {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enables the ability to update the selected GUID string. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDUpdate_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDUpdate_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Project Rename に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableProjectRename {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableProjectRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to rename the project. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableProjectRename_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableProjectRename_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Region Navigator に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableRegionNavigator {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableRegionNavigator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to move between regions with Ctrl+F2. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableRegionNavigator_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableRegionNavigator_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Seed Generator for EFCore に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Seed Generator for EFCore. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Solution Explorer synchronization に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to view current files in Solution Explorer. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Solution Rename に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionRename {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to rename solutions. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionRename_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionRename_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable type hierarchy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableTypeHierarchy {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableTypeHierarchy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enables the ability to select a type from the type hierarchy by Ctrl+clicking. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableTypeHierarchy_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableTypeHierarchy_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Cancel に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Cancel {

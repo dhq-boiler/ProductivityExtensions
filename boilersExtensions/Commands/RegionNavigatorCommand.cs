@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using boilersExtensions.Helpers;
 using EnvDTE;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -45,7 +46,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new RegionNavigatorCommand();
-            menuItem.Text = Resources.ResourceService.GetString("MoveBetweenRegionAndEndRegion");
+            menuItem.Text = ResourceService.GetString("MoveBetweenRegionAndEndRegion");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("RegionNavigatorCommand initialized successfully with keyboard shortcut Ctrl+F2");

@@ -504,4 +504,61 @@
   <data name="Apply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="BoilersExtensionsOptionPage_EnableDisableFunction" xml:space="preserve">
+    <value>Enable/Disable function</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableTypeHierarchy" xml:space="preserve">
+    <value>Enable type hierarchy</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegionNavigator" xml:space="preserve">
+    <value>Enable Region Navigator</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization" xml:space="preserve">
+    <value>Enable Solution Explorer synchronization</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGitHubLinkNavigation" xml:space="preserve">
+    <value>Enable GitHub link navigation</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableProjectRename" xml:space="preserve">
+    <value>Enable Project Rename</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionRename" xml:space="preserve">
+    <value>Enable Solution Rename</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate" xml:space="preserve">
+    <value>Enable GUID update</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDBatchUpdate" xml:space="preserve">
+    <value>Enable GUID batch update</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore" xml:space="preserve">
+    <value>Enable Seed Generator for EFCore</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description" xml:space="preserve">
+    <value>Enable Seed Generator for EFCore.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description" xml:space="preserve">
+    <value>Enable the ability to batch update GUIDs.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionRename_Description" xml:space="preserve">
+    <value>Enable the ability to rename solutions.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableProjectRename_Description" xml:space="preserve">
+    <value>Enable the ability to rename the project.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description" xml:space="preserve">
+    <value>Enable the ability to open the corresponding line in the GitHub hosting repository.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description" xml:space="preserve">
+    <value>Enable the ability to view current files in Solution Explorer.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegionNavigator_Description" xml:space="preserve">
+    <value>Enable the ability to move between regions with Ctrl+F2.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableTypeHierarchy_Description" xml:space="preserve">
+    <value>Enables the ability to select a type from the type hierarchy by Ctrl+clicking.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate_Description" xml:space="preserve">
+    <value>Enables the ability to update the selected GUID string.</value>
+  </data>
 </root>

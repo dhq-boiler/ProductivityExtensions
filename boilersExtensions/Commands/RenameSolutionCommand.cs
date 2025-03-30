@@ -3,6 +3,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using boilersExtensions.Helpers;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Views;
 using EnvDTE;
@@ -55,7 +56,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new RenameSolutionCommand();
-            menuItem.Text = Resources.ResourceService.GetString("RenameSolution");
+            menuItem.Text = ResourceService.GetString("RenameSolution");
             commandService.AddCommand(Instance);
         }
 

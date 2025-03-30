@@ -504,4 +504,61 @@
   <data name="Apply" xml:space="preserve">
     <value>適用</value>
   </data>
+  <data name="BoilersExtensionsOptionPage_EnableDisableFunction" xml:space="preserve">
+    <value>機能の有効/無効</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableTypeHierarchy" xml:space="preserve">
+    <value>型階層を有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegionNavigator" xml:space="preserve">
+    <value>リージョンナビゲータを有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization" xml:space="preserve">
+    <value>ソリューションエクスプローラー同期を有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGitHubLinkNavigation" xml:space="preserve">
+    <value>GitHubリンクナビゲーションを有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableProjectRename" xml:space="preserve">
+    <value>プロジェクトリネームを有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionRename" xml:space="preserve">
+    <value>ソリューションリネームを有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate" xml:space="preserve">
+    <value>GUID更新を有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDBatchUpdate" xml:space="preserve">
+    <value>GUID一括更新を有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore" xml:space="preserve">
+    <value>Seed Generator for EFCoreを有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description" xml:space="preserve">
+    <value>Seed Generator for EFCoreを有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description" xml:space="preserve">
+    <value>GUIDを一括更新する機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionRename_Description" xml:space="preserve">
+    <value>ソリューションをリネームする機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableProjectRename_Description" xml:space="preserve">
+    <value>プロジェクトをリネームする機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description" xml:space="preserve">
+    <value>GitHubホスティングリポジトリの該当行を開く機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description" xml:space="preserve">
+    <value>現在のファイルをソリューションエクスプローラーで表示する機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegionNavigator_Description" xml:space="preserve">
+    <value>Ctrl+F2でリージョン間を移動できる機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableTypeHierarchy_Description" xml:space="preserve">
+    <value>Ctrl+クリックで型階層から型を選択できる機能を有効にします。</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate_Description" xml:space="preserve">
+    <value>選択したGUID文字列を更新する機能を有効にします。</value>
+  </data>
 </root>

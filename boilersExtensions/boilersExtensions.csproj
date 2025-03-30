@@ -76,6 +76,9 @@
     <Compile Include="Generators\RandomDataProvider.cs" />
     <Compile Include="Generators\SeedDataGenerator.cs" />
     <Compile Include="Generators\StandardPropertyGenerator.cs" />
+    <Compile Include="Helpers\Attributes\LocalizedCategoryAttribute.cs" />
+    <Compile Include="Helpers\Attributes\LocalizedDescriptionAttribute.cs" />
+    <Compile Include="Helpers\Attributes\LocalizedDisplayNameAttribute.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
     <Compile Include="Models\EntityInfo.cs" />
@@ -83,12 +86,6 @@
     <Compile Include="Models\PropertyInfo.cs" />
     <Compile Include="Models\RelationshipInfo.cs" />
     <Compile Include="Models\SeedDataConfig.cs" />
-    <Compile Include="Resources\ResourceHelper.cs" />
-    <Compile Include="Resources\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\RegionNavigatorExtensionFactory.cs" />
     <Compile Include="TextEditor\Extensions\SolutionExplorerSynchronizerFactory.cs" />
@@ -312,12 +309,6 @@
     <EmbeddedResource Include="Properties\Resource.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\Resources.en-US.resx" />
-    <EmbeddedResource Include="Resources\Resources.ja-JP.resx" />
-    <EmbeddedResource Include="Resources\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

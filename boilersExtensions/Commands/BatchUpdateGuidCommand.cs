@@ -4,6 +4,7 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using boilersExtensions.Helpers;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Views;
 using EnvDTE;
@@ -60,7 +61,7 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new BatchUpdateGuidCommand();
-            menuItem.Text = Resources.ResourceService.GetString("BatchUpdateGuid");
+            menuItem.Text = ResourceService.GetString("BatchUpdateGuid");
             commandService.AddCommand(Instance);
         }
 

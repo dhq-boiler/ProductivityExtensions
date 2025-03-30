@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using boilersExtensions.Commands;
 using boilersExtensions.DialogPages;
-using boilersExtensions.Resources;
+using boilersExtensions.Helpers;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
