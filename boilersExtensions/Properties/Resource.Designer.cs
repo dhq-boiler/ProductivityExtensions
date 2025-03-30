@@ -61,6 +61,240 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Add に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Add {
+            get {
+                return ResourceManager.GetString("Add", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Apply に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Apply {
+            get {
+                return ResourceManager.GetString("Apply", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Batch update Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchUpdateGuid {
+            get {
+                return ResourceManager.GetString("BatchUpdateGuid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable/Disable function に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableDisableFunction {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableDisableFunction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable GitHub link navigation に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGitHubLinkNavigation {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGitHubLinkNavigation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to open the corresponding line in the GitHub hosting repository. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable GUID batch update に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDBatchUpdate {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDBatchUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to batch update GUIDs. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable GUID update に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDUpdate {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enables the ability to update the selected GUID string. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableGUIDUpdate_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableGUIDUpdate_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Project Rename に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableProjectRename {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableProjectRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to rename the project. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableProjectRename_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableProjectRename_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Region Navigator に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableRegionNavigator {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableRegionNavigator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to move between regions with Ctrl+F2. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableRegionNavigator_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableRegionNavigator_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Seed Generator for EFCore に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Seed Generator for EFCore. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Solution Explorer synchronization に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to view current files in Solution Explorer. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable Solution Rename に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionRename {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionRename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable the ability to rename solutions. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableSolutionRename_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableSolutionRename_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enable type hierarchy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableTypeHierarchy {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableTypeHierarchy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enables the ability to select a type from the type hierarchy by Ctrl+clicking. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableTypeHierarchy_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableTypeHierarchy_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   General Settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_GeneralSettings {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_GeneralSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Language に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_Language {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_Language", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Set the display language for the extension. Restart Visual Studio for changes to take effect. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_Language_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_Language_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Cancel に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Cancel {
+            get {
+                return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Cancel に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Caption_Cancel {
@@ -75,6 +309,312 @@ namespace boilersExtensions.Properties {
         public static string Caption_Rename {
             get {
                 return ResourceManager.GetString("Caption_Rename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Change type from type hierarchy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ChangeTypeFromTypeHierarchy {
+            get {
+                return ResourceManager.GetString("ChangeTypeFromTypeHierarchy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Close に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Close {
+            get {
+                return ResourceManager.GetString("Close", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Code に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Code {
+            get {
+                return ResourceManager.GetString("Code", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Count に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CountKasho {
+            get {
+                return ResourceManager.GetString("CountKasho", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   cases に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CountKen {
+            get {
+                return ResourceManager.GetString("CountKen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Data type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DataType {
+            get {
+                return ResourceManager.GetString("DataType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Delete に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Delete {
+            get {
+                return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   ↓ に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Down {
+            get {
+                return ResourceManager.GetString("Down", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   End Date に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EndDate {
+            get {
+                return ResourceManager.GetString("EndDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Entity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Entity {
+            get {
+                return ResourceManager.GetString("Entity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   File に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string File {
+            get {
+                return ResourceManager.GetString("File", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enter one value on each line. The records to be generated are created per value. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string FixedValuesDialog_Description {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Fixed value setting に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string FixedValuesDialog_Header {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property name:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string FixedValuesDialog_Property {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Property", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Edit Fixed Values に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string FixedValuesDialog_Title {
+            get {
+                return ResourceManager.GetString("FixedValuesDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Generate に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Generate {
+            get {
+                return ResourceManager.GetString("Generate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Replaces selected GUIDs with new GUIDs in a batch. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GuidSelectionDialog_Description {
+            get {
+                return ResourceManager.GetString("GuidSelectionDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Generate new Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GuidSelectionDialog_GenerateNewGuid {
+            get {
+                return ResourceManager.GetString("GuidSelectionDialog_GenerateNewGuid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   New Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GuidSelectionDialog_NewGuid {
+            get {
+                return ResourceManager.GetString("GuidSelectionDialog_NewGuid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Occurrences に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GuidSelectionDialog_Occurrences {
+            get {
+                return ResourceManager.GetString("GuidSelectionDialog_Occurrences", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Original Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GuidSelectionDialog_OriginalGuid {
+            get {
+                return ResourceManager.GetString("GuidSelectionDialog_OriginalGuid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Batch update Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GuidSelectionDialog_Title {
+            get {
+                return ResourceManager.GetString("GuidSelectionDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Affected files に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_AffectedFiles {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_AffectedFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Bookmark に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_Bookmark {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_Bookmark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///    references to locations may be affected. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_Description {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Detailed problem areas に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_DetailedProblemAreas {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_DetailedProblemAreas", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   New type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_NewType {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_NewType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Original type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_OriginalType {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_OriginalType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Potential problems に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_PotentialProblems {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_PotentialProblems", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Reference point に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_ReferencePoint {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_ReferencePoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Suggested modifications に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_SuggestedModifications {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_SuggestedModifications", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Range of influence analysis of type substitution に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_Title {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Total に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImpactAnalysisDialog_Total {
+            get {
+                return ResourceManager.GetString("ImpactAnalysisDialog_Total", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Kind に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Kind {
+            get {
+                return ResourceManager.GetString("Kind", resourceCulture);
             }
         }
         
@@ -106,6 +646,636 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Line に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Line {
+            get {
+                return ResourceManager.GetString("Line", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Maximum value に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MaximumValue {
+            get {
+                return ResourceManager.GetString("MaximumValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Minimum value に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MinumumValue {
+            get {
+                return ResourceManager.GetString("MinumumValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Move between #region/#endregion に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MoveBetweenRegionAndEndRegion {
+            get {
+                return ResourceManager.GetString("MoveBetweenRegionAndEndRegion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Numeric range に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NumericRange {
+            get {
+                return ResourceManager.GetString("NumericRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Open the corresponding line in the GitHub hosting repository に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string OpenGitHubLine {
+            get {
+                return ResourceManager.GetString("OpenGitHubLine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Original に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Original {
+            get {
+                return ResourceManager.GetString("Original", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Preferences... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Preferences {
+            get {
+                return ResourceManager.GetString("Preferences", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Preview に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Preview {
+            get {
+                return ResourceManager.GetString("Preview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Preview changes に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PreviewChanges {
+            get {
+                return ResourceManager.GetString("PreviewChanges", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Property {
+            get {
+                return ResourceManager.GetString("Property", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Relationship に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Relationship {
+            get {
+                return ResourceManager.GetString("Relationship", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Rename this project に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RenameProject {
+            get {
+                return ResourceManager.GetString("RenameProject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Rename this solution に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RenameSolution {
+            get {
+                return ResourceManager.GetString("RenameSolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Add entity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_AddEntity {
+            get {
+                return ResourceManager.GetString("SeedGenerator_AddEntity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Advanced Settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_AdvancedSettings {
+            get {
+                return ResourceManager.GetString("SeedGenerator_AdvancedSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Automatic ID numbering に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_AutomaticIDNumbering {
+            get {
+                return ResourceManager.GetString("SeedGenerator_AutomaticIDNumbering", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Automatic relationship detection に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_AutomaticRelationshipDetection {
+            get {
+                return ResourceManager.GetString("SeedGenerator_AutomaticRelationshipDetection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Class name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_ClassName {
+            get {
+                return ResourceManager.GetString("SeedGenerator_ClassName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Create as a static method に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_CreateAsStaticMethod {
+            get {
+                return ResourceManager.GetString("SeedGenerator_CreateAsStaticMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Data format に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_DataFormat {
+            get {
+                return ResourceManager.GetString("SeedGenerator_DataFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Data generation options に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_DataGenerationOptions {
+            get {
+                return ResourceManager.GetString("SeedGenerator_DataGenerationOptions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Date range に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_DateRange {
+            get {
+                return ResourceManager.GetString("SeedGenerator_DateRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Detect relationship に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_DetectRelationship {
+            get {
+                return ResourceManager.GetString("SeedGenerator_DetectRelationship", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Edit fixed value に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_EditFixedValue {
+            get {
+                return ResourceManager.GetString("SeedGenerator_EditFixedValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Entity-related に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_EntityRelated {
+            get {
+                return ResourceManager.GetString("SeedGenerator_EntityRelated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Entity relation diagram に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_EntityRelationDiagram {
+            get {
+                return ResourceManager.GetString("SeedGenerator_EntityRelationDiagram", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Fixed value に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_FixedValue {
+            get {
+                return ResourceManager.GetString("SeedGenerator_FixedValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Include NULL values に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_IncludeNullValues {
+            get {
+                return ResourceManager.GetString("SeedGenerator_IncludeNullValues", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Include Transaction processing に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_IncludeTransactionProcessing {
+            get {
+                return ResourceManager.GetString("SeedGenerator_IncludeTransactionProcessing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Item element name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_ItemElementName {
+            get {
+                return ResourceManager.GetString("SeedGenerator_ItemElementName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Load schema に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_LoadSchema {
+            get {
+                return ResourceManager.GetString("SeedGenerator_LoadSchema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Number of records に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_NumberOfRecords {
+            get {
+                return ResourceManager.GetString("SeedGenerator_NumberOfRecords", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Number of records per parent に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_NumberOfRecordsPerParent {
+            get {
+                return ResourceManager.GetString("SeedGenerator_NumberOfRecordsPerParent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Number of reference data に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_NumberOfReferenceData {
+            get {
+                return ResourceManager.GetString("SeedGenerator_NumberOfReferenceData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Parent entity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_ParentOfEntity {
+            get {
+                return ResourceManager.GetString("SeedGenerator_ParentOfEntity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_PropertyName {
+            get {
+                return ResourceManager.GetString("SeedGenerator_PropertyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Relation type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_RelationType {
+            get {
+                return ResourceManager.GetString("SeedGenerator_RelationType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Root element name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_RootElementName {
+            get {
+                return ResourceManager.GetString("SeedGenerator_RootElementName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Schema setting に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SchemaSetting {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SchemaSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Source entity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SourceEntity {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SourceEntity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Source property に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SourceProperty {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SourceProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Support information に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformation {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   This tool assists in the generation of test data. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText1 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - Numbers: integers, decimals, currency, etc. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText10 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText10", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - Date: Date, time, date and time に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText11 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText11", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - Boolean: true/false に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText12 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText12", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - GUID: unique identifier に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText13 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText13", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Hint: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText14 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText14", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - If you include “Id”, ‘Name’, “Email”, etc. in the name, it will automatically generate the appropriate value. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText15 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText15", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - Preview tab allows you to check the result before generating に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText16 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText16", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - Fixed values can be edited using the “...” button. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText17 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText17", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   How to generate data with parent-child relationships: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText2 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   1. Register multiple entities with the “Add Entity” button に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText3 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   2. automatic setting of parent-child relationship with “Detect Relationship” button に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText4 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText4", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   3. set the “number of records” for the parent entity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText5 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText5", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   4. set “number of records per parent” for child entities に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText6 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText6", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   5. the total number of records is automatically calculated に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText7 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText7", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Supported data types: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText8 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText8", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   - String: usually text, email, phone number, address, etc. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_SupportInformationText9 {
+            get {
+                return ResourceManager.GetString("SeedGenerator_SupportInformationText9", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Table name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_TableName {
+            get {
+                return ResourceManager.GetString("SeedGenerator_TableName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Target entity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_TargetEntity {
+            get {
+                return ResourceManager.GetString("SeedGenerator_TargetEntity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Target property に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_TargetProperty {
+            get {
+                return ResourceManager.GetString("SeedGenerator_TargetProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use property initializer syntax に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_UsePropertyInitializerSyntax {
+            get {
+                return ResourceManager.GetString("SeedGenerator_UsePropertyInitializerSyntax", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use random value に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGenerator_UseRandomValue {
+            get {
+                return ResourceManager.GetString("SeedGenerator_UseRandomValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Seed Generator for EFCore に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SeedGeneratorForEFCore {
+            get {
+                return ResourceManager.GetString("SeedGeneratorForEFCore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Select に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Select {
+            get {
+                return ResourceManager.GetString("Select", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Select All に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SelectAll {
+            get {
+                return ResourceManager.GetString("SelectAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Start Date に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string StartDate {
+            get {
+                return ResourceManager.GetString("StartDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Rename Project に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Title_RenameProject {
@@ -120,6 +1290,132 @@ namespace boilersExtensions.Properties {
         public static string Title_RenameSolution {
             get {
                 return ResourceManager.GetString("Title_RenameSolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Total に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Total {
+            get {
+                return ResourceManager.GetString("Total", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Type {
+            get {
+                return ResourceManager.GetString("Type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Analyze scope of impact に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_AnalyzeScopeOfImpact {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_AnalyzeScopeOfImpact", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Replaced by the selected type. A using statement is also added if necessary. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_Description {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Original type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_OriginalType {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_OriginalType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show base type/interface に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_ShowBaseTypesAndInterfaces {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_ShowBaseTypesAndInterfaces", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show Derivative Types に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_ShowDerivativeTypes {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_ShowDerivativeTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Show related types に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_ShowRelatedTypes {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_ShowRelatedTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type hierarchy selection に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchyDialog_Title {
+            get {
+                return ResourceManager.GetString("TypeHierarchyDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Unselect All に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string UnselectAll {
+            get {
+                return ResourceManager.GetString("UnselectAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   ↑ に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Up {
+            get {
+                return ResourceManager.GetString("Up", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Update に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Update {
+            get {
+                return ResourceManager.GetString("Update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Update selected Guid string に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string UpdateSelectedGuidString {
+            get {
+                return ResourceManager.GetString("UpdateSelectedGuidString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   View in Solution Explorer に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ViewInSolutionExplorer {
+            get {
+                return ResourceManager.GetString("ViewInSolutionExplorer", resourceCulture);
             }
         }
     }

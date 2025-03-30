@@ -3,6 +3,8 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using boilersExtensions.Helpers;
+using boilersExtensions.Utils;
 using EnvDTE;
 using LibGit2Sharp;
 using Microsoft.VisualStudio.Shell;
@@ -76,9 +78,7 @@ namespace boilersExtensions
                 }
 
                 // 機能が有効な場合は通常の条件で表示/非表示を決定
-                command.Visible = true;
-
-                command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
+                command.Visible = command.Enabled = !string.IsNullOrEmpty(await GetGitRepositoryUrl());
             }
         }
 
@@ -96,6 +96,8 @@ namespace boilersExtensions
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new NavigateGitHubLinesCommand();
+            menuItem.Text = ResourceService.GetString("OpenGitHubLine");
+            MenuTextUpdater.RegisterCommand(menuItem, "OpenGitHubLine");
             commandService.AddCommand(Instance);
         }
 

@@ -5,8 +5,9 @@
     xmlns:controls="clr-namespace:boilersExtensions.Controls"
     xmlns:converters="clr-namespace:boilersExtensions.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="clr-namespace:boilersExtensions.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="型階層選択"
+    Title="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_Title, Mode=OneWay}"
     Width="640"
     Height="480"
     Background="#1F1F1F"
@@ -102,10 +103,11 @@
             Margin="10"
             Orientation="Vertical">
             <DockPanel>
-                <TextBlock
-                    DockPanel.Dock="Left"
-                    FontWeight="Bold"
-                    Text="元の型: " />
+                <TextBlock DockPanel.Dock="Left" FontWeight="Bold">
+                    <Run
+                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_OriginalType, Mode=OneWay}" />
+                    <Run Text=":" />
+                </TextBlock>
                 <TextBlock FontFamily="Consolas" Text="{Binding OriginalTypeName.Value}" />
             </DockPanel>
         </StackPanel>
@@ -117,12 +119,14 @@
             Orientation="Horizontal">
             <CheckBox
                 Margin="0,0,10,0"
-                Content="ベース型/インターフェースを表示"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowBaseTypesAndInterfaces, Mode=OneWay}"
                 IsChecked="{Binding ShowBaseTypes.Value}" />
-            <CheckBox Content="派生型を表示" IsChecked="{Binding ShowDerivedTypes.Value}" />
+            <CheckBox
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowDerivativeTypes, Mode=OneWay}"
+                IsChecked="{Binding ShowDerivedTypes.Value}" />
             <CheckBox
                 Margin="10,0,0,0"
-                Content="関連型を表示"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_ShowRelatedTypes, Mode=OneWay}"
                 IsChecked="{Binding ShowRelatedTypes.Value}"
                 Visibility="{Binding IsEnabledRelatedTypes.Value, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </StackPanel>
@@ -195,7 +199,7 @@
             <TextBlock
                 VerticalAlignment="Center"
                 DockPanel.Dock="Left"
-                Text="選択した型で置き換えます。必要に応じてusing文も追加されます。" />
+                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_Description, Mode=OneWay}" />
             <StackPanel
                 HorizontalAlignment="Right"
                 DockPanel.Dock="Right"
@@ -208,17 +212,17 @@
                 <Button
                     Margin="5"
                     Command="{Binding AnalyzeImpactCommand}"
-                    Content="影響範囲を分析"
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.TypeHierarchyDialog_AnalyzeScopeOfImpact, Mode=OneWay}"
                     IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
                 <Button
                     Margin="5"
                     Command="{Binding ApplyCommand}"
-                    Content="適用"
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Apply, Mode=OneWay}"
                     IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
                 <Button
                     Margin="5"
                     Command="{Binding CancelCommand}"
-                    Content="キャンセル"
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Cancel, Mode=OneWay}"
                     IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
             </StackPanel>
         </DockPanel>

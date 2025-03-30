@@ -64,11 +64,13 @@
     <Compile Include="Converters\EntityPropertyConverter.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Converters\InverseBooleanToStringConverter.cs" />
+    <Compile Include="Converters\LanguageSelectionConverter.cs" />
     <Compile Include="Converters\PropertyConfigConverter.cs" />
     <Compile Include="Converters\PropertyWithNameConverter.cs" />
     <Compile Include="DialogPages\BoilersExtensionsOptionPage.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="DialogPages\LanguageChangedEventArgs.cs" />
     <Compile Include="Generators\EnhancedRelationalSeedDataGenerator.cs" />
     <Compile Include="Generators\EnhancedSeedDataGenerator.cs" />
     <Compile Include="Generators\EnumValueGenerator.cs" />
@@ -76,6 +78,9 @@
     <Compile Include="Generators\RandomDataProvider.cs" />
     <Compile Include="Generators\SeedDataGenerator.cs" />
     <Compile Include="Generators\StandardPropertyGenerator.cs" />
+    <Compile Include="Helpers\Attributes\LocalizedCategoryAttribute.cs" />
+    <Compile Include="Helpers\Attributes\LocalizedDescriptionAttribute.cs" />
+    <Compile Include="Helpers\Attributes\LocalizedDisplayNameAttribute.cs" />
     <Compile Include="Helpers\ResourceService.cs" />
     <Compile Include="ManualExtensionInitializer.cs" />
     <Compile Include="Models\EntityInfo.cs" />
@@ -91,6 +96,8 @@
     <Compile Include="Utils\DynamicTypeResolver.cs" />
     <Compile Include="Utils\ImpactAnalysisViewModel.cs" />
     <Compile Include="Utils\IssueGroupViewModel.cs" />
+    <Compile Include="Utils\LanguageChangeManager.cs" />
+    <Compile Include="Utils\MenuTextUpdater.cs" />
     <Compile Include="Utils\RazorFileUtility.cs" />
     <Compile Include="Utils\RazorMappingHelper.cs" />
     <Compile Include="Utils\SeedDataInsertExecutor.cs" />

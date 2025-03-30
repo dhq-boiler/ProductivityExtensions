@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using boilersExtensions.Helpers;
+using boilersExtensions.Utils;
 using EnvDTE;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -45,6 +47,8 @@ namespace boilersExtensions.Commands
 
             var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
             menuItem = Instance = new RegionNavigatorCommand();
+            menuItem.Text = ResourceService.GetString("MoveBetweenRegionAndEndRegion");
+            MenuTextUpdater.RegisterCommand(menuItem, "MoveBetweenRegionAndEndRegion");
             commandService.AddCommand(Instance);
 
             Debug.WriteLine("RegionNavigatorCommand initialized successfully with keyboard shortcut Ctrl+F2");
@@ -331,13 +335,19 @@ namespace boilersExtensions.Commands
                 }
 
                 // 機能が有効な場合は通常の条件で表示/非表示を決定
-                command.Visible = true;
 
                 // DTEオブジェクトを取得
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
 
+                //テキストエディタ上のカーソル位置にある行のテキストを取得
+                var textDocument = dte.ActiveDocument.Object("TextDocument") as TextDocument;
+                var selection = textDocument.Selection;
+                var currentLineText = selection.ActivePoint.CreateEditPoint()
+                    .GetLines(selection.ActivePoint.Line, selection.ActivePoint.Line + 1).Trim();
+
                 // アクティブなドキュメントがある場合のみ有効化
-                command.Enabled = dte.ActiveDocument != null;
+                command.Visible = command.Enabled = dte.ActiveDocument != null &&
+                                                    (IsRegionStart(currentLineText) || IsRegionEnd(currentLineText));
             }
         }
 

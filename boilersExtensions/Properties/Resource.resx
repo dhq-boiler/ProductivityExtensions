@@ -117,11 +117,89 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BatchUpdateGuid" xml:space="preserve">
+    <value>Batch update Guid</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="Caption_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
   <data name="Caption_Rename" xml:space="preserve">
     <value>Rename</value>
+  </data>
+  <data name="ChangeTypeFromTypeHierarchy" xml:space="preserve">
+    <value>Change type from type hierarchy</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="FixedValuesDialog_Header" xml:space="preserve">
+    <value>Fixed value setting</value>
+  </data>
+  <data name="FixedValuesDialog_Property" xml:space="preserve">
+    <value>Property name: </value>
+  </data>
+  <data name="FixedValuesDialog_Title" xml:space="preserve">
+    <value>Edit Fixed Values</value>
+  </data>
+  <data name="GuidSelectionDialog_Description" xml:space="preserve">
+    <value>Replaces selected GUIDs with new GUIDs in a batch.</value>
+  </data>
+  <data name="GuidSelectionDialog_GenerateNewGuid" xml:space="preserve">
+    <value>Generate new Guid</value>
+  </data>
+  <data name="GuidSelectionDialog_NewGuid" xml:space="preserve">
+    <value>New Guid</value>
+  </data>
+  <data name="GuidSelectionDialog_Occurrences" xml:space="preserve">
+    <value>Occurrences</value>
+  </data>
+  <data name="GuidSelectionDialog_OriginalGuid" xml:space="preserve">
+    <value>Original Guid</value>
+  </data>
+  <data name="GuidSelectionDialog_Title" xml:space="preserve">
+    <value>Batch update Guid</value>
+  </data>
+  <data name="ImpactAnalysisDialog_AffectedFiles" xml:space="preserve">
+    <value>Affected files</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Bookmark" xml:space="preserve">
+    <value>Bookmark</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Description" xml:space="preserve">
+    <value> references to locations may be affected.</value>
+  </data>
+  <data name="ImpactAnalysisDialog_DetailedProblemAreas" xml:space="preserve">
+    <value>Detailed problem areas</value>
+  </data>
+  <data name="ImpactAnalysisDialog_NewType" xml:space="preserve">
+    <value>New type</value>
+  </data>
+  <data name="ImpactAnalysisDialog_OriginalType" xml:space="preserve">
+    <value>Original type</value>
+  </data>
+  <data name="ImpactAnalysisDialog_PotentialProblems" xml:space="preserve">
+    <value>Potential problems</value>
+  </data>
+  <data name="ImpactAnalysisDialog_ReferencePoint" xml:space="preserve">
+    <value>Reference point</value>
+  </data>
+  <data name="ImpactAnalysisDialog_SuggestedModifications" xml:space="preserve">
+    <value>Suggested modifications</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="ImpactAnalysisDialog_Title" xml:space="preserve">
+    <value>Range of influence analysis of type substitution</value>
+  </data>
+  <data name="Kind" xml:space="preserve">
+    <value>Kind</value>
   </data>
   <data name="Label_NewProjectName" xml:space="preserve">
     <value>Project Name after renaming：</value>
@@ -132,10 +210,364 @@
   <data name="Label_WillRenameParentDir" xml:space="preserve">
     <value>Rename parent directory of Solution</value>
   </data>
+  <data name="Line" xml:space="preserve">
+    <value>Line</value>
+  </data>
+  <data name="MoveBetweenRegionAndEndRegion" xml:space="preserve">
+    <value>Move between #region/#endregion</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="OpenGitHubLine" xml:space="preserve">
+    <value>Open the corresponding line in the GitHub hosting repository</value>
+  </data>
+  <data name="Preferences" xml:space="preserve">
+    <value>Preferences...</value>
+  </data>
+  <data name="PreviewChanges" xml:space="preserve">
+    <value>Preview changes</value>
+  </data>
+  <data name="RenameProject" xml:space="preserve">
+    <value>Rename this project</value>
+  </data>
+  <data name="RenameSolution" xml:space="preserve">
+    <value>Rename this solution</value>
+  </data>
+  <data name="SeedGeneratorForEFCore" xml:space="preserve">
+    <value>Seed Generator for EFCore</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
   <data name="Title_RenameProject" xml:space="preserve">
     <value>Rename Project</value>
   </data>
   <data name="Title_RenameSolution" xml:space="preserve">
     <value>Rename Solution</value>
+  </data>
+  <data name="UnselectAll" xml:space="preserve">
+    <value>Unselect All</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="UpdateSelectedGuidString" xml:space="preserve">
+    <value>Update selected Guid string</value>
+  </data>
+  <data name="ViewInSolutionExplorer" xml:space="preserve">
+    <value>View in Solution Explorer</value>
+  </data>
+  <data name="FixedValuesDialog_Description" xml:space="preserve">
+    <value>Enter one value on each line. The records to be generated are created per value.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="CountKasho" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="Original" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="SeedGenerator_NumberOfReferenceData" xml:space="preserve">
+    <value>Number of reference data</value>
+  </data>
+  <data name="SeedGenerator_SchemaSetting" xml:space="preserve">
+    <value>Schema setting</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Up" xml:space="preserve">
+    <value>↑</value>
+  </data>
+  <data name="Down" xml:space="preserve">
+    <value>↓</value>
+  </data>
+  <data name="SeedGenerator_LoadSchema" xml:space="preserve">
+    <value>Load schema</value>
+  </data>
+  <data name="SeedGenerator_PropertyName" xml:space="preserve">
+    <value>Property name</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="DataType" xml:space="preserve">
+    <value>Data type</value>
+  </data>
+  <data name="SeedGenerator_AddEntity" xml:space="preserve">
+    <value>Add entity</value>
+  </data>
+  <data name="SeedGenerator_DetectRelationship" xml:space="preserve">
+    <value>Detect relationship</value>
+  </data>
+  <data name="Entity" xml:space="preserve">
+    <value>Entity</value>
+  </data>
+  <data name="SeedGenerator_NumberOfRecords" xml:space="preserve">
+    <value>Number of records</value>
+  </data>
+  <data name="SeedGenerator_ParentOfEntity" xml:space="preserve">
+    <value>Parent entity</value>
+  </data>
+  <data name="SeedGenerator_NumberOfRecordsPerParent" xml:space="preserve">
+    <value>Number of records per parent</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="CountKen" xml:space="preserve">
+    <value>cases</value>
+  </data>
+  <data name="SeedGenerator_EntityRelationDiagram" xml:space="preserve">
+    <value>Entity relation diagram</value>
+  </data>
+  <data name="SeedGenerator_FixedValue" xml:space="preserve">
+    <value>Fixed value</value>
+  </data>
+  <data name="SeedGenerator_EditFixedValue" xml:space="preserve">
+    <value>Edit fixed value</value>
+  </data>
+  <data name="Relationship" xml:space="preserve">
+    <value>Relationship</value>
+  </data>
+  <data name="SeedGenerator_SourceEntity" xml:space="preserve">
+    <value>Source entity</value>
+  </data>
+  <data name="SeedGenerator_SourceProperty" xml:space="preserve">
+    <value>Source property</value>
+  </data>
+  <data name="SeedGenerator_RelationType" xml:space="preserve">
+    <value>Relation type</value>
+  </data>
+  <data name="SeedGenerator_TargetEntity" xml:space="preserve">
+    <value>Target entity</value>
+  </data>
+  <data name="SeedGenerator_TargetProperty" xml:space="preserve">
+    <value>Target property</value>
+  </data>
+  <data name="SeedGenerator_DataFormat" xml:space="preserve">
+    <value>Data format</value>
+  </data>
+  <data name="SeedGenerator_ClassName" xml:space="preserve">
+    <value>Class name</value>
+  </data>
+  <data name="SeedGenerator_UsePropertyInitializerSyntax" xml:space="preserve">
+    <value>Use property initializer syntax</value>
+  </data>
+  <data name="SeedGenerator_CreateAsStaticMethod" xml:space="preserve">
+    <value>Create as a static method</value>
+  </data>
+  <data name="SeedGenerator_TableName" xml:space="preserve">
+    <value>Table name</value>
+  </data>
+  <data name="SeedGenerator_IncludeTransactionProcessing" xml:space="preserve">
+    <value>Include Transaction processing</value>
+  </data>
+  <data name="SeedGenerator_RootElementName" xml:space="preserve">
+    <value>Root element name</value>
+  </data>
+  <data name="SeedGenerator_ItemElementName" xml:space="preserve">
+    <value>Item element name</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="SeedGenerator_AdvancedSettings" xml:space="preserve">
+    <value>Advanced Settings</value>
+  </data>
+  <data name="SeedGenerator_DataGenerationOptions" xml:space="preserve">
+    <value>Data generation options</value>
+  </data>
+  <data name="SeedGenerator_UseRandomValue" xml:space="preserve">
+    <value>Use random value</value>
+  </data>
+  <data name="SeedGenerator_AutomaticIDNumbering" xml:space="preserve">
+    <value>Automatic ID numbering</value>
+  </data>
+  <data name="SeedGenerator_IncludeNullValues" xml:space="preserve">
+    <value>Include NULL values</value>
+  </data>
+  <data name="SeedGenerator_AutomaticRelationshipDetection" xml:space="preserve">
+    <value>Automatic relationship detection</value>
+  </data>
+  <data name="SeedGenerator_DateRange" xml:space="preserve">
+    <value>Date range</value>
+  </data>
+  <data name="StartDate" xml:space="preserve">
+    <value>Start Date</value>
+  </data>
+  <data name="EndDate" xml:space="preserve">
+    <value>End Date</value>
+  </data>
+  <data name="NumericRange" xml:space="preserve">
+    <value>Numeric range</value>
+  </data>
+  <data name="MinumumValue" xml:space="preserve">
+    <value>Minimum value</value>
+  </data>
+  <data name="MaximumValue" xml:space="preserve">
+    <value>Maximum value</value>
+  </data>
+  <data name="SeedGenerator_SupportInformation" xml:space="preserve">
+    <value>Support information</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText1" xml:space="preserve">
+    <value>This tool assists in the generation of test data.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText2" xml:space="preserve">
+    <value>How to generate data with parent-child relationships:</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText3" xml:space="preserve">
+    <value>1. Register multiple entities with the “Add Entity” button</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText5" xml:space="preserve">
+    <value>3. set the “number of records” for the parent entity</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText6" xml:space="preserve">
+    <value>4. set “number of records per parent” for child entities</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText7" xml:space="preserve">
+    <value>5. the total number of records is automatically calculated</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText8" xml:space="preserve">
+    <value>Supported data types:</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText9" xml:space="preserve">
+    <value>- String: usually text, email, phone number, address, etc.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText10" xml:space="preserve">
+    <value>- Numbers: integers, decimals, currency, etc.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText11" xml:space="preserve">
+    <value>- Date: Date, time, date and time</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText12" xml:space="preserve">
+    <value>- Boolean: true/false</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText13" xml:space="preserve">
+    <value>- GUID: unique identifier</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText14" xml:space="preserve">
+    <value>Hint:</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText15" xml:space="preserve">
+    <value>- If you include “Id”, ‘Name’, “Email”, etc. in the name, it will automatically generate the appropriate value.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText16" xml:space="preserve">
+    <value>- Preview tab allows you to check the result before generating</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText17" xml:space="preserve">
+    <value>- Fixed values can be edited using the “...” button.</value>
+  </data>
+  <data name="SeedGenerator_SupportInformationText4" xml:space="preserve">
+    <value>2. automatic setting of parent-child relationship with “Detect Relationship” button</value>
+  </data>
+  <data name="Generate" xml:space="preserve">
+    <value>Generate</value>
+  </data>
+  <data name="SeedGenerator_EntityRelated" xml:space="preserve">
+    <value>Entity-related</value>
+  </data>
+  <data name="Property" xml:space="preserve">
+    <value>Property</value>
+  </data>
+  <data name="TypeHierarchyDialog_Title" xml:space="preserve">
+    <value>Type hierarchy selection</value>
+  </data>
+  <data name="TypeHierarchyDialog_Description" xml:space="preserve">
+    <value>Replaced by the selected type. A using statement is also added if necessary.</value>
+  </data>
+  <data name="TypeHierarchyDialog_OriginalType" xml:space="preserve">
+    <value>Original type</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowBaseTypesAndInterfaces" xml:space="preserve">
+    <value>Show base type/interface</value>
+  </data>
+  <data name="TypeHierarchyDialog_AnalyzeScopeOfImpact" xml:space="preserve">
+    <value>Analyze scope of impact</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowDerivativeTypes" xml:space="preserve">
+    <value>Show Derivative Types</value>
+  </data>
+  <data name="TypeHierarchyDialog_ShowRelatedTypes" xml:space="preserve">
+    <value>Show related types</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableDisableFunction" xml:space="preserve">
+    <value>Enable/Disable function</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableTypeHierarchy" xml:space="preserve">
+    <value>Enable type hierarchy</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegionNavigator" xml:space="preserve">
+    <value>Enable Region Navigator</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization" xml:space="preserve">
+    <value>Enable Solution Explorer synchronization</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGitHubLinkNavigation" xml:space="preserve">
+    <value>Enable GitHub link navigation</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableProjectRename" xml:space="preserve">
+    <value>Enable Project Rename</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionRename" xml:space="preserve">
+    <value>Enable Solution Rename</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate" xml:space="preserve">
+    <value>Enable GUID update</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDBatchUpdate" xml:space="preserve">
+    <value>Enable GUID batch update</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore" xml:space="preserve">
+    <value>Enable Seed Generator for EFCore</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description" xml:space="preserve">
+    <value>Enable Seed Generator for EFCore.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDBatchUpdate_Description" xml:space="preserve">
+    <value>Enable the ability to batch update GUIDs.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionRename_Description" xml:space="preserve">
+    <value>Enable the ability to rename solutions.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableProjectRename_Description" xml:space="preserve">
+    <value>Enable the ability to rename the project.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGitHubLinkNavigation_Description" xml:space="preserve">
+    <value>Enable the ability to open the corresponding line in the GitHub hosting repository.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableSolutionExplorerSynchronization_Description" xml:space="preserve">
+    <value>Enable the ability to view current files in Solution Explorer.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegionNavigator_Description" xml:space="preserve">
+    <value>Enable the ability to move between regions with Ctrl+F2.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableTypeHierarchy_Description" xml:space="preserve">
+    <value>Enables the ability to select a type from the type hierarchy by Ctrl+clicking.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate_Description" xml:space="preserve">
+    <value>Enables the ability to update the selected GUID string.</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_GeneralSettings" xml:space="preserve">
+    <value>General Settings</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_Language_Description" xml:space="preserve">
+    <value>Set the display language for the extension. Restart Visual Studio for changes to take effect.</value>
   </data>
 </root>

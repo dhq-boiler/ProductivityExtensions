@@ -88,62 +88,82 @@
           If you do not want an image next to your command, remove the Icon node /> -->
 			<Button guid="guidboilersExtensionsPackageCmdSet" id="NavigateGitHubLinesCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidboilersExtensionsPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>GitHubホスティングリポジトリの該当行を開く</ButtonText>
+					<ButtonText>Open the corresponding line in the GitHub hosting repository</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidboilersExtensionsPackage2CmdSet" id="RenameProjectCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidboilersExtensionsPackage2CmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>プロジェクトをリネームする</ButtonText>
+					<ButtonText>Rename this project</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidboilersExtensionsPackage3CmdSet" id="RenameSolutionCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidboilersExtensionsPackage3CmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>ソリューションをリネームする</ButtonText>
+					<ButtonText>Rename this solution</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidUpdateGuidCommandPackageCmdSet" id="UpdateGuidCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidUpdateGuidCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>選択したGUID文字列を更新する</ButtonText>
+					<ButtonText>Update selected Guid string</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidBatchUpdateGuidCommandPackageCmdSet" id="BatchUpdateGuidCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidBatchUpdateGuidCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>GUIDを一括更新する</ButtonText>
+					<ButtonText>Batch update Guid</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidTypeHierarchyCommandPackageCmdSet" id="TypeHierarchyCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidTypeHierarchyCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>型階層から型を選択</ButtonText>
+					<ButtonText>Change type from type hierarchy</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidRegionNavigatorCommandPackageCmdSet" id="RegionNavigatorCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidRegionNavigatorCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>#region/#endregion間を移動</ButtonText>
+					<ButtonText>Move between #region/#endregion</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidSyncToSolutionExplorerCommandPackageCmdSet" id="SyncToSolutionExplorerCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidSyncToSolutionExplorerCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>ソリューションエクスプローラーで表示</ButtonText>
+					<ButtonText>View in Solution Explorer</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="SeedDataGeneratorCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
 					<ButtonText>Seed Generator for EFCore</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidBoilersExtensionsExtensionsCmdSet" id="cmdExtensionsSettings" priority="0x0200" type="Button">
 				<Parent guid="guidBoilersExtensionsExtensionsCmdSet" id="BoilersExtensionsMenuGroup"/>
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
-					<ButtonText>設定</ButtonText>
+					<ButtonText>Preferences...</ButtonText>
 				</Strings>
 			</Button>
 		</Buttons>

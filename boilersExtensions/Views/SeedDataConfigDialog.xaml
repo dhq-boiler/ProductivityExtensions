@@ -5,6 +5,7 @@
     xmlns:controls="clr-namespace:boilersExtensions.Controls"
     xmlns:converters="clr-namespace:boilersExtensions.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="clr-namespace:boilersExtensions.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="Seed Generator for EFCore"
     Width="700"
@@ -202,7 +203,8 @@
                 Grid.Column="1"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
-                <TextBlock Text="基準データ件数: " />
+                <TextBlock
+                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_NumberOfReferenceData, Mode=OneWay}" />
                 <TextBox
                     Width="60"
                     Margin="5,0"
@@ -217,7 +219,8 @@
             Margin="10"
             Background="#222222">
             <!--  タブ1: スキーマ設定  -->
-            <TabItem Header="スキーマ設定">
+            <TabItem
+                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SchemaSetting, Mode=OneWay}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -229,11 +232,16 @@
                         Grid.Row="0"
                         Margin="0,5"
                         Orientation="Horizontal">
-                        <Button Command="{Binding AddPropertyCommand}" Content="追加" />
-                        <Button Command="{Binding RemovePropertyCommand}" Content="削除" />
-                        <Button Command="{Binding MoveUpPropertyCommand}" Content="↑" />
-                        <Button Command="{Binding MoveDownPropertyCommand}" Content="↓" />
-                        <Button Command="{Binding LoadSchemaCommand}" Content="スキーマ読込" />
+                        <Button Command="{Binding AddPropertyCommand}"
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Add, Mode=OneWay}" />
+                        <Button Command="{Binding RemovePropertyCommand}"
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Delete, Mode=OneWay}" />
+                        <Button Command="{Binding MoveUpPropertyCommand}"
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Up, Mode=OneWay}" />
+                        <Button Command="{Binding MoveDownPropertyCommand}"
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Down, Mode=OneWay}" />
+                        <Button Command="{Binding LoadSchemaCommand}"
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_LoadSchema, Mode=OneWay}" />
                     </StackPanel>
 
                     <!--  プロパティ一覧  -->
@@ -247,7 +255,7 @@
                             <DataGridTextColumn
                                 Width="*"
                                 Binding="{Binding Name.Value}"
-                                Header="プロパティ名">
+                                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_PropertyName, Mode=OneWay}">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="White" />
@@ -257,7 +265,7 @@
                             <DataGridTextColumn
                                 Width="120"
                                 Binding="{Binding Type.Value}"
-                                Header="型">
+                                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Type, Mode=OneWay}">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="White" />
@@ -266,13 +274,14 @@
                             </DataGridTextColumn>
                             <DataGridComboBoxColumn
                                 Width="150"
-                                Header="データタイプ"
+                                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.DataType, Mode=OneWay}"
                                 SelectedItemBinding="{Binding DataType.Value}">
                                 <DataGridComboBoxColumn.ElementStyle>
                                     <Style TargetType="ComboBox">
                                         <Setter Property="Background" Value="#333333" />
                                         <Setter Property="Foreground" Value="White" />
-                                        <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                        <Setter Property="ItemsSource"
+                                                Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                         <Style.Resources>
                                             <Style TargetType="ComboBoxItem">
                                                 <Setter Property="Background" Value="#333333" />
@@ -284,7 +293,8 @@
                                 <DataGridComboBoxColumn.EditingElementStyle>
                                     <Style TargetType="ComboBox">
                                         <Setter Property="Foreground" Value="Black" />
-                                        <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                        <Setter Property="ItemsSource"
+                                                Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                         <Style.Resources>
                                             <Style TargetType="ComboBoxItem">
                                                 <Setter Property="Foreground" Value="Black" />
@@ -299,7 +309,8 @@
             </TabItem>
 
             <!--  エンティティとリレーションシップタブ  -->
-            <TabItem Header="エンティティ関連">
+            <TabItem
+                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_EntityRelated, Mode=OneWay}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="250" />
@@ -309,11 +320,12 @@
                     <!--  エンティティリスト  -->
                     <DockPanel Grid.Column="0">
                         <StackPanel Margin="0,5" DockPanel.Dock="Top">
-                            <Button Command="{Binding LoadAdditionalEntityCommand}" Content="エンティティを追加" />
+                            <Button Command="{Binding LoadAdditionalEntityCommand}"
+                                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_AddEntity, Mode=OneWay}" />
                             <Button
                                 Margin="0,5,0,0"
                                 Command="{Binding DetectRelationshipsCommand}"
-                                Content="リレーションシップを検出" />
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_DetectRelationship, Mode=OneWay}" />
                         </StackPanel>
 
                         <ListBox ItemsSource="{Binding Entities}" SelectedItem="{Binding SelectedEntity.Value}">
@@ -322,10 +334,13 @@
                                     <StackPanel Orientation="Horizontal">
                                         <CheckBox VerticalAlignment="Center" IsChecked="{Binding IsSelected.Value}" />
                                         <TextBlock Margin="5,0" Text="{Binding Name.Value}" />
-                                        <TextBlock
-                                            FontSize="11"
-                                            Foreground="Gray"
-                                            Text="{Binding TotalRecordCount.Value, StringFormat='({0}件)'}" />
+                                        <TextBlock FontSize="11" Foreground="Gray">
+                                            <Run Text="(" />
+                                            <Run Text="{Binding TotalRecordCount.Value}" />
+                                            <Run
+                                                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.CountKen, Mode=OneWay}" />
+                                            <Run Text=")" />
+                                        </TextBlock>
                                     </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -344,7 +359,12 @@
 
                         <!--  エンティティ情報  -->
                         <StackPanel Grid.Row="0">
-                            <TextBlock FontWeight="Bold" Text="{Binding SelectedEntity.Value.Name.Value, StringFormat='エンティティ: {0}'}" />
+                            <TextBlock FontWeight="Bold">
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Entity, Mode=OneWay}" />
+                                <Run Text=": " />
+                                <Run Text="{Binding SelectedEntity.Value.Name.Value}" />
+                            </TextBlock>
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -357,10 +377,12 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!--  親エンティティがない場合の設定  -->
-                                <TextBlock
-                                    Grid.Column="0"
-                                    Text="レコード数:"
-                                    Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource InverseBooleanConverter}, ConverterParameter=TrueForNonNull}" />
+                                <TextBlock Grid.Column="0"
+                                           Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource InverseBooleanConverter}, ConverterParameter=TrueForNonNull}">
+                                    <Run
+                                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_NumberOfRecords, Mode=OneWay}" />
+                                    <Run Text=":" />
+                                </TextBlock>
                                 <TextBox
                                     Grid.Column="1"
                                     Width="60"
@@ -369,10 +391,12 @@
                                     Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource InverseBooleanConverter}, ConverterParameter=TrueForNonNull}" />
 
                                 <!--  親エンティティがある場合の設定  -->
-                                <TextBlock
-                                    Grid.Column="2"
-                                    Text="親エンティティ:"
-                                    Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}" />
+                                <TextBlock Grid.Column="2"
+                                           Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}">
+                                    <Run
+                                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_ParentOfEntity, Mode=OneWay}" />
+                                    <Run Text=":" />
+                                </TextBlock>
                                 <TextBlock
                                     Grid.Column="3"
                                     Margin="5,0"
@@ -382,8 +406,11 @@
                                 <TextBlock
                                     Grid.Column="4"
                                     Margin="10,0,0,0"
-                                    Text="親1件あたりのレコード数:"
-                                    Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}" />
+                                    Visibility="{Binding SelectedEntity.Value.ParentEntity.Value, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=TrueForNonNull}">
+                                    <Run
+                                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_NumberOfRecordsPerParent, Mode=OneWay}" />
+                                    <Run Text=":" />
+                                </TextBlock>
                                 <TextBox
                                     Grid.Column="5"
                                     Width="60"
@@ -395,8 +422,14 @@
                                 <TextBlock
                                     Grid.Column="6"
                                     Margin="10,0,0,0"
-                                    HorizontalAlignment="Right"
-                                    Text="{Binding SelectedEntity.Value.TotalRecordCount.Value, StringFormat='合計: {0}件'}" />
+                                    HorizontalAlignment="Right">
+                                    <Run
+                                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Total, Mode=OneWay}" />
+                                    <Run Text=": " />
+                                    <Run Text="{Binding SelectedEntity.Value.TotalRecordCount.Value}" />
+                                    <Run
+                                        Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.CountKen, Mode=OneWay}" />
+                                </TextBlock>
                             </Grid>
                         </StackPanel>
 
@@ -404,7 +437,7 @@
                         <GroupBox
                             Grid.Row="1"
                             Margin="0,5"
-                            Header="エンティティ関係図">
+                            Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_EntityRelationDiagram, Mode=OneWay}">
                             <ListBox
                                 Background="Transparent"
                                 BorderThickness="0"
@@ -435,11 +468,9 @@
                                                 Grid.Column="3"
                                                 Margin="20,0,0,0"
                                                 HorizontalAlignment="Right">
-                                                <TextBlock.Text>
-                                                    <MultiBinding StringFormat="{}{0}件">
-                                                        <Binding Path="TotalRecords" />
-                                                    </MultiBinding>
-                                                </TextBlock.Text>
+                                                <Run Text="{Binding TotalRecords}" />
+                                                <Run
+                                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.CountKen, Mode=OneWay}" />
                                             </TextBlock>
                                         </Grid>
                                     </DataTemplate>
@@ -448,7 +479,8 @@
                         </GroupBox>
 
                         <!--  プロパティリスト  -->
-                        <GroupBox Grid.Row="2" Header="プロパティ">
+                        <GroupBox Grid.Row="2"
+                                  Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Property, Mode=OneWay}">
                             <DataGrid
                                 Name="propertiesDataGrid"
                                 Margin="0,5"
@@ -459,7 +491,7 @@
                                     <DataGridTextColumn
                                         Width="*"
                                         Binding="{Binding Name.Value}"
-                                        Header="プロパティ名">
+                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_PropertyName, Mode=OneWay}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="White" />
@@ -469,7 +501,7 @@
                                     <DataGridTextColumn
                                         Width="100"
                                         Binding="{Binding Type.Value}"
-                                        Header="型">
+                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Type, Mode=OneWay}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="White" />
@@ -478,13 +510,14 @@
                                     </DataGridTextColumn>
                                     <DataGridComboBoxColumn
                                         Width="120"
-                                        Header="データタイプ"
+                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.DataType, Mode=OneWay}"
                                         SelectedItemBinding="{Binding DataType.Value}">
                                         <DataGridComboBoxColumn.ElementStyle>
                                             <Style TargetType="ComboBox">
                                                 <Setter Property="Background" Value="#333333" />
                                                 <Setter Property="Foreground" Value="White" />
-                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                                <Setter Property="ItemsSource"
+                                                        Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                                 <Style.Resources>
                                                     <Style TargetType="ComboBoxItem">
                                                         <Setter Property="Background" Value="#333333" />
@@ -496,7 +529,8 @@
                                         <DataGridComboBoxColumn.EditingElementStyle>
                                             <Style TargetType="ComboBox">
                                                 <Setter Property="Foreground" Value="Black" />
-                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
+                                                <Setter Property="ItemsSource"
+                                                        Value="{Binding DataContext.DataTypes, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
                                                 <Style.Resources>
                                                     <Style TargetType="ComboBoxItem">
                                                         <Setter Property="Foreground" Value="Black" />
@@ -506,7 +540,8 @@
                                         </DataGridComboBoxColumn.EditingElementStyle>
                                     </DataGridComboBoxColumn>
                                     <!--  追加：固定値列  -->
-                                    <DataGridTemplateColumn Width="120" Header="固定値">
+                                    <DataGridTemplateColumn Width="120"
+                                                            Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_FixedValue, Mode=OneWay}">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Grid>
@@ -516,8 +551,10 @@
                                                     -->
                                                     <TextBlock>
                                                         <TextBlock.Text>
-                                                            <MultiBinding Converter="{StaticResource PropertyWithNameConverter}">
-                                                                <Binding Path="DataContext.SelectedEntity.Value" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                            <MultiBinding
+                                                                Converter="{StaticResource PropertyWithNameConverter}">
+                                                                <Binding Path="DataContext.SelectedEntity.Value"
+                                                                         RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
                                                                 <Binding Path="Name.Value" />
                                                             </MultiBinding>
                                                         </TextBlock.Text>
@@ -529,7 +566,7 @@
                                                         HorizontalAlignment="Right"
                                                         Click="EditFixedValuesButton_Click"
                                                         Content="..."
-                                                        ToolTip="固定値を編集" />
+                                                        ToolTip="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_EditFixedValue, Mode=OneWay}" />
                                                 </Grid>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -543,12 +580,14 @@
                             Grid.Row="3"
                             Margin="0,10,0,5"
                             Orientation="Horizontal">
-                            <TextBlock FontWeight="Bold" Text="リレーションシップ" />
+                            <TextBlock FontWeight="Bold"
+                                       Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Relationship, Mode=OneWay}" />
                             <Button
                                 Margin="10,0"
                                 Command="{Binding AddRelationshipCommand}"
-                                Content="追加" />
-                            <Button Command="{Binding RemoveRelationshipCommand}" Content="削除" />
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Add, Mode=OneWay}" />
+                            <Button Command="{Binding RemoveRelationshipCommand}"
+                                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Delete, Mode=OneWay}" />
                         </StackPanel>
 
                         <!--  リレーションシップリスト  -->
@@ -560,7 +599,8 @@
                             SelectedItem="{Binding SelectedRelationship.Value}">
                             <DataGrid.Columns>
                                 <!--  ソースエンティティ（コンボボックスに変更）  -->
-                                <DataGridTemplateColumn Width="120" Header="ソースエンティティ">
+                                <DataGridTemplateColumn Width="120"
+                                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SourceEntity, Mode=OneWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Padding="5,2" Text="{Binding SourceEntityName.Value}" />
@@ -577,7 +617,8 @@
                                 </DataGridTemplateColumn>
 
                                 <!--  ソースプロパティ（コンボボックスに変更）  -->
-                                <DataGridTemplateColumn Width="120" Header="ソースプロパティ">
+                                <DataGridTemplateColumn Width="120"
+                                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SourceProperty, Mode=OneWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Padding="5,2" Text="{Binding SourceProperty.Value}" />
@@ -589,12 +630,14 @@
                                             <ComboBox Style="{StaticResource ImprovedDataTypeComboBox}">
                                                 <ComboBox.ItemsSource>
                                                     <MultiBinding Converter="{StaticResource EntityPropertyConverter}">
-                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                        <Binding Path="DataContext"
+                                                                 RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
                                                         <Binding Path="SourceEntityName.Value" />
                                                     </MultiBinding>
                                                 </ComboBox.ItemsSource>
                                                 <ComboBox.SelectedItem>
-                                                    <Binding Path="SourceProperty.Value" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Path="SourceProperty.Value"
+                                                             UpdateSourceTrigger="PropertyChanged" />
                                                 </ComboBox.SelectedItem>
                                             </ComboBox>
                                         </DataTemplate>
@@ -602,7 +645,8 @@
                                 </DataGridTemplateColumn>
 
                                 <!--  関連タイプ  -->
-                                <DataGridTemplateColumn Width="120" Header="関連タイプ">
+                                <DataGridTemplateColumn Width="120"
+                                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_RelationType, Mode=OneWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Padding="5,2" Text="{Binding RelationType.Value}" />
@@ -619,7 +663,8 @@
                                 </DataGridTemplateColumn>
 
                                 <!--  ターゲットエンティティ（コンボボックスに変更）  -->
-                                <DataGridTemplateColumn Width="120" Header="ターゲットエンティティ">
+                                <DataGridTemplateColumn Width="120"
+                                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_TargetEntity, Mode=OneWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Padding="5,2" Text="{Binding TargetEntityName.Value}" />
@@ -636,7 +681,8 @@
                                 </DataGridTemplateColumn>
 
                                 <!--  ターゲットプロパティ（コンボボックスに変更）  -->
-                                <DataGridTemplateColumn Width="120" Header="ターゲットプロパティ">
+                                <DataGridTemplateColumn Width="120"
+                                                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SourceProperty, Mode=OneWay}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Padding="5,2" Text="{Binding TargetProperty.Value}" />
@@ -648,12 +694,14 @@
                                             <ComboBox Style="{StaticResource ImprovedDataTypeComboBox}">
                                                 <ComboBox.ItemsSource>
                                                     <MultiBinding Converter="{StaticResource EntityPropertyConverter}">
-                                                        <Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
+                                                        <Binding Path="DataContext"
+                                                                 RelativeSource="{RelativeSource AncestorType={x:Type Window}}" />
                                                         <Binding Path="TargetEntityName.Value" />
                                                     </MultiBinding>
                                                 </ComboBox.ItemsSource>
                                                 <ComboBox.SelectedItem>
-                                                    <Binding Path="TargetProperty.Value" UpdateSourceTrigger="PropertyChanged" />
+                                                    <Binding Path="TargetProperty.Value"
+                                                             UpdateSourceTrigger="PropertyChanged" />
                                                 </ComboBox.SelectedItem>
                                             </ComboBox>
                                         </DataTemplate>
@@ -667,7 +715,8 @@
             </TabItem>
 
             <!--  タブ3: データ形式設定  -->
-            <TabItem Header="データ形式設定">
+            <TabItem
+                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_DataFormat, Mode=OneWay}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -676,38 +725,53 @@
 
                     <!--  データ形式設定  -->
                     <StackPanel Grid.Row="0" Margin="0,5,0,10">
-                        <TextBlock FontWeight="Bold" Text="データ形式" />
+                        <TextBlock FontWeight="Bold"
+                                   Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_DataFormat, Mode=OneWay}" />
                         <ComboBox
                             Margin="5"
                             ItemsSource="{Binding DataFormats}"
                             SelectedItem="{Binding SelectedDataFormat.Value}" />
 
                         <!--  C#形式の追加設定  -->
-                        <StackPanel Visibility="{Binding IsCSharpFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="クラス名" />
+                        <StackPanel
+                            Visibility="{Binding IsCSharpFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock
+                                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_ClassName, Mode=OneWay}" />
                             <TextBox Text="{Binding ClassName.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <CheckBox Content="プロパティ初期化子構文を使用する" IsChecked="{Binding UsePropertyInitializer.Value}" />
-                            <CheckBox Content="静的メソッドとして作成する" IsChecked="{Binding IsStaticMethod.Value}" />
+                            <CheckBox
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_UsePropertyInitializerSyntax, Mode=OneWay}"
+                                IsChecked="{Binding UsePropertyInitializer.Value}" />
+                            <CheckBox
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_CreateAsStaticMethod, Mode=OneWay}"
+                                IsChecked="{Binding IsStaticMethod.Value}" />
                         </StackPanel>
 
                         <!--  SQL形式の追加設定  -->
-                        <StackPanel Visibility="{Binding IsSqlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="テーブル名" />
+                        <StackPanel
+                            Visibility="{Binding IsSqlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock
+                                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_TableName, Mode=OneWay}" />
                             <TextBox Text="{Binding TableName.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <CheckBox Content="Transaction処理を含める" IsChecked="{Binding IncludeTransaction.Value}" />
+                            <CheckBox
+                                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_IncludeTransactionProcessing, Mode=OneWay}"
+                                IsChecked="{Binding IncludeTransaction.Value}" />
                         </StackPanel>
 
                         <!--  XML形式の追加設定  -->
-                        <StackPanel Visibility="{Binding IsXmlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="ルート要素名" />
+                        <StackPanel
+                            Visibility="{Binding IsXmlFormat.Value, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock
+                                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_RootElementName, Mode=OneWay}" />
                             <TextBox Text="{Binding RootElementName.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Text="項目要素名" />
+                            <TextBlock
+                                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_ItemElementName, Mode=OneWay}" />
                             <TextBox Text="{Binding ItemElementName.Value, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </StackPanel>
 
                     <!--  プレビュー  -->
-                    <GroupBox Grid.Row="1" Header="プレビュー">
+                    <GroupBox Grid.Row="1"
+                              Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Preview, Mode=OneWay}">
                         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                             <TextBox
                                 Background="#222222"
@@ -723,7 +787,8 @@
             </TabItem>
 
             <!--  タブ4: 詳細設定  -->
-            <TabItem Header="詳細設定">
+            <TabItem
+                Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_AdvancedSettings, Mode=OneWay}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -732,84 +797,127 @@
 
                     <!--  各種オプション設定  -->
                     <StackPanel Grid.Row="0" Margin="0,5,0,10">
-                        <TextBlock FontWeight="Bold" Text="データ生成オプション" />
-                        <CheckBox Content="ランダム値を使用" IsChecked="{Binding UseRandomValues.Value}" />
-                        <CheckBox Content="IDを自動採番" IsChecked="{Binding AutoGenerateIds.Value}" />
-                        <CheckBox Content="NULL値を含める" IsChecked="{Binding IncludeNullValues.Value}" />
-                        <CheckBox Content="リレーションシップを自動検出" IsChecked="{Binding AutoDetectRelationships.Value}" />
+                        <TextBlock FontWeight="Bold"
+                                   Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_DataGenerationOptions, Mode=OneWay}" />
+                        <CheckBox
+                            Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_UseRandomValue, Mode=OneWay}"
+                            IsChecked="{Binding UseRandomValues.Value}" />
+                        <CheckBox
+                            Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_AutomaticIDNumbering, Mode=OneWay}"
+                            IsChecked="{Binding AutoGenerateIds.Value}" />
+                        <CheckBox
+                            Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_IncludeNullValues, Mode=OneWay}"
+                            IsChecked="{Binding IncludeNullValues.Value}" />
+                        <CheckBox
+                            Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_AutomaticRelationshipDetection, Mode=OneWay}"
+                            IsChecked="{Binding AutoDetectRelationships.Value}" />
 
                         <TextBlock
                             Margin="0,10,0,0"
                             FontWeight="Bold"
-                            Text="日付範囲" />
+                            Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_DateRange, Mode=OneWay}" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Width="50" Text="開始日:" />
+                            <TextBlock Width="50">
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.StartDate, Mode=OneWay}" />
+                                <Run Text=":" />
+                            </TextBlock>
                             <DatePicker Margin="5,0" SelectedDate="{Binding StartDate.Value}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Width="50" Text="終了日:" />
+                            <TextBlock Width="50">
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.EndDate, Mode=OneWay}" />
+                                <Run Text=":" />
+                            </TextBlock>
                             <DatePicker Margin="5,0" SelectedDate="{Binding EndDate.Value}" />
                         </StackPanel>
 
-                        <TextBlock
-                            Margin="0,10,0,0"
-                            FontWeight="Bold"
-                            Text="数値範囲" />
+                        <TextBlock Margin="0,10,0,0" FontWeight="Bold">
+                            <Run
+                                Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.NumericRange, Mode=OneWay}" />
+                            <Run Text=":" />
+                        </TextBlock>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Width="50" Text="最小値:" />
-                            <TextBox Width="80" Text="{Binding MinNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock
-                                Width="50"
-                                Margin="10,0,0,0"
-                                Text="最大値:" />
-                            <TextBox Width="80" Text="{Binding MaxNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Width="50">
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.MinumumValue, Mode=OneWay}" />
+                                <Run Text=":" />
+                            </TextBlock>
+                            <TextBox Width="80"
+                                     Text="{Binding MinNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Width="50" Margin="10,0,0,0">
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.MaximumValue, Mode=OneWay}" />
+                                <Run Text=":" />
+                            </TextBlock>
+                            <TextBox Width="80"
+                                     Text="{Binding MaxNumericValue.Value, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </StackPanel>
 
                     <!--  サポート情報  -->
-                    <GroupBox Grid.Row="1" Header="サポート情報">
+                    <GroupBox Grid.Row="1"
+                              Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformation, Mode=OneWay}">
                         <ScrollViewer>
                             <TextBlock
                                 Margin="5"
                                 FontSize="12"
                                 Foreground="#CCCCCC"
                                 TextWrapping="Wrap">
-                                <Run Text="このツールはテストデータの生成を支援します。" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText1, Mode=OneWay}" />
                                 <LineBreak />
                                 <LineBreak />
-                                <Run Text="親子関係のあるデータの生成方法:" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText2, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="1. 「エンティティを追加」ボタンで複数のエンティティを登録" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText3, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="2. 「リレーションシップを検出」ボタンで親子関係を自動設定" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText4, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="3. 親エンティティには「レコード数」を設定" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText5, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="4. 子エンティティには「親1件あたりのレコード数」を設定" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText6, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="5. 合計レコード数は自動計算されます" />
-                                <LineBreak />
-                                <LineBreak />
-                                <Run Text="サポートするデータ型:" />
-                                <LineBreak />
-                                <Run Text="- 文字列: 通常テキスト、Eメール、電話番号、住所など" />
-                                <LineBreak />
-                                <Run Text="- 数値: 整数、小数、通貨など" />
-                                <LineBreak />
-                                <Run Text="- 日付: 日付、時刻、日時" />
-                                <LineBreak />
-                                <Run Text="- ブール値: true/false" />
-                                <LineBreak />
-                                <Run Text="- GUID: 一意識別子" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText7, Mode=OneWay}" />
                                 <LineBreak />
                                 <LineBreak />
-                                <Run Text="ヒント:" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText8, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="- 名前に「Id」「Name」「Email」などを含めるとそれらしい値を自動生成します" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText9, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="- プレビュータブで結果を確認してから生成できます" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText10, Mode=OneWay}" />
                                 <LineBreak />
-                                <Run Text="- 固定値の編集は「...」ボタンで行えます" />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText11, Mode=OneWay}" />
+                                <LineBreak />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText12, Mode=OneWay}" />
+                                <LineBreak />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText13, Mode=OneWay}" />
+                                <LineBreak />
+                                <LineBreak />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText14, Mode=OneWay}" />
+                                <LineBreak />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText15, Mode=OneWay}" />
+                                <LineBreak />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText16, Mode=OneWay}" />
+                                <LineBreak />
+                                <Run
+                                    Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SeedGenerator_SupportInformationText17, Mode=OneWay}" />
                             </TextBlock>
                         </ScrollViewer>
                     </GroupBox>
@@ -825,11 +933,11 @@
             Orientation="Horizontal">
             <Button
                 Command="{Binding GenerateSeedDataCommand}"
-                Content="生成"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Generate, Mode=OneWay}"
                 IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
             <Button
                 Command="{Binding CancelCommand}"
-                Content="キャンセル"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Cancel, Mode=OneWay}"
                 IsEnabled="{Binding IsProcessing.Value, Converter={StaticResource InverseBooleanConverter}}" />
         </StackPanel>
     </Grid>
