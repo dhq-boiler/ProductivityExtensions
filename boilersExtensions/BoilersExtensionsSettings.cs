@@ -13,6 +13,25 @@ namespace boilersExtensions
     public static class BoilersExtensionsSettings
     {
         /// <summary>
+        ///     UI言語設定を取得
+        /// </summary>
+        public static string Language
+        {
+            get
+            {
+                try
+                {
+                    return GetOptionPageProperty("Language", "en-US");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error reading Language setting: {ex.Message}");
+                    return "en-US"; // デフォルトは英語
+                }
+            }
+        }
+
+        /// <summary>
         ///     型階層機能が有効かどうか
         /// </summary>
         public static bool IsTypeHierarchyEnabled

@@ -561,4 +561,13 @@
   <data name="BoilersExtensionsOptionPage_EnableGUIDUpdate_Description" xml:space="preserve">
     <value>選択したGUID文字列を更新する機能を有効にします。</value>
   </data>
+  <data name="BoilersExtensionsOptionPage_GeneralSettings" xml:space="preserve">
+    <value>一般設定</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_Language_Description" xml:space="preserve">
+    <value>拡張機能の表示言語を設定します。変更を反映するには Visual Studio を再起動してください。</value>
+  </data>
 </root>

@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
+using boilersExtensions.Converters;
 using boilersExtensions.Helpers.Attributes;
 using Microsoft.VisualStudio.Shell;
 
@@ -9,6 +11,43 @@ namespace boilersExtensions.DialogPages
     [ComVisible(true)]
     public class BoilersExtensionsOptionPage : DialogPage
     {
+        // PropertyChanged イベント
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        // PropertyChanged イベントを発火
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        private string _language = "en-US";
+
+        [LocalizedCategory("BoilersExtensionsOptionPage_GeneralSettings")]
+        [LocalizedDisplayName("BoilersExtensionsOptionPage_Language")]
+        [LocalizedDescription("BoilersExtensionsOptionPage_Language_Description")]
+        [TypeConverter(typeof(LanguageSelectionConverter))]
+        public string Language
+        {
+            get => _language;
+            set
+            {
+                if (_language != value)
+                {
+                    string oldValue = _language;
+                    _language = value;
+                    OnPropertyChanged(nameof(Language));
+
+                    // 言語設定変更を通知
+                    if (LanguageChanged != null)
+                    {
+                        LanguageChanged(this, new LanguageChangedEventArgs(oldValue, value));
+                    }
+                }
+            }
+        }
+
+        // 言語変更イベント
+        public static event EventHandler<LanguageChangedEventArgs> LanguageChanged;
+        
         [LocalizedCategory("BoilersExtensionsOptionPage_EnableDisableFunction")]
         [LocalizedDisplayName("BoilersExtensionsOptionPage_EnableTypeHierarchy")]
         [LocalizedDescription("BoilersExtensionsOptionPage_EnableTypeHierarchy_Description")]

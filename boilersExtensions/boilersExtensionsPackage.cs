@@ -54,6 +54,12 @@ namespace boilersExtensions
             // 新しい拡張機能設定コマンドを初期化
             await BoilersExtensionsSettingsCommand.InitializeAsync(this);
 
+            // 言語設定を適用
+            ResourceService.InitializeCurrentCulture();
+
+            // 言語変更マネージャーを初期化
+            Utils.LanguageChangeManager.Initialize(this);
+
             // 他の初期化処理
             await NavigateGitHubLinesCommand.InitializeAsync(this);
             await RenameProjectCommand.InitializeAsync(this);

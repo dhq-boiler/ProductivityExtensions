@@ -6,6 +6,8 @@ using System.Threading;
 using boilersExtensions.Properties;
 using Microsoft.VisualStudio.PlatformUI.Search;
 using Prism.Mvvm;
+using Microsoft.VisualStudio.Shell;
+using System.Xml.Linq;
 
 namespace boilersExtensions.Helpers
 {
@@ -30,10 +32,49 @@ namespace boilersExtensions.Helpers
             RaisePropertyChanged(nameof(Resource));
         }
 
-        internal static void InitializeCurrentCulture()
+        /// <summary>
+        /// 現在のカルチャを初期化
+        /// </summary>
+        public static void InitializeCurrentCulture()
         {
-            Resources.Culture = CultureInfo.CurrentUICulture;
-            Debug.WriteLine($"CurrentUICulture: {Resources.Culture}");
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    // 設定から言語を取得
+                    string languageSetting = "en-US";
+
+                    // パッケージがロードされた後に設定を取得
+                    if (BoilersExtensionsSettingsCommand.Instance?.Package != null)
+                    {
+                        languageSetting = BoilersExtensionsSettings.Language;
+                    }
+
+                    // 対応する CultureInfo を作成
+                    CultureInfo culture;
+                    try
+                    {
+                        culture = new CultureInfo(languageSetting);
+                    }
+                    catch (Exception)
+                    {
+                        // 無効な言語コードの場合はデフォルトに戻す
+                        culture = new CultureInfo("en-US");
+                    }
+
+                    // カルチャを設定
+                    Thread.CurrentThread.CurrentUICulture = culture;
+                    Debug.WriteLine($"Culture set to {culture.Name}");
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing culture: {ex.Message}");
+                // デフォルトカルチャーをフォールバックとして使用
+                Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
+            }
         }
 
         internal static string GetString(string name)
@@ -68,6 +109,45 @@ namespace boilersExtensions.Helpers
             {
                 Debug.WriteLine($"Error getting resource: {ex.Message}");
                 return name;
+            }
+        }
+
+        /// <summary>
+        /// 現在の言語設定を再適用します
+        /// </summary>
+        public static void ApplyLanguageSetting()
+        {
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    // 設定から言語を取得
+                    string languageSetting = BoilersExtensionsSettings.Language;
+
+                    // 対応する CultureInfo を作成
+                    CultureInfo culture;
+                    try
+                    {
+                        culture = new CultureInfo(languageSetting);
+                    }
+                    catch (Exception)
+                    {
+                        // 無効な言語コードの場合はデフォルトに戻す
+                        culture = new CultureInfo("en-US");
+                    }
+
+                    // カルチャを設定
+                    Thread.CurrentThread.CurrentUICulture = culture;
+                    Resource.Culture = culture;
+
+                    Debug.WriteLine($"Culture updated to {culture.Name}");
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error applying language setting: {ex.Message}");
             }
         }
     }

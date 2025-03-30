@@ -259,6 +259,33 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   General Settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_GeneralSettings {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_GeneralSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Language に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_Language {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_Language", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Set the display language for the extension. Restart Visual Studio for changes to take effect. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_Language_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_Language_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Cancel に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Cancel {
