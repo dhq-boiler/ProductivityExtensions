@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="boilersExtensions.e678fe69-e61b-429d-ab8e-83d2b8fe516c" Version="1.0.0" Language="en-US" Publisher="dhq_boiler" />
+        <Identity Id="boilersExtensions.e678fe69-e61b-429d-ab8e-83d2b8fe516c" Version="1.7.5" Language="en-US" Publisher="dhq_boiler" />
         <DisplayName>boilersExtensions</DisplayName>
         <Description>This is an extension that includes features to further enrich your development work with Visual Studio 2022.</Description>
         <License>LICENSE.txt</License>
