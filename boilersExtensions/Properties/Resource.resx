@@ -570,4 +570,19 @@
   <data name="BoilersExtensionsOptionPage_Language_Description" xml:space="preserve">
     <value>Set the display language for the extension. Restart Visual Studio for changes to take effect.</value>
   </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="RemoteGitRepositoryNotFound" xml:space="preserve">
+    <value>Remote Git repository not found.</value>
+  </data>
+  <data name="SolutionNotFound" xml:space="preserve">
+    <value>Solution not found.</value>
+  </data>
+  <data name="DocumentNotFound" xml:space="preserve">
+    <value>Active document not found.</value>
+  </data>
+  <data name="TextManagerNotFound" xml:space="preserve">
+    <value>TextManager not found.</value>
+  </data>
 </root>

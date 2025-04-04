@@ -376,6 +376,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Active document not found. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DocumentNotFound {
+            get {
+                return ResourceManager.GetString("DocumentNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   ↓ に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Down {
@@ -399,6 +408,15 @@ namespace boilersExtensions.Properties {
         public static string Entity {
             get {
                 return ResourceManager.GetString("Entity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Error {
+            get {
+                return ResourceManager.GetString("Error", resourceCulture);
             }
         }
         
@@ -759,6 +777,15 @@ namespace boilersExtensions.Properties {
         public static string Relationship {
             get {
                 return ResourceManager.GetString("Relationship", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Remote Git repository not found. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RemoteGitRepositoryNotFound {
+            get {
+                return ResourceManager.GetString("RemoteGitRepositoryNotFound", resourceCulture);
             }
         }
         
@@ -1267,11 +1294,29 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Solution not found. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SolutionNotFound {
+            get {
+                return ResourceManager.GetString("SolutionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Start Date に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string StartDate {
             get {
                 return ResourceManager.GetString("StartDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   TextManager not found. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TextManagerNotFound {
+            get {
+                return ResourceManager.GetString("TextManagerNotFound", resourceCulture);
             }
         }
         
