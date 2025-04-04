@@ -570,4 +570,19 @@
   <data name="BoilersExtensionsOptionPage_Language_Description" xml:space="preserve">
     <value>拡張機能の表示言語を設定します。変更を反映するには Visual Studio を再起動してください。</value>
   </data>
+  <data name="Error" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="RemoteGitRepositoryNotFound" xml:space="preserve">
+    <value>リモートのGitリポジトリが見つかりませんでした。</value>
+  </data>
+  <data name="SolutionNotFound" xml:space="preserve">
+    <value>ソリューションが見つかりませんでした。</value>
+  </data>
+  <data name="DocumentNotFound" xml:space="preserve">
+    <value>アクティブなドキュメントが見つかりませんでした。</value>
+  </data>
+  <data name="TextManagerNotFound" xml:space="preserve">
+    <value>テキストマネージャーが見つかりませんでした。</value>
+  </data>
 </root>

@@ -138,6 +138,20 @@ namespace boilersExtensions
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var serviceProvider = ServiceProvider;
             var textManager = await serviceProvider.GetServiceAsync(typeof(SVsTextManager)) as IVsTextManager;
+
+            if (textManager is null)
+            {
+                // IVsTextManagerの取得に失敗した場合はメッセージボックスで通知する
+                VsShellUtilities.ShowMessageBox(
+                    package,
+                    ResourceService.GetString("TextManagerNotFound"),
+                    ResourceService.GetString("Error"),
+                    OLEMSGICON.OLEMSGICON_CRITICAL,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                return;
+            }
+
             textManager.GetActiveView(1, null, out var textView);
             textView.GetSelection(out var startLine, out _, out var endLine, out _);
             textView.GetBuffer(out _);
@@ -156,43 +170,76 @@ namespace boilersExtensions
                 filePath = projectItem.Properties.Item("FullPath").Value.ToString();
             }
 
-            //ファイルパスを取得できた場合の処理
-            if (await serviceProvider.GetServiceAsync(typeof(SVsSolution)) is IVsSolution solution && filePath != null)
+            //ファイルパスを取得できなかった場合の処理
+            if ((!(await serviceProvider.GetServiceAsync(typeof(SVsSolution)) is IVsSolution solution)))
             {
-                var repoPath = await GetGitRepositoryUrl();
-
-                if (repoPath == null)
-                {
-                    menuItem.Enabled = false;
-                    return;
-                }
-
-                var projectPath = projectItem.ContainingProject.FullName;
-                var projectNameWithExt = Path.GetFileName(projectPath);
-                var path = projectPath.Remove(projectPath.IndexOf(projectNameWithExt), projectNameWithExt.Length);
-                path = path.Remove(path.IndexOf(repoPath), repoPath.Length);
-                path = path.Replace('\\', '/');
-                path = path.Trim('/');
-
-                var gitRepository = new Repository(repoPath);
-                var repositoryUrl = gitRepository.Network.Remotes.AsValueEnumerable().FirstOrDefault()?.Url;
-                var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://")
-                    .Replace("git://", "https://")
-                    .Replace("git@", "https://")
-                    .Replace("github.com:", "github.com/");
-                var branchName = Uri.EscapeDataString(gitRepository.Head.FriendlyName);
-                var relativeFilePath = filePath?.Substring(Path.GetDirectoryName(projectPath).Length);
-                relativeFilePath = relativeFilePath?.Replace('\\', '/');
-                var lineNumberBegin = startLine + 1;
-                var lineNumberEnd = endLine + 1;
-                var fileUrl = $"{baseUrl}/blob/{branchName}/{path}{relativeFilePath}#L{lineNumberBegin}";
-                if (lineNumberBegin != lineNumberEnd)
-                {
-                    fileUrl += $"-L{lineNumberEnd}";
-                }
-
-                Process.Start(fileUrl);
+                // IVsSolutionの取得に失敗した場合はメッセージボックスで通知する
+                VsShellUtilities.ShowMessageBox(
+                    package,
+                    ResourceService.GetString("SolutionNotFound"),
+                    ResourceService.GetString("Error"),
+                    OLEMSGICON.OLEMSGICON_CRITICAL,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                return;
             }
+
+            //ファイルパスが取得できなかった場合の処理
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // アクティブなドキュメントがない場合はメッセージボックスで通知する
+                VsShellUtilities.ShowMessageBox(
+                    package,
+                    ResourceService.GetString("DocumentNotFound"),
+                    ResourceService.GetString("Error"),
+                    OLEMSGICON.OLEMSGICON_CRITICAL,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                return;
+            }
+            
+            var repoPath = await GetGitRepositoryUrl();
+
+            if (repoPath == null)
+            {
+                // リポジトリのパスが取得できなかった場合はメッセージボックスで通知する
+                VsShellUtilities.ShowMessageBox(
+                    package,
+                    ResourceService.GetString("RemoteGitRepositoryNotFound"),
+                    ResourceService.GetString("Error"),
+                    OLEMSGICON.OLEMSGICON_CRITICAL,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+
+                menuItem.Enabled = false;
+                return;
+            }
+
+            var projectPath = projectItem.ContainingProject.FullName;
+            var projectNameWithExt = Path.GetFileName(projectPath);
+            var path = projectPath.Remove(projectPath.IndexOf(projectNameWithExt), projectNameWithExt.Length);
+            path = path.Remove(path.IndexOf(repoPath), repoPath.Length);
+            path = path.Replace('\\', '/');
+            path = path.Trim('/');
+
+            var gitRepository = new Repository(repoPath);
+            var repositoryUrl = gitRepository.Network.Remotes.AsValueEnumerable().FirstOrDefault()?.Url;
+            var baseUrl = repositoryUrl?.Replace(".git", string.Empty)?.Replace("ssh://", "https://")
+                .Replace("git://", "https://")
+                .Replace("git@", "https://")
+                .Replace("github.com:", "github.com/");
+            var branchName = Uri.EscapeDataString(gitRepository.Head.FriendlyName);
+            var relativeFilePath = filePath?.Substring(Path.GetDirectoryName(projectPath).Length);
+            relativeFilePath = relativeFilePath?.Replace('\\', '/');
+            var lineNumberBegin = startLine + 1;
+            var lineNumberEnd = endLine + 1;
+            var fileUrl = $"{baseUrl}/blob/{branchName}/{path}{relativeFilePath}#L{lineNumberBegin}";
+            if (lineNumberBegin != lineNumberEnd)
+            {
+                fileUrl += $"-L{lineNumberEnd}";
+            }
+
+            Process.Start(fileUrl);
         }
 
         private static async Task<string> GetGitRepositoryUrl()
