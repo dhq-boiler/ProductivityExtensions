@@ -68,6 +68,7 @@ namespace boilersExtensions
             await SyncToSolutionExplorerCommand.InitializeAsync(this);
             await SeedDataGeneratorCommand.InitializeAsync(this);
             await RegisterResourceStringCommand.InitializeAsync(this);
+            await XamlRegisterResourceStringCommand.InitializeAsync(this);
 
             // 手動で拡張機能を初期化
             Debug.WriteLine("Initializing RegionNavigator extensions manually");

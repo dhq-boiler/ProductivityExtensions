@@ -609,4 +609,10 @@
   <data name="ErrorWithMessage" xml:space="preserve">
     <value>エラー： {0}</value>
   </data>
+  <data name="ErrorAddingToResourceFile" xml:space="preserve">
+    <value>リソースファイルへの追加エラー： {0}</value>
+  </data>
+  <data name="XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences" xml:space="preserve">
+    <value>XAMLに含まれる文字列をリソース参照に変換します</value>
+  </data>
 </root>

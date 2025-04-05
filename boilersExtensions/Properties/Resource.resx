@@ -612,4 +612,7 @@
   <data name="ErrorAddingToResourceFile" xml:space="preserve">
     <value>Error adding to resource file: {0}</value>
   </data>
+  <data name="XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences" xml:space="preserve">
+    <value>Converts strings contained in XAML to resource references</value>
+  </data>
 </root>

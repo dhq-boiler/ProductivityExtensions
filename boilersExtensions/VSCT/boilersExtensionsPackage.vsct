@@ -70,6 +70,12 @@
 			<Group guid="guidRegisterResourceStringCommandPackageCmdSet" id="MyMenuGroup" priority="0x0600">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
 			</Group>
+			<Group guid="guidRegisterResourceStringCommandPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+			</Group>
+			<Group guid="guidXamlRegisterResourceStringCommandPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+				<Parent guid="guidXamlUiCmds" id="IDM_XAML_EDITOR" />
+			</Group>
 			<Group guid="guidSyncToSolutionExplorerCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_EZDOCWINTAB"/>
 			</Group>
@@ -177,6 +183,14 @@
 					<ButtonText>Preferences...</ButtonText>
 				</Strings>
 			</Button>
+			<Button guid="guidXamlRegisterResourceStringCommandPackageCmdSet" id="XamlResourceConverterCommandId" priority="0x0100" type="Button">
+				<Parent guid="guidXamlRegisterResourceStringCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
+				<Strings>
+					<ButtonText>Convert XAML strings to resources</ButtonText>
+				</Strings>
+			</Button>
 		</Buttons>
 
 		<!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -235,6 +249,13 @@
 		<GuidSymbol name="guidRegisterResourceStringCommandPackageCmdSet" value="{fc96ce15-b963-4ccc-9ff5-df9a98e78f73}">
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="RegisterResourceStringCommandId" value="0x0100" />
+		</GuidSymbol>
+		<GuidSymbol name="guidXamlRegisterResourceStringCommandPackageCmdSet" value="{70264969-bdcf-4cd4-a9a3-ac8ba3e90466}">
+			<IDSymbol name="MyMenuGroup" value="0x1020" />
+			<IDSymbol name="XamlResourceConverterCommandId" value="0x0200" />
+		</GuidSymbol>
+		<GuidSymbol name="guidXamlUiCmds" value="{4c87b692-1202-46aa-b64c-ef01faec53da}">
+			<IDSymbol name="IDM_XAML_EDITOR" value="0x103" />
 		</GuidSymbol>
 		
 		<!--<GuidSymbol name="guidBoilersExtensionsSettingsCommandPackageCmdSet" value="{f4ae3e4b-8f5f-4a5e-9f7b-5e9c82f7a3d1}">

@@ -1535,5 +1535,14 @@ namespace boilersExtensions.Properties {
                 return ResourceManager.GetString("ViewInSolutionExplorer", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Converts strings contained in XAML to resource references に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences {
+            get {
+                return ResourceManager.GetString("XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences", resourceCulture);
+            }
+        }
     }
 }
