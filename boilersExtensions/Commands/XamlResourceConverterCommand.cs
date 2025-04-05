@@ -115,7 +115,23 @@ namespace boilersExtensions.Commands
                     // 変換したXAMLを既存のドキュメントに適用
                     if (textSelection != null && !textSelection.IsEmpty)
                     {
+                        // 行番号を取得
+                        int lineNumber = textSelection.BottomPoint.Line;
+
+                        // 置換
                         textSelection.Text = viewModel.ConvertedXaml.Value;
+
+                        // 該当行に移動
+                        textSelection.GotoLine(lineNumber);
+
+                        // 行末に移動
+                        textSelection.EndOfLine();
+
+                        // 末尾3文字を削除するために3文字分左に移動してから選択
+                        textSelection.CharLeft(true, 3);
+
+                        // 選択した3文字を削除
+                        textSelection.Delete();
                     }
                     else
                     {

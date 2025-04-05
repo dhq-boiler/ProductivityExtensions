@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:helpers="clr-namespace:boilersExtensions.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="Register Resource String"
+    Title="Resource String Replacer"
     Width="450"
     Height="320"
     Background="#1F1F1F"
@@ -79,7 +79,7 @@
             Grid.ColumnSpan="2"
             Margin="0,0,0,10"
             FontWeight="Bold"
-            Text="Register the selected text to a resource file" />
+            Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.RegisterResourceString_Headline, Mode=OneWay}" />
 
         <!--  Resource Key  -->
         <TextBlock

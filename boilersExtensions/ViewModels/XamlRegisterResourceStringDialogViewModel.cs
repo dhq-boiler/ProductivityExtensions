@@ -124,11 +124,9 @@ namespace boilersExtensions.ViewModels
 
                 foreach (var item in DetectedTextItems.Where(i => i.IsSelected))
                 {
-                    var pattern = $"{item.AttributeName}=\"{Regex.Escape(item.OriginalText)}\"";
-                    var replacement = $"{item.AttributeName}=\"{{Binding Source={{x:Static {ResourceNamespace.Value}:{ResourceClass.Value}.Current}}, " +
-                                     $"Path=Resource.{item.ResourceKey}, Mode=OneWay}}\"";
-
-                    previewXaml = Regex.Replace(previewXaml, pattern, replacement);
+                    previewXaml = Regex.Replace(previewXaml,
+                        $"{item.AttributeName}=\"([^\"]*)\"",
+                        $"{item.AttributeName}=\"{{Binding Source={{x:Static helpers:ResourceService.Current}}, Path=Resource.{item.ResourceKey}, Mode=OneWay}}\"");
                 }
 
                 // XAMLの名前空間宣言を確認し、必要なら追加
