@@ -421,6 +421,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Error: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorWithMessage {
+            get {
+                return ResourceManager.GetString("ErrorWithMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   File に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string File {
@@ -709,6 +718,24 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   No active document. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NoActiveDocument {
+            get {
+                return ResourceManager.GetString("NoActiveDocument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   No text selected. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NoTextSelected {
+            get {
+                return ResourceManager.GetString("NoTextSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Numeric range に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NumericRange {
@@ -786,6 +813,15 @@ namespace boilersExtensions.Properties {
         public static string RegisterResourceString {
             get {
                 return ResourceManager.GetString("RegisterResourceString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Added &apos;{0}&apos; to resources with key &apos;{1}&apos; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RegisterResourceString_AddedToResources {
+            get {
+                return ResourceManager.GetString("RegisterResourceString_AddedToResources", resourceCulture);
             }
         }
         

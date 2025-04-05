@@ -597,4 +597,16 @@
   <data name="NeedResourceClassName" xml:space="preserve">
     <value>カスタムクラスを使用する場合は、リソースクラス名が必要です。</value>
   </data>
+  <data name="NoActiveDocument" xml:space="preserve">
+    <value>アクティブなドキュメントがありません。</value>
+  </data>
+  <data name="NoTextSelected" xml:space="preserve">
+    <value>テキストが選択されていません。</value>
+  </data>
+  <data name="RegisterResourceString_AddedToResources" xml:space="preserve">
+    <value>キー'{1}'のリソースに'{0}'を追加しました。</value>
+  </data>
+  <data name="ErrorWithMessage" xml:space="preserve">
+    <value>エラー： {0}</value>
+  </data>
 </root>

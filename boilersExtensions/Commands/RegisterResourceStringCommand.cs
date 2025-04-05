@@ -58,7 +58,7 @@ namespace boilersExtensions.Commands
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                 if (dte?.ActiveDocument == null)
                 {
-                    ShowDialogMessage("No active document.", icon: OLEMSGICON.OLEMSGICON_INFO);
+                    ShowDialogMessage(ResourceService.GetString("NoActiveDocument"), icon: OLEMSGICON.OLEMSGICON_INFO);
                     return;
                 }
 
@@ -66,7 +66,7 @@ namespace boilersExtensions.Commands
                 var textSelection = dte.ActiveDocument.Selection as TextSelection;
                 if (textSelection == null || textSelection.IsEmpty)
                 {
-                    ShowDialogMessage("No text selected.", icon: OLEMSGICON.OLEMSGICON_INFO);
+                    ShowDialogMessage(ResourceService.GetString("NoTextSelected"), icon: OLEMSGICON.OLEMSGICON_INFO);
                     return;
                 }
 
@@ -109,7 +109,7 @@ namespace boilersExtensions.Commands
                                 interpolationExpressions.ToArray());
                             textSelection.Text = replacementCode;
 
-                            ShowDialogMessage($"Added '{selectedText}' to resources with key '{viewModel.ResourceKey}'");
+                            ShowDialogMessage(string.Format(ResourceService.GetString("RegisterResourceString_AddedToResources"), selectedText, viewModel.ResourceKey));
                             continueLoop = false;
                         }
                         else
@@ -127,7 +127,7 @@ namespace boilersExtensions.Commands
             {
                 Debug.WriteLine($"Error in Execute: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
-                ShowDialogMessage($"Error: {ex.Message}", icon: OLEMSGICON.OLEMSGICON_WARNING);
+                ShowDialogMessage(string.Format(ResourceService.GetString("ErrorWithMessage"), ex.Message), icon: OLEMSGICON.OLEMSGICON_WARNING);
             }
         }
 
@@ -270,7 +270,7 @@ namespace boilersExtensions.Commands
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error adding to resource file: {ex.Message}");
-                ShowDialogMessage($"Error adding to resource file: {ex.Message}", icon: OLEMSGICON.OLEMSGICON_WARNING);
+                ShowDialogMessage(string.Format(ResourceService.GetString("ErrorAddingToResourceFile"), ex.Message), icon: OLEMSGICON.OLEMSGICON_WARNING);
                 return false;
             }
         }

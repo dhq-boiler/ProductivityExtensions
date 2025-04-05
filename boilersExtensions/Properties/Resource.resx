@@ -597,4 +597,19 @@
   <data name="NeedResourceClassName" xml:space="preserve">
     <value>Resource class name is required when using a custom class.</value>
   </data>
+  <data name="NoActiveDocument" xml:space="preserve">
+    <value>No active document.</value>
+  </data>
+  <data name="NoTextSelected" xml:space="preserve">
+    <value>No text selected.</value>
+  </data>
+  <data name="RegisterResourceString_AddedToResources" xml:space="preserve">
+    <value>Added '{0}' to resources with key '{1}'</value>
+  </data>
+  <data name="ErrorWithMessage" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="ErrorAddingToResourceFile" xml:space="preserve">
+    <value>Error adding to resource file: {0}</value>
+  </data>
 </root>
