@@ -67,6 +67,9 @@
 			<Group guid="guidRegionNavigatorCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
 			</Group>
+			<Group guid="guidRegisterResourceStringCommandPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+			</Group>
 			<Group guid="guidSyncToSolutionExplorerCommandPackageCmdSet" id="MyMenuGroup" priority="0x0100">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_EZDOCWINTAB"/>
 			</Group>
@@ -140,6 +143,14 @@
 				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
 					<ButtonText>Move between #region/#endregion</ButtonText>
+				</Strings>
+			</Button>
+			<Button guid="guidRegisterResourceStringCommandPackageCmdSet" id="RegisterResourceStringCommandId" priority="0x0100" type="Button">
+				<Parent guid="guidRegisterResourceStringCommandPackageCmdSet" id="MyMenuGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>TextChanges</CommandFlag>
+				<Strings>
+					<ButtonText>Register resource string</ButtonText>
 				</Strings>
 			</Button>
 			<Button guid="guidSyncToSolutionExplorerCommandPackageCmdSet" id="SyncToSolutionExplorerCommandId" priority="0x0100" type="Button">
@@ -221,6 +232,11 @@
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="SyncToSolutionExplorerCommandId" value="0x0100" />
 		</GuidSymbol>
+		<GuidSymbol name="guidRegisterResourceStringCommandPackageCmdSet" value="{fc96ce15-b963-4ccc-9ff5-df9a98e78f73}">
+			<IDSymbol name="MyMenuGroup" value="0x1020" />
+			<IDSymbol name="RegisterResourceStringCommandId" value="0x0100" />
+		</GuidSymbol>
+		
 		<!--<GuidSymbol name="guidBoilersExtensionsSettingsCommandPackageCmdSet" value="{f4ae3e4b-8f5f-4a5e-9f7b-5e9c82f7a3d1}">
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="BoilersExtensionsSettingsCommandId" value="0x1000" />

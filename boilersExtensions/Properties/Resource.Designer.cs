@@ -772,6 +772,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Register resource string に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RegisterResourceString {
+            get {
+                return ResourceManager.GetString("RegisterResourceString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Relationship に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Relationship {

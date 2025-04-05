@@ -585,4 +585,7 @@
   <data name="TextManagerNotFound" xml:space="preserve">
     <value>テキストマネージャーが見つかりませんでした。</value>
   </data>
+  <data name="RegisterResourceString" xml:space="preserve">
+    <value>リソース文字列を登録する</value>
+  </data>
 </root>

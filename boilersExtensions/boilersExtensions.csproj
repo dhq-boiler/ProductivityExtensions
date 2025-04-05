@@ -52,6 +52,7 @@
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
+    <Compile Include="Commands\RegisterResourceStringCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
     <Compile Include="Commands\SeedDataGeneratorCommand.cs" />
     <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
@@ -122,6 +123,7 @@
     </Compile>
     <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
+    <Compile Include="ViewModels\RegisterResourceDialogViewModel.cs" />
     <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
     <Compile Include="ViewModels\SeedDataConfigViewModel.cs" />
     <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
@@ -134,6 +136,9 @@
     </Compile>
     <Compile Include="Views\ImpactAnalysisDialog.xaml.cs">
       <DependentUpon>ImpactAnalysisDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RegisterResourceDialog.xaml.cs">
+      <DependentUpon>RegisterResourceDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RenameSolutionDialog.xaml.cs">
       <DependentUpon>RenameSolutionDialog.xaml</DependentUpon>
@@ -289,6 +294,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\ImpactAnalysisDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\RegisterResourceDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
