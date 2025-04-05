@@ -75,6 +75,22 @@ namespace boilersExtensions.Helpers
             }
         }
 
+        public static void ReloadResources()
+        {
+            try
+            {
+                // Re-initialize the ResourceManager to pick up new resources
+                resourceMan = new ResourceManager(typeof(Resource));
+
+                // Apply current culture
+                InitializeCurrentCulture();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error reloading resources: {ex.Message}");
+            }
+        }
+
         internal static string GetString(string name)
         {
             if (resourceMan == null)

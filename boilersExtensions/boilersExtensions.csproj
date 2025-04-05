@@ -52,11 +52,13 @@
     <Compile Include="Commands\BatchUpdateGuidCommand.cs" />
     <Compile Include="Commands\BoilersExtensionsSettingsCommand.cs" />
     <Compile Include="Commands\RegionNavigatorCommand.cs" />
+    <Compile Include="Commands\RegisterResourceStringCommand.cs" />
     <Compile Include="Commands\RenameSolutionCommand.cs" />
     <Compile Include="Commands\SeedDataGeneratorCommand.cs" />
     <Compile Include="Commands\SyncToSolutionExplorerCommand.cs" />
     <Compile Include="Commands\TypeHierarchyCommand.cs" />
     <Compile Include="Commands\UpdateGuidCommand.cs" />
+    <Compile Include="Commands\XamlResourceConverterCommand.cs" />
     <Compile Include="Controls\EasyEnterTextBox.cs" />
     <Compile Include="Controls\LoadingSpinner.xaml.cs">
       <DependentUpon>LoadingSpinner.xaml</DependentUpon>
@@ -122,10 +124,12 @@
     </Compile>
     <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
+    <Compile Include="ViewModels\RegisterResourceDialogViewModel.cs" />
     <Compile Include="ViewModels\RenameSolutionDialogViewModel.cs" />
     <Compile Include="ViewModels\SeedDataConfigViewModel.cs" />
     <Compile Include="ViewModels\TypeHierarchyDialogViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="ViewModels\XamlRegisterResourceStringDialogViewModel.cs" />
     <Compile Include="Views\FixedValuesDialog.xaml.cs">
       <DependentUpon>FixedValuesDialog.xaml</DependentUpon>
     </Compile>
@@ -134,6 +138,12 @@
     </Compile>
     <Compile Include="Views\ImpactAnalysisDialog.xaml.cs">
       <DependentUpon>ImpactAnalysisDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\XamlRegisterResourceStringDialog.xaml.cs">
+      <DependentUpon>XamlRegisterResourceStringDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RegisterResourceDialog.xaml.cs">
+      <DependentUpon>RegisterResourceDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RenameSolutionDialog.xaml.cs">
       <DependentUpon>RenameSolutionDialog.xaml</DependentUpon>
@@ -292,6 +302,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\XamlRegisterResourceStringDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\RegisterResourceDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\RenameSolutionDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -314,6 +332,7 @@
     <EmbeddedResource Include="Properties\Resource.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

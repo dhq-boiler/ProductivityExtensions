@@ -421,6 +421,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Error: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorWithMessage {
+            get {
+                return ResourceManager.GetString("ErrorWithMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   File に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string File {
@@ -700,6 +709,33 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Resource class name is required when using a custom class. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NeedResourceClassName {
+            get {
+                return ResourceManager.GetString("NeedResourceClassName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   No active document. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NoActiveDocument {
+            get {
+                return ResourceManager.GetString("NoActiveDocument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   No text selected. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NoTextSelected {
+            get {
+                return ResourceManager.GetString("NoTextSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Numeric range に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NumericRange {
@@ -772,6 +808,24 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Register resource string に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RegisterResourceString {
+            get {
+                return ResourceManager.GetString("RegisterResourceString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Added &apos;{0}&apos; to resources with key &apos;{1}&apos; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RegisterResourceString_AddedToResources {
+            get {
+                return ResourceManager.GetString("RegisterResourceString_AddedToResources", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Relationship に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Relationship {
@@ -804,6 +858,15 @@ namespace boilersExtensions.Properties {
         public static string RenameSolution {
             get {
                 return ResourceManager.GetString("RenameSolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Resource key is required. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ResourceKeyIsRequired {
+            get {
+                return ResourceManager.GetString("ResourceKeyIsRequired", resourceCulture);
             }
         }
         
@@ -1456,11 +1519,29 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Validation Error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ValidationError {
+            get {
+                return ResourceManager.GetString("ValidationError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   View in Solution Explorer に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ViewInSolutionExplorer {
             get {
                 return ResourceManager.GetString("ViewInSolutionExplorer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Converts strings contained in XAML to resource references に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences {
+            get {
+                return ResourceManager.GetString("XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences", resourceCulture);
             }
         }
     }
