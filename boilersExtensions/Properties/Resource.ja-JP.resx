@@ -624,29 +624,11 @@
   <data name="Culture" xml:space="preserve">
     <value>カルチャ</value>
   </data>
-  <data name="Culture" xml:space="preserve">
-    <value>カルチャ</value>
+  <data name="DeselectAll" xml:space="preserve">
+    <value>すべて選択解除</value>
   </data>
   <data name="DetectedString" xml:space="preserve">
     <value>検出された文字列</value>
-  </data>
-  <data name="SelectAll" xml:space="preserve">
-    <value>すべて選択</value>
-  </data>
-  <data name="SelectAll" xml:space="preserve">
-    <value>すべて選択</value>
-  </data>
-  <data name="SelectAll" xml:space="preserve">
-    <value>すべて選択</value>
-  </data>
-  <data name="DeselectAll" xml:space="preserve">
-    <value>すべて選択解除</value>
-  </data>
-  <data name="DeselectAll" xml:space="preserve">
-    <value>すべて選択解除</value>
-  </data>
-  <data name="Select" xml:space="preserve">
-    <value>選択</value>
   </data>
   <data name="Attribute" xml:space="preserve">
     <value>属性</value>
@@ -663,7 +645,7 @@
   <data name="Convert" xml:space="preserve">
     <value>変換</value>
   </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>キャンセル</value>
+  <data name="RegisterResourceString_Headline" xml:space="preserve">
+    <value>選択したテキストをリソースファイルに登録する</value>
   </data>
 </root>

@@ -645,4 +645,7 @@
   <data name="Convert" xml:space="preserve">
     <value>Convert</value>
   </data>
+  <data name="RegisterResourceString_Headline" xml:space="preserve">
+    <value>Register the selected text to a resource file</value>
+  </data>
 </root>

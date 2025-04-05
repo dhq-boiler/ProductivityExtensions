@@ -889,6 +889,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Register the selected text to a resource file に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RegisterResourceString_Headline {
+            get {
+                return ResourceManager.GetString("RegisterResourceString_Headline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Relationship に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Relationship {
