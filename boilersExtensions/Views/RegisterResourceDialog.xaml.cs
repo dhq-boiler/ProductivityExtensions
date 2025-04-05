@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using boilersExtensions.Helpers;
 using boilersExtensions.ViewModels;
 
 namespace boilersExtensions.Views
@@ -20,7 +21,7 @@ namespace boilersExtensions.Views
                 // Validate required fields
                 if (string.IsNullOrWhiteSpace(viewModel.ResourceKey.Value))
                 {
-                    MessageBox.Show("Resource key is required.", "Validation Error",
+                    MessageBox.Show(ResourceService.GetString("ResourceKeyIsRequired"), ResourceService.GetString("ValidationError"),
                         MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
@@ -29,8 +30,8 @@ namespace boilersExtensions.Views
                 if (viewModel.UseCustomResourceClass.Value &&
                     string.IsNullOrWhiteSpace(viewModel.ResourceClassName.Value))
                 {
-                    MessageBox.Show("Resource class name is required when using a custom class.",
-                        "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(ResourceService.GetString("NeedResourceClassName"),
+                        ResourceService.GetString("ValidationError"), MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
             }

@@ -700,6 +700,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Resource class name is required when using a custom class. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NeedResourceClassName {
+            get {
+                return ResourceManager.GetString("NeedResourceClassName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Numeric range に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NumericRange {
@@ -813,6 +822,15 @@ namespace boilersExtensions.Properties {
         public static string RenameSolution {
             get {
                 return ResourceManager.GetString("RenameSolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Resource key is required. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ResourceKeyIsRequired {
+            get {
+                return ResourceManager.GetString("ResourceKeyIsRequired", resourceCulture);
             }
         }
         
@@ -1461,6 +1479,15 @@ namespace boilersExtensions.Properties {
         public static string UpdateSelectedGuidString {
             get {
                 return ResourceManager.GetString("UpdateSelectedGuidString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Validation Error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ValidationError {
+            get {
+                return ResourceManager.GetString("ValidationError", resourceCulture);
             }
         }
         

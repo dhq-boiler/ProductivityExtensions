@@ -50,11 +50,12 @@ namespace boilersExtensions.Commands
 
             try
             {
+
                 // Get DTE
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                 if (dte?.ActiveDocument == null)
                 {
-                    ShowMessage("No active document.");
+                    ShowDialogMessage("No active document.", icon: OLEMSGICON.OLEMSGICON_INFO);
                     return;
                 }
 
@@ -62,7 +63,7 @@ namespace boilersExtensions.Commands
                 var textSelection = dte.ActiveDocument.Selection as TextSelection;
                 if (textSelection == null || textSelection.IsEmpty)
                 {
-                    ShowMessage("No text selected.");
+                    ShowDialogMessage("No text selected.", icon: OLEMSGICON.OLEMSGICON_INFO);
                     return;
                 }
 
@@ -75,19 +76,35 @@ namespace boilersExtensions.Commands
                     Package = package
                 };
 
-                var dialog = new RegisterResourceDialog { DataContext = viewModel };
-                bool? result = dialog.ShowDialog();
+                var continueLoop = true;
 
-                if (result == true)
+                while (continueLoop)
                 {
-                    // Add to resource file
-                    if (AddToResourceFile(viewModel.ResourceKey.Value, selectedText, viewModel.SelectedCulture.Value))
-                    {
-                        // Replace selected text with resource access code
-                        string replacementCode = GenerateResourceAccessCode(viewModel.ResourceKey.Value, viewModel.ResourceClassName.Value);
-                        textSelection.Text = replacementCode;
+                    var dialog = new RegisterResourceDialog { DataContext = viewModel };
+                    bool? result = dialog.ShowDialog();
 
-                        ShowMessage($"Added '{selectedText}' to resources with key '{viewModel.ResourceKey}'");
+                    if (result == true)
+                    {
+                        // Add to resource file
+                        if (AddToResourceFile(viewModel.ResourceKey.Value, selectedText,
+                                viewModel.SelectedCulture.Value))
+                        {
+                            // Replace selected text with resource access code
+                            string replacementCode = GenerateResourceAccessCode(viewModel.ResourceKey.Value,
+                                viewModel.ResourceClassName.Value);
+                            textSelection.Text = replacementCode;
+
+                            ShowDialogMessage($"Added '{selectedText}' to resources with key '{viewModel.ResourceKey}'");
+                            continueLoop = false;
+                        }
+                        else
+                        {
+                            //もう一度ダイアログを表示
+                        }
+                    }
+                    else
+                    {
+                        continueLoop = false;
                     }
                 }
             }
@@ -95,7 +112,7 @@ namespace boilersExtensions.Commands
             {
                 Debug.WriteLine($"Error in Execute: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
-                ShowMessage($"Error: {ex.Message}");
+                ShowDialogMessage($"Error: {ex.Message}", icon: OLEMSGICON.OLEMSGICON_WARNING);
             }
         }
 
@@ -118,7 +135,7 @@ namespace boilersExtensions.Commands
 
                 if (resourceFile == null)
                 {
-                    ShowMessage($"Resource file '{resourceFilename}' not found in solution.");
+                    ShowDialogMessage($"Resource file '{resourceFilename}' not found in solution.", icon: OLEMSGICON.OLEMSGICON_INFO);
                     return false;
                 }
 
@@ -156,7 +173,7 @@ namespace boilersExtensions.Commands
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error adding to resource file: {ex.Message}");
-                ShowMessage($"Error adding to resource file: {ex.Message}");
+                ShowDialogMessage($"Error adding to resource file: {ex.Message}", icon: OLEMSGICON.OLEMSGICON_WARNING);
                 return false;
             }
         }
@@ -308,6 +325,50 @@ namespace boilersExtensions.Commands
             catch (Exception ex)
             {
                 Debug.WriteLine($"Status bar update error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// メッセージダイアログを表示します
+        /// </summary>
+        /// <param name="message">表示するメッセージ</param>
+        /// <param name="title">ダイアログのタイトル（省略可）</param>
+        /// <param name="icon">表示するアイコン（省略可）</param>
+        private static void ShowDialogMessage(string message, string title = "boilersExtensions", OLEMSGICON icon = OLEMSGICON.OLEMSGICON_INFO)
+        {
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    // ダイアログを表示
+                    VsShellUtilities.ShowMessageBox(
+                        package,
+                        message,
+                        title,
+                        icon,
+                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+
+                    // ステータスバーにも表示（オプション）
+                    var dte = (DTE)Package.GetGlobalService(typeof(DTE));
+                    if (dte != null)
+                    {
+                        dte.StatusBar.Text = message;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Dialog display error: {ex.Message}");
+
+                // 最後の砦としてのフォールバック：通常のメッセージだけでも表示を試みる
+                try
+                {
+                    ShowMessage(message);
+                }
+                catch { }
             }
         }
     }

@@ -588,4 +588,13 @@
   <data name="RegisterResourceString" xml:space="preserve">
     <value>リソース文字列を登録する</value>
   </data>
+  <data name="ResourceKeyIsRequired" xml:space="preserve">
+    <value>リソースキーが必要です。</value>
+  </data>
+  <data name="ValidationError" xml:space="preserve">
+    <value>バリデーションエラー</value>
+  </data>
+  <data name="NeedResourceClassName" xml:space="preserve">
+    <value>カスタムクラスを使用する場合は、リソースクラス名が必要です。</value>
+  </data>
 </root>
