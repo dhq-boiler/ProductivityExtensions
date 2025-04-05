@@ -12,6 +12,9 @@ using boilersExtensions.Dialogs;
 using boilersExtensions.ViewModels;
 using boilersExtensions.Helpers;
 using boilersExtensions.Views;
+using System.Text.RegularExpressions;
+using System.Text;
+using System.Collections.Generic;
 
 namespace boilersExtensions.Commands
 {
@@ -85,13 +88,25 @@ namespace boilersExtensions.Commands
 
                     if (result == true)
                     {
+                        // 選択テキストから補完式を抽出
+                        var interpolationExpressions = ExtractInterpolationExpressions(selectedText);
+
+                        // プレースホルダー形式に変換
+                        string placeholderText = selectedText;
+                        if (interpolationExpressions.Count > 0)
+                        {
+                            placeholderText = ConvertToPlaceholderFormat(selectedText, interpolationExpressions);
+                        }
+
                         // Add to resource file
-                        if (AddToResourceFile(viewModel.ResourceKey.Value, selectedText,
-                                viewModel.SelectedCulture.Value))
+                        if (AddToResourceFile(viewModel.ResourceKey.Value, placeholderText, viewModel.SelectedCulture.Value))
                         {
                             // Replace selected text with resource access code
-                            string replacementCode = GenerateResourceAccessCode(viewModel.ResourceKey.Value,
-                                viewModel.ResourceClassName.Value);
+                            string replacementCode = GenerateResourceAccessCode(
+                                viewModel.ResourceKey.Value,
+                                placeholderText,
+                                viewModel.ResourceClassName.Value,
+                                interpolationExpressions.ToArray());
                             textSelection.Text = replacementCode;
 
                             ShowDialogMessage($"Added '{selectedText}' to resources with key '{viewModel.ResourceKey}'");
@@ -116,6 +131,81 @@ namespace boilersExtensions.Commands
             }
         }
 
+        /// <summary>
+        /// 文字列補完パターンをプレースホルダー形式に変換します
+        /// </summary>
+        /// <param name="value">元の文字列</param>
+        /// <param name="extractedExpressions">抽出された補完式のリスト</param>
+        /// <returns>プレースホルダー形式に変換された文字列とマッピング情報</returns>
+        private static string ConvertToPlaceholderFormat(string value, List<string> extractedExpressions)
+        {
+            if (string.IsNullOrEmpty(value) || extractedExpressions.Count == 0)
+                return value;
+
+            // $"..."形式の文字列のみを処理
+            if (!(value.StartsWith("$\"") || value.StartsWith("$@\"")))
+                return value;
+
+            // 文字列の先頭の$と最後の"を取り除く
+            string content = value.StartsWith("$@\"")
+                ? value.Substring(3, value.Length - 4)
+                : value.Substring(2, value.Length - 3);
+
+            // エスケープされた{{や}}を一時トークンに置き換え
+            string tempToken1 = "##DOUBLE_OPEN_BRACE##";
+            string tempToken2 = "##DOUBLE_CLOSE_BRACE##";
+
+            string temp = content
+                .Replace("{{", tempToken1)
+                .Replace("}}", tempToken2);
+
+            // {式}形式を{n}形式に置換
+            for (int i = 0; i < extractedExpressions.Count; i++)
+            {
+                string expression = extractedExpressions[i];
+                // エスケープして正規表現で使用可能にする
+                string escapedExpression = Regex.Escape(expression);
+                temp = Regex.Replace(temp, $"\\{{{escapedExpression}\\}}", $"{{{i}}}");
+            }
+
+            // 元のエスケープ文字を戻す
+            return temp
+                .Replace(tempToken1, "{{")
+                .Replace(tempToken2, "}}");
+        }
+
+        /// <summary>
+        /// 文字列補完で使用されている式を抽出します
+        /// </summary>
+        /// <param name="text">解析対象のテキスト</param>
+        /// <returns>抽出された補完式のリスト</returns>
+        private static List<string> ExtractInterpolationExpressions(string text)
+        {
+            var result = new List<string>();
+
+            if (string.IsNullOrEmpty(text))
+                return result;
+
+            // 文字列補完の式を抽出（$"..."形式の文字列内の{...}を探す）
+            if (text.StartsWith("$\"") || text.StartsWith("$@\""))
+            {
+                // エスケープされた{{や}}を一時的に無視
+                string tempText = text.Replace("{{", "##OPEN##").Replace("}}", "##CLOSE##");
+
+                // 補完式を抽出（{...}で囲まれた部分）
+                var matches = Regex.Matches(tempText, @"\{([^{}]+)\}");
+
+                foreach (Match match in matches)
+                {
+                    // 元の式を取得
+                    string expression = match.Groups[1].Value.Trim();
+                    result.Add(expression);
+                }
+            }
+
+            return result;
+        }
+
         private static bool AddToResourceFile(string resourceKey, string resourceValue, string culture)
         {
             try
@@ -137,6 +227,13 @@ namespace boilersExtensions.Commands
                 {
                     ShowDialogMessage($"Resource file '{resourceFilename}' not found in solution.", icon: OLEMSGICON.OLEMSGICON_INFO);
                     return false;
+                }
+
+                // 文字列補完パターンの特別処理 - プレースホルダー形式に変換済みの場合は不要
+                if (resourceValue.StartsWith("$\"") || resourceValue.StartsWith("$@\""))
+                {
+                    // 単一の{を{{に、単一の}を}}に置換
+                    resourceValue = EscapeInterpolationBraces(resourceValue);
                 }
 
                 // Open the file
@@ -176,6 +273,34 @@ namespace boilersExtensions.Commands
                 ShowDialogMessage($"Error adding to resource file: {ex.Message}", icon: OLEMSGICON.OLEMSGICON_WARNING);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 文字列補完パターンで使用される中括弧をエスケープします
+        /// </summary>
+        /// <param name="value">元の文字列</param>
+        /// <returns>エスケープされた文字列</returns>
+        private static string EscapeInterpolationBraces(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            // 既にエスケープされている{{や}}をいったん別の文字列に置き換え
+            string tempToken1 = "##DOUBLE_OPEN_BRACE##";
+            string tempToken2 = "##DOUBLE_CLOSE_BRACE##";
+
+            string temp = value
+                .Replace("{{", tempToken1)
+                .Replace("}}", tempToken2);
+
+            // 単一の{や}を{{や}}に置き換え
+            temp = Regex.Replace(temp, @"(?<!\{)\{(?!\{)", "{{");
+            temp = Regex.Replace(temp, @"(?<!\})\}(?!\})", "}}");
+
+            // 元のエスケープ文字を戻す
+            return temp
+                .Replace(tempToken1, "{{")
+                .Replace(tempToken2, "}}");
         }
 
         private static ProjectItem FindResourceFile(Solution solution, string resourceFilename)
@@ -281,16 +406,80 @@ namespace boilersExtensions.Commands
             }
         }
 
-        private static string GenerateResourceAccessCode(string resourceKey, string resourceClassName)
+        /// <summary>
+        /// リソースにアクセスするコードを生成します
+        /// </summary>
+        /// <param name="resourceKey">リソースキー</param>
+        /// <param name="resourceValue">リソース値（プレースホルダー解析用）</param>
+        /// <param name="formatParameters">プレースホルダーに対応するパラメータ名の配列（オプション）</param>
+        /// <returns>生成されたコード</returns>
+        private static string GenerateResourceAccessCode(string resourceKey, string resourceValue, string resourceClassName, params string[] formatParameters)
         {
-            // If user specified a custom resource class
             if (!string.IsNullOrEmpty(resourceClassName))
             {
                 return $"{resourceClassName}.{resourceKey}";
             }
+            else
+            {
+                // プレースホルダー（{0}、{1}など）の数を数える
+                int placeholderCount = CountPlaceholders(resourceValue);
 
-            // Default to using our ResourceService
-            return $"ResourceService.GetString(\"{resourceKey}\")";
+                if (placeholderCount == 0)
+                {
+                    // プレースホルダーがない場合は単純に文字列を取得
+                    return $"ResourceService.GetString(\"{resourceKey}\")";
+                }
+                else
+                {
+                    // プレースホルダーがある場合はstring.Formatを使用
+                    StringBuilder formatParams = new StringBuilder();
+
+                    // 提供されたパラメータ名を使用
+                    for (int i = 0; i < placeholderCount; i++)
+                    {
+                        // パラメータ名が提供されている場合はそれを使用、それ以外は汎用名
+                        string paramName = (i < formatParameters.Length) ? formatParameters[i] : $"param{i + 1}";
+
+                        if (i > 0) formatParams.Append(", ");
+                        formatParams.Append(paramName);
+                    }
+
+                    return $"string.Format(ResourceService.GetString(\"{resourceKey}\"), {formatParams})";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 文字列内のプレースホルダー（{0}、{1}など）の数を数えます
+        /// </summary>
+        /// <param name="value">対象の文字列</param>
+        /// <returns>プレースホルダーの数</returns>
+        private static int CountPlaceholders(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0;
+
+            // エスケープされた{{や}}を一時的に置き換え
+            string temp = value.Replace("{{", "##OPEN##").Replace("}}", "##CLOSE##");
+
+            // {n}形式のプレースホルダーを探す
+            var matches = Regex.Matches(temp, @"\{(\d+)\}");
+
+            if (matches.Count == 0)
+                return 0;
+
+            // 最大のインデックス番号を見つける
+            int maxIndex = -1;
+            foreach (Match match in matches)
+            {
+                if (int.TryParse(match.Groups[1].Value, out int index))
+                {
+                    maxIndex = Math.Max(maxIndex, index);
+                }
+            }
+
+            // インデックスは0から始まるので、最大値+1がプレースホルダーの数
+            return maxIndex + 1;
         }
 
         private static void BeforeQueryStatus(object sender, EventArgs e)
