@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -614,5 +614,35 @@
   </data>
   <data name="XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences" xml:space="preserve">
     <value>Converts strings contained in XAML to resource references</value>
+  </data>
+  <data name="ResourceNamespace" xml:space="preserve">
+    <value>Resource namespace</value>
+  </data>
+  <data name="ResourceClass" xml:space="preserve">
+    <value>Resource class</value>
+  </data>
+  <data name="Culture" xml:space="preserve">
+    <value>Culture</value>
+  </data>
+  <data name="DeselectAll" xml:space="preserve">
+    <value>すべて選択解除</value>
+  </data>
+  <data name="DetectedString" xml:space="preserve">
+    <value>Detected strings</value>
+  </data>
+  <data name="Attribute" xml:space="preserve">
+    <value>Attribute</value>
+  </data>
+  <data name="OriginalText" xml:space="preserve">
+    <value>Original text</value>
+  </data>
+  <data name="ResourceKey" xml:space="preserve">
+    <value>Resource key</value>
+  </data>
+  <data name="PreviewAfterConversion" xml:space="preserve">
+    <value>Preview after conversion</value>
+  </data>
+  <data name="Convert" xml:space="preserve">
+    <value>Convert</value>
   </data>
 </root>

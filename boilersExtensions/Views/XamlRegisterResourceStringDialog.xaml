@@ -5,7 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:helpers="clr-namespace:boilersExtensions.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="XAML Resource String Converter"
+    Title="XAML Resource String Replacer"
     Width="800"
     Height="600"
     Background="#1F1F1F"
@@ -132,28 +132,28 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Text="リソース名前空間:" />
+            <TextBlock Grid.Row="0" Grid.Column="0">
+                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ResourceNamespace, Mode=OneWay}" />
+                <Run Text=":" />
+            </TextBlock>
             <TextBox
                 Grid.Row="0"
                 Grid.Column="1"
                 Text="{Binding ResourceNamespace.Value, UpdateSourceTrigger=PropertyChanged}" />
 
-            <TextBlock
-                Grid.Row="1"
-                Grid.Column="0"
-                Text="リソースクラス:" />
+            <TextBlock Grid.Row="1" Grid.Column="0">
+                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ResourceClass, Mode=OneWay}" />
+                <Run Text=":" />
+            </TextBlock>
             <TextBox
                 Grid.Row="1"
                 Grid.Column="1"
                 Text="{Binding ResourceClass.Value, UpdateSourceTrigger=PropertyChanged}" />
 
-            <TextBlock
-                Grid.Row="2"
-                Grid.Column="0"
-                Text="言語・カルチャ:" />
+            <TextBlock Grid.Row="2" Grid.Column="0">
+                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Culture, Mode=OneWay}" />
+                <Run Text=":" />
+            </TextBlock>
             <ComboBox
                 Grid.Row="2"
                 Grid.Column="1"
@@ -172,12 +172,15 @@
                 Grid.Row="0"
                 Margin="0,10,0,5"
                 Orientation="Horizontal">
-                <TextBlock FontWeight="Bold" Text="検出された文字列:" />
+                <TextBlock FontWeight="Bold">
+                    <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.DetectedString, Mode=OneWay}" />
+                    <Run Text=":" />
+                </TextBlock>
                 <Button
                     Margin="10,0,5,0"
                     Click="SelectAllButton_Click"
-                    Content="すべて選択" />
-                <Button Click="UnselectAllButton_Click" Content="すべて選択解除" />
+                    Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.SelectAll, Mode=OneWay}" />
+                <Button Click="UnselectAllButton_Click" Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.DeselectAll, Mode=OneWay}" />
             </StackPanel>
 
             <DataGrid
@@ -190,18 +193,18 @@
                     <DataGridCheckBoxColumn
                         Width="50"
                         Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
-                        Header="選択" />
+                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Select, Mode=OneWay}" />
                     <DataGridTextColumn
                         Width="80"
                         Binding="{Binding AttributeName}"
-                        Header="属性"
+                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Attribute, Mode=OneWay}"
                         IsReadOnly="True" />
                     <DataGridTextColumn
                         Width="*"
                         Binding="{Binding OriginalText}"
-                        Header="元のテキスト"
+                        Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.OriginalText, Mode=OneWay}"
                         IsReadOnly="True" />
-                    <DataGridTemplateColumn Width="150" Header="リソースキー">
+                    <DataGridTemplateColumn Width="150" Header="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ResourceKey, Mode=OneWay}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBox
@@ -219,8 +222,11 @@
         <TextBlock
             Grid.Row="3"
             Margin="0,10,0,5"
-            FontWeight="Bold"
-            Text="変換後のプレビュー:" />
+            FontWeight="Bold">
+            <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.PreviewAfterConversion, Mode=OneWay}" />
+            <Run Text=":" />
+        </TextBlock>
+
 
         <!--  プレビューエリア  -->
         <TextBox
@@ -242,9 +248,9 @@
             Orientation="Horizontal">
             <Button
                 Click="ConvertButton_Click"
-                Content="変換"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Convert, Mode=OneWay}"
                 IsDefault="True" />
-            <Button Content="キャンセル" IsCancel="True" />
+            <Button Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Cancel, Mode=OneWay}" IsCancel="True" />
         </StackPanel>
     </Grid>
 </Window>

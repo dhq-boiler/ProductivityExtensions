@@ -79,6 +79,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Attribute に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Attribute {
+            get {
+                return ResourceManager.GetString("Attribute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Batch update Guid に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string BatchUpdateGuid {
@@ -340,6 +349,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Convert に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Convert {
+            get {
+                return ResourceManager.GetString("Convert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Count に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string CountKasho {
@@ -372,6 +390,24 @@ namespace boilersExtensions.Properties {
         public static string Delete {
             get {
                 return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   すべて選択解除 に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DeselectAll {
+            get {
+                return ResourceManager.GetString("DeselectAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Detected strings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DetectedString {
+            get {
+                return ResourceManager.GetString("DetectedString", resourceCulture);
             }
         }
         
@@ -417,6 +453,15 @@ namespace boilersExtensions.Properties {
         public static string Error {
             get {
                 return ResourceManager.GetString("Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error adding to resource file: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorAddingToResourceFile {
+            get {
+                return ResourceManager.GetString("ErrorAddingToResourceFile", resourceCulture);
             }
         }
         
@@ -772,6 +817,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Original text に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string OriginalText {
+            get {
+                return ResourceManager.GetString("OriginalText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Preferences... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Preferences {
@@ -786,6 +840,15 @@ namespace boilersExtensions.Properties {
         public static string Preview {
             get {
                 return ResourceManager.GetString("Preview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Preview after conversion に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PreviewAfterConversion {
+            get {
+                return ResourceManager.GetString("PreviewAfterConversion", resourceCulture);
             }
         }
         
@@ -862,11 +925,38 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Resource class に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ResourceClass {
+            get {
+                return ResourceManager.GetString("ResourceClass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Resource key に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ResourceKey {
+            get {
+                return ResourceManager.GetString("ResourceKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Resource key is required. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ResourceKeyIsRequired {
             get {
                 return ResourceManager.GetString("ResourceKeyIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Resource namespace に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ResourceNamespace {
+            get {
+                return ResourceManager.GetString("ResourceNamespace", resourceCulture);
             }
         }
         

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -614,5 +614,56 @@
   </data>
   <data name="XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences" xml:space="preserve">
     <value>XAMLに含まれる文字列をリソース参照に変換します</value>
+  </data>
+  <data name="ResourceNamespace" xml:space="preserve">
+    <value>リソース名前空間</value>
+  </data>
+  <data name="ResourceClass" xml:space="preserve">
+    <value>リソースクラス</value>
+  </data>
+  <data name="Culture" xml:space="preserve">
+    <value>カルチャ</value>
+  </data>
+  <data name="Culture" xml:space="preserve">
+    <value>カルチャ</value>
+  </data>
+  <data name="DetectedString" xml:space="preserve">
+    <value>検出された文字列</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="DeselectAll" xml:space="preserve">
+    <value>すべて選択解除</value>
+  </data>
+  <data name="DeselectAll" xml:space="preserve">
+    <value>すべて選択解除</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>選択</value>
+  </data>
+  <data name="Attribute" xml:space="preserve">
+    <value>属性</value>
+  </data>
+  <data name="OriginalText" xml:space="preserve">
+    <value>元のテキスト</value>
+  </data>
+  <data name="ResourceKey" xml:space="preserve">
+    <value>リソースキー</value>
+  </data>
+  <data name="PreviewAfterConversion" xml:space="preserve">
+    <value>変換後のプレビュー</value>
+  </data>
+  <data name="Convert" xml:space="preserve">
+    <value>変換</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
   </data>
 </root>
