@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BatchUpdateGuid" xml:space="preserve">
-    <value>Guidを一括更新する</value>
+    <value>GUID一括更新</value>
   </data>
   <data name="Cancel" xml:space="preserve">
     <value>キャンセル</value>
@@ -656,5 +656,20 @@
   </data>
   <data name="RegisterResourceStringReplacer_Description" xml:space="preserve">
     <value>カスタムリソースクラスの名前を入力します。選択されたテキストは、リソースキーを使用してこのクラスを呼び出すことで置き換えられます。</value>
+  </data>
+  <data name="NotSelectedReplacingGuidOrNotGenerateNewGuid" xml:space="preserve">
+    <value>置換するGUIDが選択されていないか、新しいGUIDが生成されていません。</value>
+  </data>
+  <data name="BatchUpdateGuid_Updating" xml:space="preserve">
+    <value>更新中: {0} ({1}/{2})</value>
+  </data>
+  <data name="BatchUpdateGuid_UpdatedGuid" xml:space="preserve">
+    <value>{0}個のGUIDを更新しました。</value>
+  </data>
+  <data name="BatchUpdateGuid_Error" xml:space="preserve">
+    <value>GUID一括更新エラー</value>
+  </data>
+  <data name="BatchUpdateGuid_ErrorOccured" xml:space="preserve">
+    <value>エラーが発生しました: {0}</value>
   </data>
 </root>

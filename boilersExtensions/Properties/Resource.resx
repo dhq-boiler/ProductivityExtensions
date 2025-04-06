@@ -637,7 +637,7 @@
     <value>Original text</value>
   </data>
   <data name="ResourceKey" xml:space="preserve">
-    <value>Resource key</value>
+    <value>Resource Key</value>
   </data>
   <data name="PreviewAfterConversion" xml:space="preserve">
     <value>Preview after conversion</value>
@@ -648,24 +648,6 @@
   <data name="RegisterResourceString_Headline" xml:space="preserve">
     <value>Register the selected text to a resource file</value>
   </data>
-  <data name="ResourceKey" xml:space="preserve">
-    <value>Resource Key</value>
-  </data>
-  <data name="Culture" xml:space="preserve">
-    <value>Culture</value>
-  </data>
-  <data name="Culture" xml:space="preserve">
-    <value>Culture</value>
-  </data>
-  <data name="Culture" xml:space="preserve">
-    <value>Culture</value>
-  </data>
-  <data name="Culture" xml:space="preserve">
-    <value>Culture</value>
-  </data>
-  <data name="Culture" xml:space="preserve">
-    <value>Culture</value>
-  </data>
   <data name="UseCustomResourceClass" xml:space="preserve">
     <value>Use custom resource class</value>
   </data>
@@ -675,10 +657,19 @@
   <data name="RegisterResourceStringReplacer_Description" xml:space="preserve">
     <value>Enter the name of your custom resource class. The selected text will be replaced with a call to this class using the resource key.</value>
   </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
+  <data name="NotSelectedReplacingGuidOrNotGenerateNewGuid" xml:space="preserve">
+    <value>The GUID to be replaced has not been selected or a new GUID has not been generated.</value>
   </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+  <data name="BatchUpdateGuid_Updating" xml:space="preserve">
+    <value>Updating: {0} ({1}/{2})</value>
+  </data>
+  <data name="BatchUpdateGuid_UpdatedGuid" xml:space="preserve">
+    <value>Updated {0} GUIDs.</value>
+  </data>
+  <data name="BatchUpdateGuid_Error" xml:space="preserve">
+    <value>GUID batch update error</value>
+  </data>
+  <data name="BatchUpdateGuid_ErrorOccured" xml:space="preserve">
+    <value>An error has occurred: {0}</value>
   </data>
 </root>

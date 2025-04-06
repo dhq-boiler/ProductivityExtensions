@@ -97,6 +97,42 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   GUID batch update error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchUpdateGuid_Error {
+            get {
+                return ResourceManager.GetString("BatchUpdateGuid_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   An error has occurred: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchUpdateGuid_ErrorOccured {
+            get {
+                return ResourceManager.GetString("BatchUpdateGuid_ErrorOccured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Updated {0} GUIDs. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchUpdateGuid_UpdatedGuid {
+            get {
+                return ResourceManager.GetString("BatchUpdateGuid_UpdatedGuid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Updating: {0} ({1}/{2}) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchUpdateGuid_Updating {
+            get {
+                return ResourceManager.GetString("BatchUpdateGuid_Updating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Enable/Disable function に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string BoilersExtensionsOptionPage_EnableDisableFunction {
@@ -786,6 +822,15 @@ namespace boilersExtensions.Properties {
         public static string NoTextSelected {
             get {
                 return ResourceManager.GetString("NoTextSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The GUID to be replaced has not been selected or a new GUID has not been generated. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NotSelectedReplacingGuidOrNotGenerateNewGuid {
+            get {
+                return ResourceManager.GetString("NotSelectedReplacingGuidOrNotGenerateNewGuid", resourceCulture);
             }
         }
         
