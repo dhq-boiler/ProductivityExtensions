@@ -331,6 +331,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Class Name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ClassName {
+            get {
+                return ResourceManager.GetString("ClassName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Close に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Close {
@@ -943,7 +952,7 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
-        ///   Resource key に類似しているローカライズされた文字列を検索します。
+        ///   Resource Key に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ResourceKey {
             get {
@@ -1614,6 +1623,15 @@ namespace boilersExtensions.Properties {
         public static string UpdateSelectedGuidString {
             get {
                 return ResourceManager.GetString("UpdateSelectedGuidString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use custom resource class に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string UseCustomResourceClass {
+            get {
+                return ResourceManager.GetString("UseCustomResourceClass", resourceCulture);
             }
         }
         

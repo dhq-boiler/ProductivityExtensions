@@ -11,6 +11,11 @@ using boilersExtensions.Views;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace boilersExtensions.Commands
 {
@@ -112,33 +117,105 @@ namespace boilersExtensions.Commands
 
                 if (result == true)
                 {
-                    // 変換したXAMLを既存のドキュメントに適用
-                    if (textSelection != null && !textSelection.IsEmpty)
+                    try
                     {
-                        // 行番号を取得
-                        int lineNumber = textSelection.BottomPoint.Line;
+                        // ComponentModelサービスの取得
+                        var componentModel = (IComponentModel)Package.GetGlobalService(typeof(SComponentModel));
+                        if (componentModel == null)
+                        {
+                            // フォールバック：通常の方法でテキストを置換
+                            if (textSelection != null && !textSelection.IsEmpty)
+                            {
+                                textSelection.Text = viewModel.ConvertedXaml.Value;
+                            }
+                            else
+                            {
+                                SetDocumentText(dte.ActiveDocument, viewModel.ConvertedXaml.Value);
+                            }
+                            return;
+                        }
 
-                        // 置換
-                        textSelection.Text = viewModel.ConvertedXaml.Value;
+                        // EditorAdaptersFactoryServiceの取得
+                        var editorAdaptersFactoryService = componentModel.GetService<IVsEditorAdaptersFactoryService>();
+                        if (editorAdaptersFactoryService == null)
+                        {
+                            // フォールバック：通常の方法でテキストを置換
+                            textSelection.Text = viewModel.ConvertedXaml.Value;
+                            return;
+                        }
 
-                        // 該当行に移動
-                        textSelection.GotoLine(lineNumber);
+                        // VsTextViewAdapterの取得
+                        var vsTextView = GetActiveTextView();
+                        if (vsTextView == null)
+                        {
+                            // フォールバック：通常の方法でテキストを置換
+                            textSelection.Text = viewModel.ConvertedXaml.Value;
+                            return;
+                        }
 
-                        // 行末に移動
-                        textSelection.EndOfLine();
+                        // IWpfTextViewの取得
+                        var wpfTextView = editorAdaptersFactoryService.GetWpfTextView(vsTextView);
+                        if (wpfTextView == null)
+                        {
+                            // フォールバック：通常の方法でテキストを置換
+                            textSelection.Text = viewModel.ConvertedXaml.Value;
+                            return;
+                        }
 
-                        // 末尾3文字を削除するために3文字分左に移動してから選択
-                        textSelection.CharLeft(true, 3);
+                        // テキストバッファの取得
+                        var textBuffer = wpfTextView.TextBuffer;
+                        if (textBuffer == null)
+                        {
+                            // フォールバック：通常の方法でテキストを置換
+                            textSelection.Text = viewModel.ConvertedXaml.Value;
+                            return;
+                        }
 
-                        // 選択した3文字を削除
-                        textSelection.Delete();
+                        // テキストバッファ経由でテキストを置換
+                        using (var edit = textBuffer.CreateEdit())
+                        {
+                            if (textSelection != null && !textSelection.IsEmpty)
+                            {
+                                // 選択範囲のみ置換
+                                var startPoint = textSelection.TopPoint;
+                                var endPoint = textSelection.BottomPoint;
+
+                                var startPosition = wpfTextView.TextSnapshot.GetLineFromLineNumber(startPoint.Line - 1).Start.Position + startPoint.LineCharOffset - 1;
+                                var endPosition = wpfTextView.TextSnapshot.GetLineFromLineNumber(endPoint.Line - 1).Start.Position + endPoint.LineCharOffset - 1;
+                                var span = new Span(startPosition, endPosition - startPosition);
+
+                                edit.Replace(span, viewModel.ConvertedXaml.Value);
+                            }
+                            else
+                            {
+                                // ドキュメント全体を置換
+                                var span = new Span(0, textBuffer.CurrentSnapshot.Length);
+                                edit.Replace(span, viewModel.ConvertedXaml.Value);
+                            }
+
+                            edit.Apply();
+                        }
+
+                        ShowDialogMessage("XAML strings converted to resource references successfully.");
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        SetDocumentText(dte.ActiveDocument, viewModel.ConvertedXaml.Value);
-                    }
+                        // エラーが発生した場合はフォールバック
+                        Debug.WriteLine($"Error using TextBuffer API: {ex.Message}");
+                        Debug.WriteLine(ex.StackTrace);
 
-                    ShowDialogMessage("XAML strings converted to resource references successfully.");
+                        // 通常の方法でテキストを置換
+                        if (textSelection != null && !textSelection.IsEmpty)
+                        {
+                            textSelection.Text = viewModel.ConvertedXaml.Value;
+                        }
+                        else
+                        {
+                            SetDocumentText(dte.ActiveDocument, viewModel.ConvertedXaml.Value);
+                        }
+
+                        ShowDialogMessage("XAML strings converted to resource references successfully (fallback method).");
+                    }
                 }
             }
             catch (Exception ex)
@@ -146,6 +223,23 @@ namespace boilersExtensions.Commands
                 Debug.WriteLine($"Error in Execute: {ex.Message}");
                 ShowDialogMessage($"Error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// アクティブなテキストビューを取得
+        /// </summary>
+        private static IVsTextView GetActiveTextView()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var textManager = Package.GetGlobalService(typeof(SVsTextManager)) as IVsTextManager;
+            if (textManager == null)
+                return null;
+
+            IVsTextView activeView = null;
+            textManager.GetActiveView(1, null, out activeView);
+
+            return activeView;
         }
 
         /// <summary>

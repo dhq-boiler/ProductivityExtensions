@@ -82,20 +82,20 @@
             Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.RegisterResourceString_Headline, Mode=OneWay}" />
 
         <!--  Resource Key  -->
-        <TextBlock
-            Grid.Row="1"
-            Grid.Column="0"
-            Text="Resource Key:" />
+        <TextBlock Grid.Row="1" Grid.Column="0">
+            <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ResourceKey, Mode=OneWay}" />
+            <Run Text=":" />
+        </TextBlock>
         <TextBox
             Grid.Row="1"
             Grid.Column="1"
             Text="{Binding ResourceKey.Value, UpdateSourceTrigger=PropertyChanged}" />
 
         <!--  Culture Selection  -->
-        <TextBlock
-            Grid.Row="2"
-            Grid.Column="0"
-            Text="Culture:" />
+        <TextBlock Grid.Row="2" Grid.Column="0">
+            <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Culture, Mode=OneWay}" />
+            <Run Text=":" />
+        </TextBlock>
         <ComboBox
             Grid.Row="2"
             Grid.Column="1"
@@ -107,7 +107,7 @@
             Grid.Row="3"
             Grid.Column="0"
             Grid.ColumnSpan="2"
-            Content="Use custom resource class"
+            Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.UseCustomResourceClass, Mode=OneWay}"
             IsChecked="{Binding UseCustomResourceClass.Value}" />
 
         <!--  Custom Resource Class Name  -->
@@ -125,10 +125,10 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Text="Class Name:" />
+            <TextBlock Grid.Row="0" Grid.Column="0">
+                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.ClassName, Mode=OneWay}" />
+                <Run Text=":" />
+            </TextBlock>
             <TextBox
                 Grid.Row="0"
                 Grid.Column="1"
