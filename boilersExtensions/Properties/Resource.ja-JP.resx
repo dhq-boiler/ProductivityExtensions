@@ -648,4 +648,10 @@
   <data name="RegisterResourceString_Headline" xml:space="preserve">
     <value>選択したテキストをリソースファイルに登録する</value>
   </data>
+  <data name="UseCustomResourceClass" xml:space="preserve">
+    <value>カスタムリソースクラスを使用する</value>
+  </data>
+  <data name="ClassName" xml:space="preserve">
+    <value>クラス名</value>
+  </data>
 </root>
