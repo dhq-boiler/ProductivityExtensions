@@ -672,4 +672,13 @@
   <data name="ClassName" xml:space="preserve">
     <value>Class Name</value>
   </data>
+  <data name="RegisterResourceStringReplacer_Description" xml:space="preserve">
+    <value>Enter the name of your custom resource class. The selected text will be replaced with a call to this class using the resource key.</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
 </root>

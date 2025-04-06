@@ -142,7 +142,7 @@
                 FontSize="11"
                 Foreground="#AAAAAA"
                 TextWrapping="Wrap">
-                <Run Text="Enter the name of your custom resource class. The selected text will be replaced with a call to this class using the resource key." />
+                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.RegisterResourceStringReplacer_Description, Mode=OneWay}" />
             </TextBlock>
         </Grid>
 
@@ -156,9 +156,9 @@
             Orientation="Horizontal">
             <Button
                 Click="OkButton_Click"
-                Content="OK"
+                Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.OK, Mode=OneWay}"
                 IsDefault="True" />
-            <Button Content="Cancel" IsCancel="True" />
+            <Button Content="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Cancel, Mode=OneWay}" IsCancel="True" />
         </StackPanel>
     </Grid>
 </Window>

@@ -654,4 +654,7 @@
   <data name="ClassName" xml:space="preserve">
     <value>クラス名</value>
   </data>
+  <data name="RegisterResourceStringReplacer_Description" xml:space="preserve">
+    <value>カスタムリソースクラスの名前を入力します。選択されたテキストは、リソースキーを使用してこのクラスを呼び出すことで置き換えられます。</value>
+  </data>
 </root>

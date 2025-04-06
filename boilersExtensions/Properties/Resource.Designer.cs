@@ -907,6 +907,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Enter the name of your custom resource class. The selected text will be replaced with a call to this class using the resource key. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RegisterResourceStringReplacer_Description {
+            get {
+                return ResourceManager.GetString("RegisterResourceStringReplacer_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Relationship に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Relationship {
