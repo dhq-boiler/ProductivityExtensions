@@ -169,7 +169,7 @@ namespace boilersExtensions.ViewModels
             try
             {
                 // 名前空間宣言の存在チェック
-                string namespaceCheck = $"xmlns:{ResourceNamespace.Value}=";
+                string namespaceCheck = $"xmlns:{ResourceNamespace.Value.Replace(".", string.Empty).ToLower()}=";
 
                 if (xaml.Contains(namespaceCheck))
                     return xaml;
@@ -186,7 +186,7 @@ namespace boilersExtensions.ViewModels
                 if (endOfLastXmlns > 0)
                 {
                     // 名前空間を追加
-                    string helperNamespace = $"\r\n    xmlns:{ResourceNamespace.Value}=\"clr-namespace:boilersExtensions.Helpers\"";
+                    string helperNamespace = $"\r\n    xmlns:{ResourceNamespace.Value.Replace(".", string.Empty).ToLower()}=\"clr-namespace:{ResourceNamespace.Value}\"";
                     xaml = xaml.Insert(endOfLastXmlns, helperNamespace);
                 }
 
