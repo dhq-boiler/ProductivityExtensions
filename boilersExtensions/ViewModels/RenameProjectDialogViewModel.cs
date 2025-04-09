@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using boilersExtensions.Helpers;
 using boilersExtensions.Properties;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
@@ -54,7 +55,7 @@ namespace boilersExtensions.ViewModels
 
         public AsyncPackage Package { get; set; }
 
-        public string Title => Resource.Title_RenameProject;
+        public string Title => ResourceService.GetString("Title_RenameProject");
 
         public void Dispose()
         {

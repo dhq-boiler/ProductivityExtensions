@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Analyzers;
 using boilersExtensions.Generators;
+using boilersExtensions.Helpers;
 using boilersExtensions.Models;
 using boilersExtensions.Utils;
 using EnvDTE;
@@ -46,11 +47,11 @@ namespace boilersExtensions.ViewModels
             // データ形式切り替え時の処理
             SelectedDataFormat.Subscribe(format =>
             {
-                IsCSharpFormat.Value = format == "C#クラス";
-                IsJsonFormat.Value = format == "JSON配列";
-                IsCsvFormat.Value = format == "CSV形式";
-                IsSqlFormat.Value = format == "SQL INSERT文";
-                IsXmlFormat.Value = format == "XML形式";
+                IsCSharpFormat.Value = format == ResourceService.GetString("CSharpClass");
+                IsJsonFormat.Value = format == ResourceService.GetString("JsonArray");
+                IsCsvFormat.Value = format == ResourceService.GetString("CsvFormat");
+                IsSqlFormat.Value = format == ResourceService.GetString("SQLInsert");
+                IsXmlFormat.Value = format == ResourceService.GetString("XMLFormat");
 
                 // プレビュー更新
                 UpdatePreview();
@@ -145,7 +146,7 @@ namespace boilersExtensions.ViewModels
             {
                 Name = { Value = $"Property{Properties.Count + 1}" },
                 Type = { Value = "string" },
-                DataType = { Value = "標準" }
+                DataType = { Value = ResourceService.GetString("Standard") }
             };
 
             Properties.Add(property);
@@ -217,7 +218,7 @@ namespace boilersExtensions.ViewModels
 
                 try
                 {
-                    SetProcessing(true, "スキーマを解析中...");
+                    SetProcessing(true, ResourceService.GetString("NowAnalyzingSchema"));
 
                     // ファイルの種類に応じたスキーマ解析
                     switch (TargetType.Value.ToLowerInvariant())
@@ -249,8 +250,8 @@ namespace boilersExtensions.ViewModels
 
                     // エラーメッセージを表示
                     MessageBox.Show(
-                        $"スキーマ読み込み中にエラーが発生しました: {ex.Message}",
-                        "エラー",
+                        string.Format(ResourceService.GetString("ErrorWhenSchemaLoading"), ex.Message),
+                        ResourceService.GetString("Error"),
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 }
@@ -790,22 +791,22 @@ namespace boilersExtensions.ViewModels
             switch (documentType.ToLowerInvariant())
             {
                 case "csharp":
-                    SelectedDataFormat.Value = "C#クラス";
+                    SelectedDataFormat.Value = ResourceService.GetString("CSharpClass");
                     break;
                 case "json":
-                    SelectedDataFormat.Value = "JSON配列";
+                    SelectedDataFormat.Value = ResourceService.GetString("JsonArray");
                     break;
                 case "csv":
-                    SelectedDataFormat.Value = "CSV形式";
+                    SelectedDataFormat.Value = ResourceService.GetString("CsvFormat");
                     break;
                 case "sql":
-                    SelectedDataFormat.Value = "SQL INSERT文";
+                    SelectedDataFormat.Value = ResourceService.GetString("SQLInsert");
                     break;
                 case "xml":
-                    SelectedDataFormat.Value = "XML形式";
+                    SelectedDataFormat.Value = ResourceService.GetString("XMLFormat");
                     break;
                 default:
-                    SelectedDataFormat.Value = "C#クラス";
+                    SelectedDataFormat.Value = ResourceService.GetString("CSharpClass");
                     break;
             }
 
@@ -1258,7 +1259,7 @@ namespace boilersExtensions.ViewModels
                     {
                         ParentEntityName = "",
                         ThisEntityName = entity.Name.Value,
-                        RelationshipType = "単体",
+                        RelationshipType = ResourceService.GetString("Single"),
                         RecordsPerParent = 0,
                         TotalRecords = entity.TotalRecordCount.Value
                     });
@@ -1279,7 +1280,7 @@ namespace boilersExtensions.ViewModels
                         {
                             ParentEntityName = parent.Name.Value,
                             ThisEntityName = entity.Name.Value,
-                            RelationshipType = "1対多",
+                            RelationshipType = ResourceService.GetString("OneToMany"),
                             RecordsPerParent = entity.RecordsPerParent.Value,
                             TotalRecords = entity.TotalRecordCount.Value
                         });
@@ -1303,7 +1304,7 @@ namespace boilersExtensions.ViewModels
         private void LoadAdditionalEntity()
         {
             // ファイル選択ダイアログを表示
-            var dialog = new OpenFileDialog { Filter = "C# Files (*.cs)|*.cs", Title = "関連エンティティファイルを選択" };
+            var dialog = new OpenFileDialog { Filter = "C# Files (*.cs)|*.cs", Title = ResourceService.GetString("SelectRelatedEntityFiles") };
 
             if (dialog.ShowDialog() == true)
             {
@@ -1312,7 +1313,7 @@ namespace boilersExtensions.ViewModels
                 {
                     try
                     {
-                        SetProcessing(true, "関連エンティティを解析中...");
+                        SetProcessing(true, ResourceService.GetString("ParsingRelatedEntities"));
                         // DTEからファイルを開く
                         var dte = (DTE)AsyncPackage.GetGlobalService(typeof(DTE));
                         var documentWindow = dte.OpenFile(Constants.vsViewKindCode, dialog.FileName);
@@ -1374,44 +1375,44 @@ namespace boilersExtensions.ViewModels
             if (nameLower.Contains("guid") || nameLower.Contains("uuid") ||
                 type == "Guid" || type.Contains("Unique"))
             {
-                return "GUID";
+                return ResourceService.GetString("Guid");
             }
 
             // ID系
             if (nameLower == "id" || nameLower.EndsWith("id"))
             {
-                return "ID/連番";
+                return ResourceService.GetString("IDandSequentialNumber");
             }
 
             // 名前系
             if (nameLower.Contains("name") || nameLower.Contains("title"))
             {
-                return "名前";
+                return ResourceService.GetString("Name");
             }
 
             // メール
             if (nameLower.Contains("email"))
             {
-                return "Email";
+                return ResourceService.GetString("Email");
             }
 
             // 電話番号
             if (nameLower.Contains("phone") || nameLower.Contains("tel"))
             {
-                return "電話番号";
+                return ResourceService.GetString("PhoneNumber");
             }
 
             // 住所
             if (nameLower.Contains("address"))
             {
-                return "住所";
+                return ResourceService.GetString("Address");
             }
 
             // 日付
             if (nameLower.Contains("date") || nameLower.Contains("time") ||
                 type.Contains("Date") || type.Contains("Time"))
             {
-                return "日付";
+                return ResourceService.GetString("Date");
             }
 
             // ブール値
@@ -1419,7 +1420,7 @@ namespace boilersExtensions.ViewModels
                 nameLower.Contains("flag") || nameLower.Contains("is") ||
                 type == "bool" || type == "Boolean")
             {
-                return "ブール値";
+                return ResourceService.GetString("BooleanValue");
             }
 
             // 価格/金額
@@ -1427,11 +1428,11 @@ namespace boilersExtensions.ViewModels
                 nameLower.Contains("amount") || nameLower.Contains("fee") ||
                 type == "decimal" || type == "money")
             {
-                return "価格/金額";
+                return ResourceService.GetString("PriceAmount");
             }
 
             // デフォルト
-            return "標準";
+            return ResourceService.GetString("Standard");
         }
 
         /// <summary>
@@ -1479,46 +1480,46 @@ namespace boilersExtensions.ViewModels
                 return;
             }
 
-            SetProcessing(true, "リレーションシップを検出中...");
+            SetProcessing(true,ResourceService.GetString("RelationshipsAreBeingDetected"));
 
             try
             {
                 // 1. 外部キー命名規則に基づいて関係を検出
                 DetectRelationshipsByNamingConvention();
-                UpdateProgress(20, "外部キー命名規則による検出完了");
+                UpdateProgress(20, ResourceService.GetString("DetectionByForeignKeyNamingConventionComplete"));
 
                 // 2. プロパティの型の一致に基づいて関係を検出
                 DetectRelationshipsByPropertyTypes();
-                UpdateProgress(40, "プロパティ型による検出完了");
+                UpdateProgress(40, ResourceService.GetString("DetectionByPropertyTypeComplete"));
 
                 // 3. 既存のナビゲーションプロパティに基づいて関係を検出
                 DetectRelationshipsByNavigationProperties();
-                UpdateProgress(60, "ナビゲーションプロパティによる検出完了");
+                UpdateProgress(60, ResourceService.GetString("DetectionByNavigationPropertyComplete"));
 
                 // 4. 循環参照を検出して解消
                 DetectAndBreakCircularDependencies();
-                UpdateProgress(70, "循環参照チェック完了");
+                UpdateProgress(70, ResourceService.GetString("CircularReferenceCheckComplete"));
 
                 // 5. 見つかった関係に基づいてエンティティの親子関係を設定
                 SetupEntityParentChildRelationships();
-                UpdateProgress(80, "親子関係の設定完了");
+                UpdateProgress(80, ResourceService.GetString("ParentChildRelationshipSetUpComplete"));
 
                 // 6. レコード数を更新
                 UpdateEntityRecordCounts();
-                UpdateProgress(90, "レコード数の計算完了");
+                UpdateProgress(90, ResourceService.GetString("RecordCountCalculationComplete"));
 
                 // 7. リレーションシップ表示を更新
                 UpdateEntityRelationshipInfo();
-                UpdateProgress(100, "リレーションシップ表示の更新完了");
+                UpdateProgress(100, ResourceService.GetString("RelationshipDisplayUpdateComplete"));
 
                 // 処理成功メッセージ
-                ShowMessage("リレーションシップの検出が完了しました。");
+                ShowMessage(ResourceService.GetString("RelationshipDetectionCompleted"));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error detecting relationships: {ex.Message}");
                 Debug.WriteLine(ex.StackTrace);
-                ShowMessage($"リレーションシップの検出中にエラーが発生しました: {ex.Message}");
+                ShowMessage(string.Format(ResourceService.GetString("ErrorDuringRelationshipDetection"), ex.Message));
             }
             finally
             {
@@ -1660,15 +1661,15 @@ namespace boilersExtensions.ViewModels
 
                 try
                 {
-                    SetProcessing(true, "テストデータを生成中...");
+                    SetProcessing(true, ResourceService.GetString("GeneratingTestData"));
                     UpdateProgress(0);
 
                     // プロパティリストが空の場合はエラー
                     if (Entities.Count == 0 || Entities.All(e => e.Properties.Count == 0))
                     {
                         MessageBox.Show(
-                            "プロパティ/エンティティが設定されていません。スキーマ読込または手動でプロパティ/エンティティを追加してください。",
-                            "エラー",
+                            ResourceService.GetString("PropertyEntityIsNotSet"),
+                            ResourceService.GetString("Error"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                         return;
@@ -1694,8 +1695,8 @@ namespace boilersExtensions.ViewModels
                         if (document == null)
                         {
                             MessageBox.Show(
-                                $"{entity.Name.Value}の解析に失敗しました。",
-                                "エラー",
+                                string.Format(ResourceService.GetString("Error_FailedToAnalyze"), entity.Name.Value),
+                                ResourceService.GetString("Error"),
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
                             continue;
@@ -1716,8 +1717,8 @@ namespace boilersExtensions.ViewModels
                     if (entityInfos.Count == 0)
                     {
                         MessageBox.Show(
-                            "出力可能なエンティティクラスが見つかりませんでした。",
-                            "エラー",
+                            ResourceService.GetString("NoOutputableEntityClassWasFound"),
+                            ResourceService.GetString("Error"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                         return;
@@ -1812,20 +1813,20 @@ namespace boilersExtensions.ViewModels
                         }
                     }
 
-                    UpdateProgress(50, "コード生成中...");
+                    UpdateProgress(50, ResourceService.GetString("CodeIsBeingGenerated"));
 
                     // 拡張シードデータジェネレーターを使用
                     var seedGenerator = new EnhancedRelationalSeedDataGenerator();
                     var generatedCode = seedGenerator.GenerateSeedDataWithRelationships(entityInfos, config);
 
-                    UpdateProgress(80, "コードを挿入中...");
+                    UpdateProgress(80, ResourceService.GetString("InsertingCode"));
 
                     // 生成したコードを挿入
                     var executor = new SeedDataInsertExecutor(Package);
                     var result =
                         await executor.InsertGeneratedCodeToDocument(_targetDocument, ClassName.Value, generatedCode);
 
-                    UpdateProgress(100, "完了");
+                    UpdateProgress(100, ResourceService.GetString("Complete"));
 
                     // 結果に応じたメッセージを表示
                     if (result)
@@ -1834,8 +1835,8 @@ namespace boilersExtensions.ViewModels
                             .Sum(e => e.TotalRecordCount.Value);
 
                         MessageBox.Show(
-                            $"合計{totalRecords}件のテストデータを生成しました。",
-                            "完了",
+                            string.Format(ResourceService.GetString("TotalSomeTestDataGenerated"), totalRecords),
+                            ResourceService.GetString("Complete"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
 
@@ -1847,8 +1848,8 @@ namespace boilersExtensions.ViewModels
                     else
                     {
                         MessageBox.Show(
-                            "データ生成中にエラーが発生しました。",
-                            "エラー",
+                            ResourceService.GetString("ErrorOccurredDuringDataGeneration"),
+                            ResourceService.GetString("Error"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                     }
@@ -1856,8 +1857,8 @@ namespace boilersExtensions.ViewModels
                 catch (Exception ex)
                 {
                     MessageBox.Show(
-                        $"テストデータ生成中にエラーが発生しました: {ex.Message}",
-                        "エラー",
+                        string.Format(ResourceService.GetString("ErrorOccurredDuringTestDataGeneration"), ex.Message),
+                        ResourceService.GetString("Error"),
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 }
@@ -1953,7 +1954,7 @@ namespace boilersExtensions.ViewModels
                 // プロパティリストが空の場合は何もしない
                 if (Properties.Count == 0)
                 {
-                    PreviewText.Value = "プロパティが設定されていません。\nスキーマ読込または手動でプロパティを追加してください。";
+                    PreviewText.Value = ResourceService.GetString("PropertyIsNotSet");
                     return;
                 }
 
@@ -1963,22 +1964,27 @@ namespace boilersExtensions.ViewModels
                 switch (SelectedDataFormat.Value)
                 {
                     case "C#クラス":
+                    case "C# Class":
                         GenerateCSharpPreview(sb);
                         break;
 
                     case "JSON配列":
+                    case "JSON Array":
                         GenerateJsonPreview(sb);
                         break;
 
                     case "CSV形式":
+                    case "CSV format":
                         GenerateCsvPreview(sb);
                         break;
 
                     case "SQL INSERT文":
+                    case "SQL INSERT statement":
                         GenerateSqlPreview(sb);
                         break;
 
                     case "XML形式":
+                    case "XML format":
                         GenerateXmlPreview(sb);
                         break;
                 }
@@ -1988,7 +1994,7 @@ namespace boilersExtensions.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error updating preview: {ex.Message}");
-                PreviewText.Value = $"プレビュー生成中にエラーが発生しました: {ex.Message}";
+                PreviewText.Value = string.Format(ResourceService.GetString("ErrorOccurredDuringPreviewGeneration"), ex.Message);
             }
         }
 
@@ -1997,7 +2003,7 @@ namespace boilersExtensions.ViewModels
         /// </summary>
         private void GenerateCSharpPreview(StringBuilder sb)
         {
-            sb.AppendLine($"// {DataCount.Value}件のテストデータを生成するメソッド");
+            sb.AppendLine(string.Format(ResourceService.GetString("GenerateCSharpPreview_1"), DataCount.Value));
             sb.AppendLine(
                 $"public {(IsStaticMethod.Value ? "static " : "")}List<{ClassName.Value}> GenerateSeedData()");
             sb.AppendLine("{");
@@ -2030,7 +2036,7 @@ namespace boilersExtensions.ViewModels
 
                 if (Properties.Count > 5)
                 {
-                    sb.AppendLine("            // ... 他のプロパティ");
+                    sb.AppendLine("            " + ResourceService.GetString("GenerateCSharpPreview_2"));
                 }
 
                 sb.AppendLine("        };");
@@ -2049,7 +2055,7 @@ namespace boilersExtensions.ViewModels
 
                 if (Properties.Count > 5)
                 {
-                    sb.AppendLine("        // ... 他のプロパティ");
+                    sb.AppendLine("        " + ResourceService.GetString("GenerateCSharpPreview_2"));
                 }
             }
 
@@ -2104,7 +2110,7 @@ namespace boilersExtensions.ViewModels
             // データ件数が2件を超える場合は省略記号を表示
             if (DataCount.Value > 2)
             {
-                sb.AppendLine("  // ... 他のデータ");
+                sb.AppendLine("  " + ResourceService.GetString("GenerateJsonPreview_1"));
 
                 sb.AppendLine("  {");
 
@@ -2154,7 +2160,7 @@ namespace boilersExtensions.ViewModels
             // データ件数が3件を超える場合は省略記号を表示
             if (DataCount.Value > 3)
             {
-                sb.AppendLine("// ... 他のデータ");
+                sb.AppendLine(ResourceService.GetString("GenerateJsonPreview_1"));
             }
         }
 
@@ -2163,8 +2169,8 @@ namespace boilersExtensions.ViewModels
         /// </summary>
         private void GenerateSqlPreview(StringBuilder sb)
         {
-            sb.AppendLine($"-- {DataCount.Value}件のテストデータ");
-            sb.AppendLine($"-- 生成日時: {DateTime.Now}");
+            sb.AppendLine(string.Format(ResourceService.GetString("GenerateSqlPreview_1"), DataCount.Value));
+            sb.AppendLine(string.Format(ResourceService.GetString("GenerateSqlPreview_2"), DateTime.Now));
             sb.AppendLine();
 
             if (IncludeTransaction.Value)
@@ -2195,7 +2201,7 @@ namespace boilersExtensions.ViewModels
             // データ件数が2件を超える場合は省略記号を表示
             if (DataCount.Value > 2)
             {
-                sb.AppendLine("-- ... 他のINSERT文");
+                sb.AppendLine(ResourceService.GetString("GenerateSqlPreivew_3"));
             }
 
             if (IncludeTransaction.Value)
@@ -2230,7 +2236,7 @@ namespace boilersExtensions.ViewModels
             // データ件数が3件を超える場合は省略記号を表示
             if (DataCount.Value > 3)
             {
-                sb.AppendLine("  <!-- ... 他のデータ -->");
+                sb.AppendLine("  " + ResourceService.GetString("GenerateXmlPreview_1"));
             }
 
             sb.AppendLine($"</{RootElementName.Value}>");
@@ -2245,9 +2251,11 @@ namespace boilersExtensions.ViewModels
             switch (dataType)
             {
                 case "ID/連番":
+                case "ID/sequential number":
                     return "i + 1";
 
                 case "名前":
+                case "Name":
                     if (propertyName.ToLowerInvariant().Contains("first"))
                     {
                         return "\"FirstName\" + i";
@@ -2261,24 +2269,30 @@ namespace boilersExtensions.ViewModels
                     return "\"Name\" + i";
 
                 case "Email":
+                case "Eメール":
                     return "$\"user{i}@example.com\"";
 
                 case "電話番号":
+                case "Phone number":
                     return "$\"555-{random.Next(1000, 9999)}\"";
 
                 case "住所":
+                case "Address":
                     return "$\"Address {i}, Street {random.Next(1, 100)}\"";
 
                 case "日付":
+                case "Date":
                     return "DateTime.Now.AddDays(random.Next(-30, 30))";
 
                 case "ブール値":
+                case "Boolean value":
                     return "random.Next(2) == 0";
 
-                case "GUID":
+                case "Guid":
                     return "Guid.NewGuid()";
 
                 case "価格/金額":
+                case "Price/amount":
                     return "Math.Round(random.NextDouble() * 100, 2)";
             }
 
@@ -2321,9 +2335,11 @@ namespace boilersExtensions.ViewModels
             switch (dataType)
             {
                 case "ID/連番":
+                case "ID/sequential number":
                     return "1";
 
                 case "名前":
+                case "Name":
                     if (propertyName.ToLowerInvariant().Contains("first"))
                     {
                         return "\"FirstName1\"";
@@ -2337,24 +2353,30 @@ namespace boilersExtensions.ViewModels
                     return "\"Name1\"";
 
                 case "Email":
+                case "Eメール":
                     return "\"user1@example.com\"";
 
                 case "電話番号":
+                case "Phone number":
                     return "\"555-1234\"";
 
                 case "住所":
+                case "Address":
                     return "\"Address 1, Street 10\"";
 
                 case "日付":
+                case "Date":
                     return $"\"{DateTime.Now:yyyy-MM-dd}\"";
 
                 case "ブール値":
+                case "Boolean value":
                     return "true";
 
-                case "GUID":
+                case "Guid":
                     return $"\"{Guid.NewGuid()}\"";
 
                 case "価格/金額":
+                case "Price/amount":
                     return "99.95";
             }
 
@@ -2399,9 +2421,11 @@ namespace boilersExtensions.ViewModels
             switch (dataType)
             {
                 case "ID/連番":
+                case "ID/sequential number":
                     return "1";
 
                 case "名前":
+                case "Name":
                     if (headerName.ToLowerInvariant().Contains("first"))
                     {
                         return "\"FirstName1\"";
@@ -2415,24 +2439,30 @@ namespace boilersExtensions.ViewModels
                     return "\"Name1\"";
 
                 case "Email":
+                case "Eメール":
                     return "user1@example.com";
 
                 case "電話番号":
+                case "Phone number":
                     return "555-1234";
 
                 case "住所":
+                case "Address":
                     return "\"Address 1, Street 10\"";
 
                 case "日付":
+                case "Date":
                     return $"{DateTime.Now:yyyy-MM-dd}";
 
                 case "ブール値":
+                case "Boolean value":
                     return "true";
 
-                case "GUID":
+                case "Guid":
                     return $"{Guid.NewGuid()}";
 
                 case "価格/金額":
+                case "Price/amount":
                     return "99.95";
             }
 
@@ -2475,9 +2505,11 @@ namespace boilersExtensions.ViewModels
             switch (dataType)
             {
                 case "ID/連番":
+                case "ID/sequential number":
                     return "1";
 
                 case "名前":
+                case "Name":
                     if (columnName.ToLowerInvariant().Contains("first"))
                     {
                         return "'FirstName1'";
@@ -2491,24 +2523,30 @@ namespace boilersExtensions.ViewModels
                     return "'Name1'";
 
                 case "Email":
+                case "Eメール":
                     return "'user1@example.com'";
 
                 case "電話番号":
+                case "Phone number":
                     return "'555-1234'";
 
                 case "住所":
+                case "Address":
                     return "'Address 1, Street 10'";
 
                 case "日付":
+                case "Date":
                     return $"'{DateTime.Now:yyyy-MM-dd}'";
 
                 case "ブール値":
+                case "Boolean value":
                     return "1";
 
-                case "GUID":
+                case "Guid":
                     return $"'{Guid.NewGuid()}'";
 
                 case "価格/金額":
+                case "Price/amount":
                     return "99.95";
             }
 
@@ -2553,9 +2591,11 @@ namespace boilersExtensions.ViewModels
             switch (dataType)
             {
                 case "ID/連番":
+                case "ID/sequential number":
                     return "1";
 
                 case "名前":
+                case "Name":
                     if (attributeName.ToLowerInvariant().Contains("first"))
                     {
                         return "FirstName1";
@@ -2569,24 +2609,30 @@ namespace boilersExtensions.ViewModels
                     return "Name1";
 
                 case "Email":
+                case "Eメール":
                     return "user1@example.com";
 
                 case "電話番号":
+                case "Phone number":
                     return "555-1234";
 
                 case "住所":
+                case "Address":
                     return "Address 1, Street 10";
 
                 case "日付":
+                case "Date":
                     return $"{DateTime.Now:yyyy-MM-dd}";
 
                 case "ブール値":
+                case "Boolean value":
                     return "true";
 
-                case "GUID":
+                case "Guid":
                     return $"{Guid.NewGuid()}";
 
                 case "価格/金額":
+                case "Price/amount":
                     return "99.95";
             }
 
@@ -2664,14 +2710,14 @@ namespace boilersExtensions.ViewModels
         // データ形式関連
         public List<string> DataFormats { get; } = new List<string>
         {
-            "C#クラス",
-            "JSON配列",
-            "CSV形式",
-            "SQL INSERT文",
-            "XML形式"
+            ResourceService.GetString("CSharpClass"),
+            ResourceService.GetString("JsonArray"),
+            ResourceService.GetString("CsvFormat"),
+            ResourceService.GetString("SQLInsert"),
+            ResourceService.GetString("XMLFormat")
         };
 
-        public ReactivePropertySlim<string> SelectedDataFormat { get; } = new ReactivePropertySlim<string>("C#クラス");
+        public ReactivePropertySlim<string> SelectedDataFormat { get; } = new ReactivePropertySlim<string>(ResourceService.GetString("CSharpClass"));
 
         // 各形式の設定
         public ReactivePropertySlim<bool> IsCSharpFormat { get; } = new ReactivePropertySlim<bool>(true);
@@ -2713,17 +2759,17 @@ namespace boilersExtensions.ViewModels
         // 使用可能なデータタイプ
         public List<string> DataTypes { get; } = new List<string>
         {
-            "標準",
-            "ID/連番",
-            "名前",
-            "Email",
-            "電話番号",
-            "住所",
-            "日付",
-            "ブール値",
-            "GUID",
-            "価格/金額",
-            "カスタム"
+            ResourceService.GetString("Standard"),
+            ResourceService.GetString("IDandSequentialNumber"),
+            ResourceService.GetString("Name"),
+            ResourceService.GetString("Email"),
+            ResourceService.GetString("PhoneNumber"),
+            ResourceService.GetString("Address"),
+            ResourceService.GetString("Date"),
+            ResourceService.GetString("BooleanValue"),
+            ResourceService.GetString("Guid"),
+            ResourceService.GetString("PriceAmount"),
+            ResourceService.GetString("Custom")
         };
 
         // 対象ドキュメント
@@ -2790,7 +2836,7 @@ namespace boilersExtensions.ViewModels
                 return $"{ParentEntityName}: {TotalRecords}件";
             }
 
-            return $"{ParentEntityName} → {ThisEntityName}: 親1件あたり{RecordsPerParent}件 (合計{TotalRecords}件)";
+            return string.Format(ResourceService.GetString("EntityRelationshipInfo_ToString"), ParentEntityName, ThisEntityName, RecordsPerParent, TotalRecords);
         }
     }
 
@@ -2834,7 +2880,7 @@ namespace boilersExtensions.ViewModels
 
             return FixedValues.Count == 1
                 ? FixedValues[0]
-                : $"{FixedValues.Count}個の値...";
+                : string.Format(ResourceService.GetString("PropertyViewModel_FixValuesCount"), FixedValues.Count);
         }
     }
 }

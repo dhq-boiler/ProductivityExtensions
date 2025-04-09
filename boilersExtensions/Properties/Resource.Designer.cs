@@ -70,6 +70,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Address に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Address {
+            get {
+                return ResourceManager.GetString("Address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Apply に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Apply {
@@ -84,6 +93,15 @@ namespace boilersExtensions.Properties {
         public static string Attribute {
             get {
                 return ResourceManager.GetString("Attribute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Batch file not found. {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchFileNotFound {
+            get {
+                return ResourceManager.GetString("BatchFileNotFound", resourceCulture);
             }
         }
         
@@ -111,6 +129,15 @@ namespace boilersExtensions.Properties {
         public static string BatchUpdateGuid_ErrorOccured {
             get {
                 return ResourceManager.GetString("BatchUpdateGuid_ErrorOccured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Batch Update Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BatchUpdateGuid_Title {
+            get {
+                return ResourceManager.GetString("BatchUpdateGuid_Title", resourceCulture);
             }
         }
         
@@ -331,6 +358,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Boolean value に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BooleanValue {
+            get {
+                return ResourceManager.GetString("BooleanValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Cancel に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Cancel {
@@ -367,6 +403,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Circulation reference check complete に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CircularReferenceCheckComplete {
+            get {
+                return ResourceManager.GetString("CircularReferenceCheckComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Class Name に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ClassName {
@@ -390,6 +435,24 @@ namespace boilersExtensions.Properties {
         public static string Code {
             get {
                 return ResourceManager.GetString("Code", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Code being generated... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CodeIsBeingGenerated {
+            get {
+                return ResourceManager.GetString("CodeIsBeingGenerated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Complete に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Complete {
+            get {
+                return ResourceManager.GetString("Complete", resourceCulture);
             }
         }
         
@@ -421,11 +484,56 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   C# Class に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CSharpClass {
+            get {
+                return ResourceManager.GetString("CSharpClass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   CSV format に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CsvFormat {
+            get {
+                return ResourceManager.GetString("CsvFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Culture に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Culture_ {
+            get {
+                return ResourceManager.GetString("Culture_", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Custom に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Custom {
+            get {
+                return ResourceManager.GetString("Custom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Data type に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string DataType {
             get {
                 return ResourceManager.GetString("DataType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Date に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Date {
+            get {
+                return ResourceManager.GetString("Date", resourceCulture);
             }
         }
         
@@ -457,6 +565,33 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Detection completed by foreign key naming convention に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DetectionByForeignKeyNamingConventionComplete {
+            get {
+                return ResourceManager.GetString("DetectionByForeignKeyNamingConventionComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Detection by navigation property complete に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DetectionByNavigationPropertyComplete {
+            get {
+                return ResourceManager.GetString("DetectionByNavigationPropertyComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Detection completed by property type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DetectionByPropertyTypeComplete {
+            get {
+                return ResourceManager.GetString("DetectionByPropertyTypeComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Active document not found. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string DocumentNotFound {
@@ -471,6 +606,15 @@ namespace boilersExtensions.Properties {
         public static string Down {
             get {
                 return ResourceManager.GetString("Down", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Email に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Email {
+            get {
+                return ResourceManager.GetString("Email", resourceCulture);
             }
         }
         
@@ -493,6 +637,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   {0} → {1}: {2} per parent ({3} total) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EntityRelationshipInfo_ToString {
+            get {
+                return ResourceManager.GetString("EntityRelationshipInfo_ToString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Error に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Error {
@@ -502,11 +655,65 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Failed to parse {0}. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Error_FailedToAnalyze {
+            get {
+                return ResourceManager.GetString("Error_FailedToAnalyze", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Error adding to resource file: {0} に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ErrorAddingToResourceFile {
             get {
                 return ResourceManager.GetString("ErrorAddingToResourceFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error during relationship detection: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorDuringRelationshipDetection {
+            get {
+                return ResourceManager.GetString("ErrorDuringRelationshipDetection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   An error occurred during data generation. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredDuringDataGeneration {
+            get {
+                return ResourceManager.GetString("ErrorOccurredDuringDataGeneration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   An error occurred during preview generation: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredDuringPreviewGeneration {
+            get {
+                return ResourceManager.GetString("ErrorOccurredDuringPreviewGeneration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   An error occurred during test data generation: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredDuringTestDataGeneration {
+            get {
+                return ResourceManager.GetString("ErrorOccurredDuringTestDataGeneration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error while loading schema: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorWhenSchemaLoading {
+            get {
+                return ResourceManager.GetString("ErrorWhenSchemaLoading", resourceCulture);
             }
         }
         
@@ -574,6 +781,87 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   // Method to generate test data for {0} cases に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateCSharpPreview_1 {
+            get {
+                return ResourceManager.GetString("GenerateCSharpPreview_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   // ... Other Properties に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateCSharpPreview_2 {
+            get {
+                return ResourceManager.GetString("GenerateCSharpPreview_2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   // ... Other data に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateJsonPreview_1 {
+            get {
+                return ResourceManager.GetString("GenerateJsonPreview_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   -- ... Other INSERT statements に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateSqlPreivew_3 {
+            get {
+                return ResourceManager.GetString("GenerateSqlPreivew_3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   -- {0} test data に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateSqlPreview_1 {
+            get {
+                return ResourceManager.GetString("GenerateSqlPreview_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   -- Date generated: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateSqlPreview_2 {
+            get {
+                return ResourceManager.GetString("GenerateSqlPreview_2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   &lt;! -- other data --&gt; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenerateXmlPreview_1 {
+            get {
+                return ResourceManager.GetString("GenerateXmlPreview_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Generating test data... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GeneratingTestData {
+            get {
+                return ResourceManager.GetString("GeneratingTestData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Guid に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Guid {
+            get {
+                return ResourceManager.GetString("Guid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Replaces selected GUIDs with new GUIDs in a batch. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string GuidSelectionDialog_Description {
@@ -624,6 +912,15 @@ namespace boilersExtensions.Properties {
         public static string GuidSelectionDialog_Title {
             get {
                 return ResourceManager.GetString("GuidSelectionDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   ID/sequential number に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string IDandSequentialNumber {
+            get {
+                return ResourceManager.GetString("IDandSequentialNumber", resourceCulture);
             }
         }
         
@@ -727,6 +1024,24 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Inserting code... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InsertingCode {
+            get {
+                return ResourceManager.GetString("InsertingCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   JSON Array に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string JsonArray {
+            get {
+                return ResourceManager.GetString("JsonArray", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Kind に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Kind {
@@ -799,6 +1114,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Name {
+            get {
+                return ResourceManager.GetString("Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Resource class name is required when using a custom class. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NeedResourceClassName {
@@ -813,6 +1137,15 @@ namespace boilersExtensions.Properties {
         public static string NoActiveDocument {
             get {
                 return ResourceManager.GetString("NoActiveDocument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   No outputtable entity class was found. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NoOutputableEntityClassWasFound {
+            get {
+                return ResourceManager.GetString("NoOutputableEntityClassWasFound", resourceCulture);
             }
         }
         
@@ -835,6 +1168,24 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Parsing schema... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NowAnalyzingSchema {
+            get {
+                return ResourceManager.GetString("NowAnalyzingSchema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Now Searching Guid... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NowSearchingGuid {
+            get {
+                return ResourceManager.GetString("NowSearchingGuid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Numeric range に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NumericRange {
@@ -849,6 +1200,15 @@ namespace boilersExtensions.Properties {
         public static string OK {
             get {
                 return ResourceManager.GetString("OK", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OneToMany に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string OneToMany {
+            get {
+                return ResourceManager.GetString("OneToMany", resourceCulture);
             }
         }
         
@@ -876,6 +1236,33 @@ namespace boilersExtensions.Properties {
         public static string OriginalText {
             get {
                 return ResourceManager.GetString("OriginalText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Parent-child relationship set up complete に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ParentChildRelationshipSetUpComplete {
+            get {
+                return ResourceManager.GetString("ParentChildRelationshipSetUpComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Parsing related entities... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ParsingRelatedEntities {
+            get {
+                return ResourceManager.GetString("ParsingRelatedEntities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Phone number に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PhoneNumber {
+            get {
+                return ResourceManager.GetString("PhoneNumber", resourceCulture);
             }
         }
         
@@ -916,11 +1303,56 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Price/amount に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PriceAmount {
+            get {
+                return ResourceManager.GetString("PriceAmount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Property に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Property {
             get {
                 return ResourceManager.GetString("Property", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property/entity is not set. Please load schema or add properties/entities manually. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyEntityIsNotSet {
+            get {
+                return ResourceManager.GetString("PropertyEntityIsNotSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property is not set. \Please read the schema or add the property manually. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyIsNotSet {
+            get {
+                return ResourceManager.GetString("PropertyIsNotSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ready に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Ready {
+            get {
+                return ResourceManager.GetString("Ready", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Calculation of number of records completed に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RecordCountCalculationComplete {
+            get {
+                return ResourceManager.GetString("RecordCountCalculationComplete", resourceCulture);
             }
         }
         
@@ -966,6 +1398,33 @@ namespace boilersExtensions.Properties {
         public static string Relationship {
             get {
                 return ResourceManager.GetString("Relationship", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Relationship detection is complete. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RelationshipDetectionCompleted {
+            get {
+                return ResourceManager.GetString("RelationshipDetectionCompleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Relationship display update completed に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RelationshipDisplayUpdateComplete {
+            get {
+                return ResourceManager.GetString("RelationshipDisplayUpdateComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Relationships are being detected... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string RelationshipsAreBeingDetected {
+            get {
+                return ResourceManager.GetString("RelationshipsAreBeingDetected", resourceCulture);
             }
         }
         
@@ -1519,11 +1978,47 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Select Related Entity Files に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SelectRelatedEntityFiles {
+            get {
+                return ResourceManager.GetString("SelectRelatedEntityFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Single に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Single {
+            get {
+                return ResourceManager.GetString("Single", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Solution not found. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SolutionNotFound {
             get {
                 return ResourceManager.GetString("SolutionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   SQL INSERT statement に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SQLInsert {
+            get {
+                return ResourceManager.GetString("SQLInsert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Standard に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Standard {
+            get {
+                return ResourceManager.GetString("Standard", resourceCulture);
             }
         }
         
@@ -1569,6 +2064,15 @@ namespace boilersExtensions.Properties {
         public static string Total {
             get {
                 return ResourceManager.GetString("Total", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   A total of {0} test data was generated. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TotalSomeTestDataGenerated {
+            get {
+                return ResourceManager.GetString("TotalSomeTestDataGenerated", resourceCulture);
             }
         }
         
@@ -1713,6 +2217,15 @@ namespace boilersExtensions.Properties {
         public static string XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences {
             get {
                 return ResourceManager.GetString("XAMLResourceStringConverter_ConvertsStringsContainedInXAMLToResourceReferences", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   XML format に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string XMLFormat {
+            get {
+                return ResourceManager.GetString("XMLFormat", resourceCulture);
             }
         }
     }

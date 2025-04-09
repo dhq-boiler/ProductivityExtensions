@@ -621,7 +621,7 @@
   <data name="ResourceClass" xml:space="preserve">
     <value>リソースクラス</value>
   </data>
-  <data name="Culture" xml:space="preserve">
+  <data name="Culture_" xml:space="preserve">
     <value>カルチャ</value>
   </data>
   <data name="DeselectAll" xml:space="preserve">
@@ -671,5 +671,176 @@
   </data>
   <data name="BatchUpdateGuid_ErrorOccured" xml:space="preserve">
     <value>エラーが発生しました: {0}</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="BatchUpdateGuid_Title" xml:space="preserve">
+    <value>GUIDの一括更新</value>
+  </data>
+  <data name="NowSearchingGuid" xml:space="preserve">
+    <value>GUIDを検索中...</value>
+  </data>
+  <data name="BatchFileNotFound" xml:space="preserve">
+    <value>バッチファイルが見つかりません。{0}</value>
+  </data>
+  <data name="CSharpClass" xml:space="preserve">
+    <value>C#クラス</value>
+  </data>
+  <data name="JsonArray" xml:space="preserve">
+    <value>JSON配列</value>
+  </data>
+  <data name="CsvFormat" xml:space="preserve">
+    <value>CSV形式</value>
+  </data>
+  <data name="SQLInsert" xml:space="preserve">
+    <value>SQL INSERT文</value>
+  </data>
+  <data name="XMLFormat" xml:space="preserve">
+    <value>XML形式</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>日付</value>
+  </data>
+  <data name="ErrorOccurredDuringTestDataGeneration" xml:space="preserve">
+    <value>テストデータ生成中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="Standard" xml:space="preserve">
+    <value>標準</value>
+  </data>
+  <data name="NowAnalyzingSchema" xml:space="preserve">
+    <value>スキーマを解析中...</value>
+  </data>
+  <data name="ErrorWhenSchemaLoading" xml:space="preserve">
+    <value>スキーマ読み込み中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="Single" xml:space="preserve">
+    <value>単体</value>
+  </data>
+  <data name="OneToMany" xml:space="preserve">
+    <value>1対多</value>
+  </data>
+  <data name="SelectRelatedEntityFiles" xml:space="preserve">
+    <value>関連エンティティファイルを選択</value>
+  </data>
+  <data name="ParsingRelatedEntities" xml:space="preserve">
+    <value>関連エンティティを解析中...</value>
+  </data>
+  <data name="Guid" xml:space="preserve">
+    <value>Guid</value>
+  </data>
+  <data name="IDandSequentialNumber" xml:space="preserve">
+    <value>ID/連番</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Eメール</value>
+  </data>
+  <data name="PhoneNumber" xml:space="preserve">
+    <value>電話番号</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>住所</value>
+  </data>
+  <data name="BooleanValue" xml:space="preserve">
+    <value>ブール値</value>
+  </data>
+  <data name="PriceAmount" xml:space="preserve">
+    <value>価格/金額</value>
+  </data>
+  <data name="RelationshipsAreBeingDetected" xml:space="preserve">
+    <value>リレーションシップを検出中...</value>
+  </data>
+  <data name="DetectionByForeignKeyNamingConventionComplete" xml:space="preserve">
+    <value>外部キー命名規則による検出完了</value>
+  </data>
+  <data name="DetectionByPropertyTypeComplete" xml:space="preserve">
+    <value>プロパティ型による検出完了</value>
+  </data>
+  <data name="DetectionByNavigationPropertyComplete" xml:space="preserve">
+    <value>ナビゲーションプロパティによる検出完了</value>
+  </data>
+  <data name="CircularReferenceCheckComplete" xml:space="preserve">
+    <value>循環参照チェック完了</value>
+  </data>
+  <data name="ParentChildRelationshipSetUpComplete" xml:space="preserve">
+    <value>親子関係の設定完了</value>
+  </data>
+  <data name="RecordCountCalculationComplete" xml:space="preserve">
+    <value>レコード数の計算完了</value>
+  </data>
+  <data name="RelationshipDisplayUpdateComplete" xml:space="preserve">
+    <value>リレーションシップ表示の更新完了</value>
+  </data>
+  <data name="RelationshipDetectionCompleted" xml:space="preserve">
+    <value>リレーションシップの検出が完了しました。</value>
+  </data>
+  <data name="ErrorDuringRelationshipDetection" xml:space="preserve">
+    <value>リレーションシップの検出中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="GeneratingTestData" xml:space="preserve">
+    <value>テストデータを生成中...</value>
+  </data>
+  <data name="PropertyEntityIsNotSet" xml:space="preserve">
+    <value>プロパティ/エンティティが設定されていません。スキーマ読込または手動でプロパティ/エンティティを追加してください。</value>
+  </data>
+  <data name="Error_FailedToAnalyze" xml:space="preserve">
+    <value>{0}の解析に失敗しました。</value>
+  </data>
+  <data name="NoOutputableEntityClassWasFound" xml:space="preserve">
+    <value>出力可能なエンティティクラスが見つかりませんでした。</value>
+  </data>
+  <data name="CodeIsBeingGenerated" xml:space="preserve">
+    <value>コード生成中...</value>
+  </data>
+  <data name="InsertingCode" xml:space="preserve">
+    <value>コードを挿入中...</value>
+  </data>
+  <data name="TotalSomeTestDataGenerated" xml:space="preserve">
+    <value>合計{0}件のテストデータを生成しました。</value>
+  </data>
+  <data name="ErrorOccurredDuringDataGeneration" xml:space="preserve">
+    <value>データ生成中にエラーが発生しました。</value>
+  </data>
+  <data name="PropertyIsNotSet" xml:space="preserve">
+    <value>プロパティが設定されていません。\nスキーマ読込または手動でプロパティを追加してください。</value>
+  </data>
+  <data name="ErrorOccurredDuringPreviewGeneration" xml:space="preserve">
+    <value>プレビュー生成中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="GenerateCSharpPreview_1" xml:space="preserve">
+    <value>// {0}件のテストデータを生成するメソッド</value>
+  </data>
+  <data name="GenerateCSharpPreview_2" xml:space="preserve">
+    <value>// ... 他のプロパティ</value>
+  </data>
+  <data name="GenerateJsonPreview_1" xml:space="preserve">
+    <value>// ... 他のデータ</value>
+  </data>
+  <data name="GenerateSqlPreview_1" xml:space="preserve">
+    <value>-- {0}件のテストデータ</value>
+  </data>
+  <data name="GenerateSqlPreview_2" xml:space="preserve">
+    <value>-- 生成日時: {0}</value>
+  </data>
+  <data name="GenerateSqlPreivew_3" xml:space="preserve">
+    <value>-- ... 他のINSERT文</value>
+  </data>
+  <data name="GenerateXmlPreview_1" xml:space="preserve">
+    <value>&lt;!-- 他のデータ --&gt;</value>
+  </data>
+  <data name="Custom" xml:space="preserve">
+    <value>カスタム</value>
+  </data>
+  <data name="EntityRelationshipInfo_ToString" xml:space="preserve">
+    <value>{0} → {1}: 親1件あたり{2}件 (合計{3}件)</value>
+  </data>
+  <data name="PropertyViewModel_FixValuesCount" xml:space="preserve">
+    <value>{0}個の値...</value>
   </data>
 </root>

@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using boilersExtensions.Helpers;
 using boilersExtensions.Properties;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
@@ -59,7 +60,7 @@ namespace boilersExtensions.ViewModels
 
         public AsyncPackage Package { get; set; }
 
-        public string Title => Resource.Title_RenameProject;
+        public string Title => ResourceService.GetString("Title_RenameProject");
 
         public void Dispose()
         {
@@ -135,7 +136,7 @@ namespace boilersExtensions.ViewModels
                 // バッチファイルの存在を確認
                 if (!File.Exists(batchFilePath))
                 {
-                    MessageBox.Show($"バッチファイルが見つかりません。{batchFilePath}");
+                    MessageBox.Show(string.Format(ResourceService.GetString("BatchFileNotFound"), batchFilePath));
                     return;
                 }
 
@@ -188,7 +189,7 @@ namespace boilersExtensions.ViewModels
                 // バッチファイルの存在を確認
                 if (!File.Exists(batchFilePath))
                 {
-                    MessageBox.Show($"バッチファイルが見つかりません。{batchFilePath}");
+                    MessageBox.Show(string.Format(ResourceService.GetString("BatchFileNotFound"), batchFilePath));
                     return;
                 }
 

@@ -110,7 +110,7 @@ namespace boilersExtensions.ViewModels
                         UnusedParameterAdornment.ResumeAnalysis();
 
                         // 処理終了
-                        ProcessingStatus.Value = "完了";
+                        ProcessingStatus.Value = ResourceService.GetString("Complete");
                         IsProcessing.Value = false;
                     }
                 })
@@ -234,7 +234,7 @@ namespace boilersExtensions.ViewModels
         public ReactivePropertySlim<double> Progress { get; } = new ReactivePropertySlim<double>();
 
         // 処理状況メッセージ
-        public ReactivePropertySlim<string> ProcessingStatus { get; } = new ReactivePropertySlim<string>("準備完了");
+        public ReactivePropertySlim<string> ProcessingStatus { get; } = new ReactivePropertySlim<string>(ResourceService.GetString("Ready"));
 
         public Window Window { get; set; }
 
@@ -242,7 +242,7 @@ namespace boilersExtensions.ViewModels
 
         public TextDocument Document { get; set; }
 
-        public string Title => "GUIDの一括更新";
+        public string Title => ResourceService.GetString("BatchUpdateGuid_Title");
 
 
         public void Dispose()
@@ -320,7 +320,7 @@ namespace boilersExtensions.ViewModels
 
             // 処理開始
             IsProcessing.Value = true;
-            ProcessingStatus.Value = "GUIDを検索中...";
+            ProcessingStatus.Value = ResourceService.GetString("NowSearchingGuid");
 
             try
             {
@@ -352,7 +352,7 @@ namespace boilersExtensions.ViewModels
             }
             finally
             {
-                ProcessingStatus.Value = "準備完了";
+                ProcessingStatus.Value = ResourceService.GetString("Ready");
                 IsProcessing.Value = false;
             }
         }

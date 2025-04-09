@@ -93,7 +93,7 @@
 
         <!--  Culture Selection  -->
         <TextBlock Grid.Row="2" Grid.Column="0">
-            <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Culture, Mode=OneWay}" />
+            <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Culture_, Mode=OneWay}" />
             <Run Text=":" />
         </TextBlock>
         <ComboBox

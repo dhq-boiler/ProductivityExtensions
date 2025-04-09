@@ -621,7 +621,7 @@
   <data name="ResourceClass" xml:space="preserve">
     <value>Resource class</value>
   </data>
-  <data name="Culture" xml:space="preserve">
+  <data name="Culture_" xml:space="preserve">
     <value>Culture</value>
   </data>
   <data name="DeselectAll" xml:space="preserve">
@@ -671,5 +671,173 @@
   </data>
   <data name="BatchUpdateGuid_ErrorOccured" xml:space="preserve">
     <value>An error has occurred: {0}</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="BatchUpdateGuid_Title" xml:space="preserve">
+    <value>Batch Update Guid</value>
+  </data>
+  <data name="NowSearchingGuid" xml:space="preserve">
+    <value>Now Searching Guid...</value>
+  </data>
+  <data name="BatchFileNotFound" xml:space="preserve">
+    <value>Batch file not found. {0}</value>
+  </data>
+  <data name="CSharpClass" xml:space="preserve">
+    <value>C# Class</value>
+  </data>
+  <data name="JsonArray" xml:space="preserve">
+    <value>JSON Array</value>
+  </data>
+  <data name="CsvFormat" xml:space="preserve">
+    <value>CSV format</value>
+  </data>
+  <data name="SQLInsert" xml:space="preserve">
+    <value>SQL INSERT statement</value>
+  </data>
+  <data name="XMLFormat" xml:space="preserve">
+    <value>XML format</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="ErrorOccurredDuringTestDataGeneration" xml:space="preserve">
+    <value>An error occurred during test data generation: {0}</value>
+  </data>
+  <data name="Standard" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="NowAnalyzingSchema" xml:space="preserve">
+    <value>Parsing schema...</value>
+  </data>
+  <data name="ErrorWhenSchemaLoading" xml:space="preserve">
+    <value>Error while loading schema: {0}</value>
+  </data>
+  <data name="Single" xml:space="preserve">
+    <value>Single</value>
+  </data>
+  <data name="OneToMany" xml:space="preserve">
+    <value>OneToMany</value>
+  </data>
+  <data name="SelectRelatedEntityFiles" xml:space="preserve">
+    <value>Select Related Entity Files</value>
+  </data>
+  <data name="ParsingRelatedEntities" xml:space="preserve">
+    <value>Parsing related entities...</value>
+  </data>
+  <data name="Guid" xml:space="preserve">
+    <value>Guid</value>
+  </data>
+  <data name="IDandSequentialNumber" xml:space="preserve">
+    <value>ID/sequential number</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="PhoneNumber" xml:space="preserve">
+    <value>Phone number</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="BooleanValue" xml:space="preserve">
+    <value>Boolean value</value>
+  </data>
+  <data name="PriceAmount" xml:space="preserve">
+    <value>Price/amount</value>
+  </data>
+  <data name="RelationshipsAreBeingDetected" xml:space="preserve">
+    <value>Relationships are being detected...</value>
+  </data>
+  <data name="DetectionByForeignKeyNamingConventionComplete" xml:space="preserve">
+    <value>Detection completed by foreign key naming convention</value>
+  </data>
+  <data name="DetectionByPropertyTypeComplete" xml:space="preserve">
+    <value>Detection completed by property type</value>
+  </data>
+  <data name="DetectionByNavigationPropertyComplete" xml:space="preserve">
+    <value>Detection by navigation property complete</value>
+  </data>
+  <data name="CircularReferenceCheckComplete" xml:space="preserve">
+    <value>Circulation reference check complete</value>
+  </data>
+  <data name="ParentChildRelationshipSetUpComplete" xml:space="preserve">
+    <value>Parent-child relationship set up complete</value>
+  </data>
+  <data name="RecordCountCalculationComplete" xml:space="preserve">
+    <value>Calculation of number of records completed</value>
+  </data>
+  <data name="RelationshipDisplayUpdateComplete" xml:space="preserve">
+    <value>Relationship display update completed</value>
+  </data>
+  <data name="RelationshipDetectionCompleted" xml:space="preserve">
+    <value>Relationship detection is complete.</value>
+  </data>
+  <data name="ErrorDuringRelationshipDetection" xml:space="preserve">
+    <value>Error during relationship detection: {0}</value>
+  </data>
+  <data name="GeneratingTestData" xml:space="preserve">
+    <value>Generating test data...</value>
+  </data>
+  <data name="PropertyEntityIsNotSet" xml:space="preserve">
+    <value>Property/entity is not set. Please load schema or add properties/entities manually.</value>
+  </data>
+  <data name="Error_FailedToAnalyze" xml:space="preserve">
+    <value>Failed to parse {0}.</value>
+  </data>
+  <data name="NoOutputableEntityClassWasFound" xml:space="preserve">
+    <value>No outputtable entity class was found.</value>
+  </data>
+  <data name="CodeIsBeingGenerated" xml:space="preserve">
+    <value>Code being generated...</value>
+  </data>
+  <data name="InsertingCode" xml:space="preserve">
+    <value>Inserting code...</value>
+  </data>
+  <data name="TotalSomeTestDataGenerated" xml:space="preserve">
+    <value>A total of {0} test data was generated.</value>
+  </data>
+  <data name="ErrorOccurredDuringDataGeneration" xml:space="preserve">
+    <value>An error occurred during data generation.</value>
+  </data>
+  <data name="PropertyIsNotSet" xml:space="preserve">
+    <value>Property is not set. \Please read the schema or add the property manually.</value>
+  </data>
+  <data name="ErrorOccurredDuringPreviewGeneration" xml:space="preserve">
+    <value>An error occurred during preview generation: {0}</value>
+  </data>
+  <data name="GenerateCSharpPreview_1" xml:space="preserve">
+    <value>// Method to generate test data for {0} cases</value>
+  </data>
+  <data name="GenerateCSharpPreview_2" xml:space="preserve">
+    <value>// ... Other Properties</value>
+  </data>
+  <data name="GenerateJsonPreview_1" xml:space="preserve">
+    <value>// ... Other data</value>
+  </data>
+  <data name="GenerateSqlPreview_1" xml:space="preserve">
+    <value>-- {0} test data</value>
+  </data>
+  <data name="GenerateSqlPreview_2" xml:space="preserve">
+    <value>-- Date generated: {0}</value>
+  </data>
+  <data name="GenerateSqlPreivew_3" xml:space="preserve">
+    <value>-- ... Other INSERT statements</value>
+  </data>
+  <data name="GenerateXmlPreview_1" xml:space="preserve">
+    <value>&lt;! -- other data --&gt;</value>
+  </data>
+  <data name="Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="EntityRelationshipInfo_ToString" xml:space="preserve">
+    <value>{0} → {1}: {2} per parent ({3} total)</value>
   </data>
 </root>
