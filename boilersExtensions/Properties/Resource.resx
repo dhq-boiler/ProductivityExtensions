@@ -1119,4 +1119,10 @@
   <data name="NewMethodsHaveAdditionalParameters" xml:space="preserve">
     <value>The new method has an additional parameter #{0} ({1}).</value>
   </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegisterResourceString" xml:space="preserve">
+    <value>Enable resource string registration</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegisterResourceString_Description" xml:space="preserve">
+    <value>Enables the ability to register strings to resources.</value>
+  </data>
 </root>

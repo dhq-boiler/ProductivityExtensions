@@ -286,6 +286,24 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Enable resource string registration に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableRegisterResourceString {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableRegisterResourceString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enables the ability to register strings to resources. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BoilersExtensionsOptionPage_EnableRegisterResourceString_Description {
+            get {
+                return ResourceManager.GetString("BoilersExtensionsOptionPage_EnableRegisterResourceString_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Enable Seed Generator for EFCore に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore {

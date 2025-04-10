@@ -1119,4 +1119,10 @@
   <data name="NewMethodsHaveAdditionalParameters" xml:space="preserve">
     <value>新しいメソッドには追加のパラメータ #{0} ({1}) があります。</value>
   </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegisterResourceString" xml:space="preserve">
+    <value>リソース文字列登録機能を有効にする</value>
+  </data>
+  <data name="BoilersExtensionsOptionPage_EnableRegisterResourceString_Description" xml:space="preserve">
+    <value>リソース文字列登録機能を有効にします。</value>
+  </data>
 </root>
