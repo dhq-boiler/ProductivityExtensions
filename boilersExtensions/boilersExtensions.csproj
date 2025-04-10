@@ -90,6 +90,11 @@
     <Compile Include="Models\PropertyInfo.cs" />
     <Compile Include="Models\RelationshipInfo.cs" />
     <Compile Include="Models\SeedDataConfig.cs" />
+    <Compile Include="Properties\Resource.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resource.resx</DependentUpon>
+    </Compile>
     <Compile Include="TextEditor\Adornments\UnusedParameterAdornment.cs" />
     <Compile Include="TextEditor\Extensions\RegionNavigatorExtensionFactory.cs" />
     <Compile Include="TextEditor\Extensions\SolutionExplorerSynchronizerFactory.cs" />
@@ -117,11 +122,6 @@
     <Compile Include="Commands\NavigateGitHubLinesCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="boilersExtensionsPackage.cs" />
-    <Compile Include="Properties\Resource.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resource.resx</DependentUpon>
-    </Compile>
     <Compile Include="Commands\RenameProjectCommand.cs" />
     <Compile Include="ViewModels\GuidSelectionDialogViewModel.cs" />
     <Compile Include="ViewModels\RegisterResourceDialogViewModel.cs" />
@@ -331,8 +331,8 @@
     <EmbeddedResource Include="Properties\Resource.ja-JP.resx" />
     <EmbeddedResource Include="Properties\Resource.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resource.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resource.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

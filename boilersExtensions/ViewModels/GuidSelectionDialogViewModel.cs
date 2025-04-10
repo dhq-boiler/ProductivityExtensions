@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using boilersExtensions.Commands;
+using boilersExtensions.Helpers;
 using boilersExtensions.TextEditor.Adornments;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
@@ -42,8 +43,8 @@ namespace boilersExtensions.ViewModels
 
                         if (selectedGuids.Count == 0)
                         {
-                            MessageBox.Show("置換するGUIDが選択されていないか、新しいGUIDが生成されていません。",
-                                "GUID一括更新",
+                            MessageBox.Show(ResourceService.GetString("NotSelectedReplacingGuidOrNotGenerateNewGuid"),
+                                ResourceService.GetString("BatchUpdateGuid"),
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Information);
                             return;
@@ -67,7 +68,7 @@ namespace boilersExtensions.ViewModels
                                 // 進捗状況を更新
                                 await Application.Current.Dispatcher.InvokeAsync(() =>
                                 {
-                                    ProcessingStatus.Value = $"更新中: {originalGuid} ({i + 1}/{selectedGuids.Count})";
+                                    ProcessingStatus.Value = string.Format(ResourceService.GetString("BatchUpdateGuid_Updating"), originalGuid, i + 1, selectedGuids.Count);
                                     Progress.Value = (double)(i + 1) / selectedGuids.Count * 100;
                                 });
 
@@ -82,8 +83,8 @@ namespace boilersExtensions.ViewModels
                             }
 
                             // 成功メッセージを表示
-                            MessageBox.Show($"{selectedGuids.Count}個のGUIDを更新しました。",
-                                "GUID一括更新",
+                            MessageBox.Show(string.Format(ResourceService.GetString("BatchUpdateGuid_UpdatedGuid"), selectedGuids.Count),
+                                ResourceService.GetString("BatchUpdateGuid"),
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Information);
 
@@ -98,8 +99,8 @@ namespace boilersExtensions.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"エラーが発生しました: {ex.Message}",
-                            "GUID一括更新エラー",
+                        MessageBox.Show(string.Format(ResourceService.GetString("BatchUpdateGuid_ErrorOccured"), ex.Message),
+                            ResourceService.GetString("BatchUpdateGuid_Error"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                     }
@@ -109,7 +110,7 @@ namespace boilersExtensions.ViewModels
                         UnusedParameterAdornment.ResumeAnalysis();
 
                         // 処理終了
-                        ProcessingStatus.Value = "完了";
+                        ProcessingStatus.Value = ResourceService.GetString("Complete");
                         IsProcessing.Value = false;
                     }
                 })
@@ -233,7 +234,7 @@ namespace boilersExtensions.ViewModels
         public ReactivePropertySlim<double> Progress { get; } = new ReactivePropertySlim<double>();
 
         // 処理状況メッセージ
-        public ReactivePropertySlim<string> ProcessingStatus { get; } = new ReactivePropertySlim<string>("準備完了");
+        public ReactivePropertySlim<string> ProcessingStatus { get; } = new ReactivePropertySlim<string>(ResourceService.GetString("Ready"));
 
         public Window Window { get; set; }
 
@@ -241,7 +242,7 @@ namespace boilersExtensions.ViewModels
 
         public TextDocument Document { get; set; }
 
-        public string Title => "GUIDの一括更新";
+        public string Title => ResourceService.GetString("BatchUpdateGuid_Title");
 
 
         public void Dispose()
@@ -319,7 +320,7 @@ namespace boilersExtensions.ViewModels
 
             // 処理開始
             IsProcessing.Value = true;
-            ProcessingStatus.Value = "GUIDを検索中...";
+            ProcessingStatus.Value = ResourceService.GetString("NowSearchingGuid");
 
             try
             {
@@ -351,7 +352,7 @@ namespace boilersExtensions.ViewModels
             }
             finally
             {
-                ProcessingStatus.Value = "準備完了";
+                ProcessingStatus.Value = ResourceService.GetString("Ready");
                 IsProcessing.Value = false;
             }
         }

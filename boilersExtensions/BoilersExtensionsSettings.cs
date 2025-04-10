@@ -203,6 +203,25 @@ namespace boilersExtensions
         }
 
         /// <summary>
+        ///     リソース文字列登録機能が有効かどうか
+        /// </summary>
+        public static bool IsRegisterResourceStringEnabled
+        {
+            get
+            {
+                try
+                {
+                    return GetOptionPageProperty("EnableRegisterResourceString ", true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error reading SeedDataGenerator setting: {ex.Message}");
+                    return true; // デフォルトで有効
+                }
+            }
+        }
+
+        /// <summary>
         ///     オプションページからプロパティを取得
         /// </summary>
         private static T GetOptionPageProperty<T>(string propertyName, T defaultValue)

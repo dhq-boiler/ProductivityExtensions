@@ -43,11 +43,16 @@
 
         <!--  コンボボックススタイル  -->
         <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#333333" />
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Foreground" Value="Black" />
             <Setter Property="BorderBrush" Value="#555555" />
             <Setter Property="Padding" Value="2" />
             <Setter Property="Margin" Value="2" />
+            <Style.Resources>
+                <!--  ドロップダウンアイテムのスタイル  -->
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="Foreground" Value="Black" />
+                </Style>
+            </Style.Resources>
         </Style>
 
         <!--  チェックボックススタイル  -->
@@ -151,7 +156,7 @@
                 Text="{Binding ResourceClass.Value, UpdateSourceTrigger=PropertyChanged}" />
 
             <TextBlock Grid.Row="2" Grid.Column="0">
-                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Culture, Mode=OneWay}" />
+                <Run Text="{Binding Source={x:Static helpers:ResourceService.Current}, Path=Resource.Culture_, Mode=OneWay}" />
                 <Run Text=":" />
             </TextBlock>
             <ComboBox

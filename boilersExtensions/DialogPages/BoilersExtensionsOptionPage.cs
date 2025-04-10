@@ -82,6 +82,11 @@ namespace boilersExtensions.DialogPages
         [LocalizedDescription("BoilersExtensionsOptionPage_EnableSeedGeneratorForEFCore_Description")]
         public bool EnableSeedDataGenerator { get; set; } = true;
 
+        [LocalizedCategory("BoilersExtensionsOptionPage_EnableDisableFunction")]
+        [LocalizedDisplayName("BoilersExtensionsOptionPage_EnableRegisterResourceString")]
+        [LocalizedDescription("BoilersExtensionsOptionPage_EnableRegisterResourceString_Description")]
+        public bool EnableRegisterResourceString { get; set; } = true;
+
         // PropertyChanged イベント
         public event PropertyChangedEventHandler PropertyChanged;
 

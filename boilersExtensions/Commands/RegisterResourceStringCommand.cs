@@ -53,6 +53,11 @@ namespace boilersExtensions.Commands
 
             try
             {
+                if (!BoilersExtensionsSettings.IsRegisterResourceStringEnabled)
+                {
+                    Debug.WriteLine("RegisterResourceString feature is disabled in settings");
+                    return;
+                }
 
                 // Get DTE
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
@@ -488,6 +493,17 @@ namespace boilersExtensions.Commands
 
             if (sender is OleMenuCommand command)
             {
+                // 設定で無効化されているかチェック
+                var featureEnabled = BoilersExtensionsSettings.IsRegisterResourceStringEnabled;
+
+                if (!featureEnabled)
+                {
+                    // 機能が無効の場合はメニュー項目を非表示にする
+                    command.Visible = false;
+                    command.Enabled = false;
+                    return;
+                }
+
                 // Make command visible and enabled only when text is selected
                 var dte = (DTE)Package.GetGlobalService(typeof(DTE));
                 var textSelection = dte?.ActiveDocument?.Selection as TextSelection;
