@@ -840,7 +840,283 @@
   <data name="EntityRelationshipInfo_ToString" xml:space="preserve">
     <value>{0} → {1}: 親1件あたり{2}件 (合計{3}件)</value>
   </data>
+  <data name="ErrorOccurredWhenEdittingRazorFile" xml:space="preserve">
+    <value>Razorファイルの編集中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="PreviewConfirmation" xml:space="preserve">
+    <value>プレビュー確認</value>
+  </data>
   <data name="PropertyViewModel_FixValuesCount" xml:space="preserve">
     <value>{0}個の値...</value>
+  </data>
+  <data name="UpdatingType" xml:space="preserve">
+    <value>型を更新中...</value>
+  </data>
+  <data name="ErrorOccurredWhenReplacingType" xml:space="preserve">
+    <value>型の置換中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="ErrorTypeHierarchySelection" xml:space="preserve">
+    <value>型階層選択エラー</value>
+  </data>
+  <data name="TypeHierarchySelection" xml:space="preserve">
+    <value>型階層選択</value>
+  </data>
+  <data name="AnalyzingTypeHierarchy" xml:space="preserve">
+    <value>型の階層を分析中...</value>
+  </data>
+  <data name="Question_ReplaceFirstFoundTypeName" xml:space="preserve">
+    <value>特定の行での型の置換ができませんでした。\n最初に見つかった型名を置換しますか？</value>
+  </data>
+  <data name="TypeReplacement" xml:space="preserve">
+    <value>型置換</value>
+  </data>
+  <data name="CannotEditAsTextDocument" xml:space="preserve">
+    <value>テキストドキュメントとして編集できませんでした。</value>
+  </data>
+  <data name="CannotSpecifiedPositionReplacingType" xml:space="preserve">
+    <value>型を置換する位置を特定できませんでした。</value>
+  </data>
+  <data name="CannotLocateTypeReplacement" xml:space="preserve">
+    <value>型を置換する位置を特定できませんでした。</value>
+  </data>
+  <data name="ErrorOccurredWhenDirectlyEditingFile" xml:space="preserve">
+    <value>ファイルの直接編集中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="SetPlaceHoldersForTypeParameters" xml:space="preserve">
+    <value>型パラメーターの数に互換がないため、型パラメーターにプレースホルダーを設定します。</value>
+  </data>
+  <data name="NowPreviewingCodeChanges" xml:space="preserve">
+    <value>コード変更をプレビュー中...</value>
+  </data>
+  <data name="TypeChangePreview" xml:space="preserve">
+    <value>型変更のプレビュー</value>
+  </data>
+  <data name="ReplaceTypeNameAtThatLine" xml:space="preserve">
+    <value>行 {0} の型名を置換します</value>
+  </data>
+  <data name="Question_CouldNotFindTypeNameForParticularLine" xml:space="preserve">
+    <value>特定の行での型名が見つかりませんでした。\n最初に見つかった型名でプレビューしますか？</value>
+  </data>
+  <data name="ReplaceTypeNameFirstFound" xml:space="preserve">
+    <value>最初に見つかった型名を置換します</value>
+  </data>
+  <data name="ErrorOccurredCannotSpecifiedPositionReplacingType" xml:space="preserve">
+    <value>型を置換する位置を特定できませんでした。</value>
+  </data>
+  <data name="PleaseConsiderToApplyTypeChange" xml:space="preserve">
+    <value>型変更を適用するか検討してください</value>
+  </data>
+  <data name="ErrorOccurredWhenPreviewing" xml:space="preserve">
+    <value>プレビューの表示中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="Error_Preview" xml:space="preserve">
+    <value>プレビューエラー</value>
+  </data>
+  <data name="NowAnalyzingAffectedRange" xml:space="preserve">
+    <value>影響範囲を分析中...</value>
+  </data>
+  <data name="SearchReferencesForEntireType" xml:space="preserve">
+    <value>特定のパラメータや変数が見つかりませんでした。型全体に対する参照を検索します。</value>
+  </data>
+  <data name="FailedToGetDocumentAndCannotContinueAnalyzing" xml:space="preserve">
+    <value>ドキュメントの取得に失敗しました。分析を続行できません。</value>
+  </data>
+  <data name="ErrorOccurredWhenAnalyzingAffectedRange" xml:space="preserve">
+    <value>影響範囲の分析中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="NotFoundReferenceOfType" xml:space="preserve">
+    <value>型 '{0}' の参照が見つかりませんでした。</value>
+  </data>
+  <data name="AnalyzingResult" xml:space="preserve">
+    <value>分析結果</value>
+  </data>
+  <data name="ErrorOccurredWhenAnalyzingToAffectRazorFile" xml:space="preserve">
+    <value>Razorファイルの影響分析中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="MethodSignatureMismatch_Description" xml:space="preserve">
+    <value>メソッド '{0}({1})' のシグネチャが一致するものが新しい型にありません。</value>
+  </data>
+  <data name="DirectReferencesInRazorFiles" xml:space="preserve">
+    <value>Razorファイルでの直接参照</value>
+  </data>
+  <data name="DataBindingReference" xml:space="preserve">
+    <value>データバインド参照</value>
+  </data>
+  <data name="DependentInjectionReference" xml:space="preserve">
+    <value>依存性注入参照</value>
+  </data>
+  <data name="ReferenceInAtCodeBlock" xml:space="preserve">
+    <value>@code ブロック内での参照</value>
+  </data>
+  <data name="ReferenceInAtFunctionsBlock" xml:space="preserve">
+    <value>@functions ブロック内での参照</value>
+  </data>
+  <data name="ReferenceInInlineCSharpExpressions" xml:space="preserve">
+    <value>インラインC#式での参照</value>
+  </data>
+  <data name="GenericTypeParameterReference" xml:space="preserve">
+    <value>ジェネリック型パラメータ参照</value>
+  </data>
+  <data name="InheritanceReference" xml:space="preserve">
+    <value>継承参照</value>
+  </data>
+  <data name="InterfaceImplementationReference" xml:space="preserve">
+    <value>インターフェース実装参照</value>
+  </data>
+  <data name="TypeParameterConstraintReference" xml:space="preserve">
+    <value>型パラメータ制約参照</value>
+  </data>
+  <data name="TypeReference" xml:space="preserve">
+    <value>型の参照</value>
+  </data>
+  <data name="ParameterType" xml:space="preserve">
+    <value>パラメータの型</value>
+  </data>
+  <data name="VariableTypes" xml:space="preserve">
+    <value>変数の型</value>
+  </data>
+  <data name="PropertyTypes" xml:space="preserve">
+    <value>プロパティの型</value>
+  </data>
+  <data name="MethodReturnType" xml:space="preserve">
+    <value>メソッドの戻り値型</value>
+  </data>
+  <data name="MemberUse" xml:space="preserve">
+    <value>メンバー {0} の使用</value>
+  </data>
+  <data name="TypeKindMismatch" xml:space="preserve">
+    <value>型の種類の不一致</value>
+  </data>
+  <data name="CheckTypeCompatibility_Description1" xml:space="preserve">
+    <value>元の型 '{0}' は {1} ですが、新しい型 '{2}' は {3} です。</value>
+  </data>
+  <data name="CheckTypeCompatibility_SuggestedFix1" xml:space="preserve">
+    <value>型の種類が一致するように設計を見直してください。</value>
+  </data>
+  <data name="InconsistencyOfSuccessionRelationships" xml:space="preserve">
+    <value>継承関係の不一致</value>
+  </data>
+  <data name="InconsistencyOfSuccessionRelationships_Description" xml:space="preserve">
+    <value>新しい型 '{0}' は元の型 '{1}' を継承していません。</value>
+  </data>
+  <data name="InconsistencyOfSuccessionRelationships_SuggestedFix" xml:space="preserve">
+    <value>元の型と継承関係がある型を使用するか、アダプターパターンを検討してください。</value>
+  </data>
+  <data name="InterfaceImplementationMismatch" xml:space="preserve">
+    <value>インターフェース実装の不一致</value>
+  </data>
+  <data name="InterfaceImplementationMismatch_Description" xml:space="preserve">
+    <value>新しい型 '{0}' はインターフェース '{1}' を実装していません。</value>
+  </data>
+  <data name="InterfaceImplementationMismatch_SuggestedFix" xml:space="preserve">
+    <value>インターフェースを実装する型を選択するか、アダプターパターンを検討してください。</value>
+  </data>
+  <data name="MissingMethod" xml:space="preserve">
+    <value>メソッド欠落</value>
+  </data>
+  <data name="MissingMethod_Description" xml:space="preserve">
+    <value>メソッド '{0}' は新しい型に存在しません。</value>
+  </data>
+  <data name="MissingMethod_SuggestedFix" xml:space="preserve">
+    <value>新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。</value>
+  </data>
+  <data name="MethodSignatureMismatch" xml:space="preserve">
+    <value>メソッドシグネチャの不一致</value>
+  </data>
+  <data name="MethodSignatureMismatch_SuggestedFix" xml:space="preserve">
+    <value>メソッド呼び出しを修正するか、アダプターを実装して互換性を確保してください。</value>
+  </data>
+  <data name="MIssingProperty" xml:space="preserve">
+    <value>プロパティ欠落</value>
+  </data>
+  <data name="MissingProperty_Description" xml:space="preserve">
+    <value>プロパティ '{0}' は新しい型に存在しません。</value>
+  </data>
+  <data name="MissingProperty_SuggestedFix" xml:space="preserve">
+    <value>新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。</value>
+  </data>
+  <data name="PropertyTypeMismatch" xml:space="preserve">
+    <value>プロパティ型の不一致</value>
+  </data>
+  <data name="PropertyTypeMismatch_Description" xml:space="preserve">
+    <value>プロパティ '{0}' の型が異なります: '{1}' → '{2}'</value>
+  </data>
+  <data name="PropertyTypeMismatch_SuggestedFix" xml:space="preserve">
+    <value>型変換または拡張メソッドを使用して互換性を確保することを検討してください。</value>
+  </data>
+  <data name="EventMissing" xml:space="preserve">
+    <value>イベント欠落</value>
+  </data>
+  <data name="EventMissing_Description" xml:space="preserve">
+    <value>イベント '{0}' は新しい型に存在しません。</value>
+  </data>
+  <data name="EventMissing_SuggestedFix" xml:space="preserve">
+    <value>新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。</value>
+  </data>
+  <data name="EventTypeMismatch" xml:space="preserve">
+    <value>イベント型の不一致</value>
+  </data>
+  <data name="EventTypeMismatch_Description" xml:space="preserve">
+    <value>イベント '{0}' のデリゲート型が異なります: '{1}' → '{2}'</value>
+  </data>
+  <data name="EventTypeMismatch_SuggestedFix" xml:space="preserve">
+    <value>イベントハンドラーに適応するためのアダプターメソッドの実装を検討してください。</value>
+  </data>
+  <data name="MemberAccessMismatch" xml:space="preserve">
+    <value>メンバーアクセスの不一致</value>
+  </data>
+  <data name="MemberAccessMismatch_Description" xml:space="preserve">
+    <value>元の型の '{0}' メンバーは新しい型には存在しません。</value>
+  </data>
+  <data name="MemberAccessMismatch_SuggestedFix" xml:space="preserve">
+    <value>'{0}' にアクセスするコードを修正するか、代替手段を実装してください。</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>不明</value>
+  </data>
+  <data name="Parameter" xml:space="preserve">
+    <value>パラメータ</value>
+  </data>
+  <data name="Variable" xml:space="preserve">
+    <value>変数</value>
+  </data>
+  <data name="UseReference" xml:space="preserve">
+    <value>{0}の使用 ({1}内)</value>
+  </data>
+  <data name="EventAccessibilityMismatch" xml:space="preserve">
+    <value>イベントアクセシビリティの不一致</value>
+  </data>
+  <data name="EventAccessibilityMismatch_Description" xml:space="preserve">
+    <value>イベント '{0}' のアクセシビリティが異なります: '{1}' → '{2}'</value>
+  </data>
+  <data name="EventAccessibilityMismatch_SuggestedFix" xml:space="preserve">
+    <value>アクセシビリティの変更により、一部のコードで参照できなくなる可能性があります。コードの構造を見直すか、アクセサメソッドの実装を検討してください。</value>
+  </data>
+  <data name="EventDoesnotExistInNewType" xml:space="preserve">
+    <value>イベント '{0}' は新しい型に存在しません</value>
+  </data>
+  <data name="ReferencePoint" xml:space="preserve">
+    <value>  - 参照箇所: {0}, {1}箇所</value>
+  </data>
+  <data name="EventDelegateTypeMismatch" xml:space="preserve">
+    <value>イベント '{0}' のデリゲート型が不一致</value>
+  </data>
+  <data name="AccessibilityOfEventsVaries" xml:space="preserve">
+    <value>イベント '{0}' のアクセシビリティが異なります</value>
+  </data>
+  <data name="ReturnTypeIsDifferent" xml:space="preserve">
+    <value>戻り値の型が異なります</value>
+  </data>
+  <data name="DifferentParameterTypes" xml:space="preserve">
+    <value>パラメータ #{0} ({1}) の型が異なります</value>
+  </data>
+  <data name="ParameterIsMissingInNewMethod" xml:space="preserve">
+    <value>パラメータ #{0} ({1}) が新しいメソッドにありません。</value>
+  </data>
+  <data name="NewMethodsHaveAdditionalParameters" xml:space="preserve">
+    <value>新しいメソッドには追加のパラメータ #{0} ({1}) があります。</value>
   </data>
 </root>

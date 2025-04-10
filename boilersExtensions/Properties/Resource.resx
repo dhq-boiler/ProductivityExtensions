@@ -840,4 +840,283 @@
   <data name="EntityRelationshipInfo_ToString" xml:space="preserve">
     <value>{0} → {1}: {2} per parent ({3} total)</value>
   </data>
+  <data name="ErrorOccurredWhenEdittingRazorFile" xml:space="preserve">
+    <value>Error while editing Razor file: {0}</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="PreviewConfirmation" xml:space="preserve">
+    <value>Preview Confirmation</value>
+  </data>
+  <data name="PropertyViewModel_FixValuesCount" xml:space="preserve">
+    <value>{0} values...</value>
+  </data>
+  <data name="UpdatingType" xml:space="preserve">
+    <value>Updating type...</value>
+  </data>
+  <data name="ErrorOccurredWhenReplacingType" xml:space="preserve">
+    <value>Error during type substitution: {0}</value>
+  </data>
+  <data name="ErrorTypeHierarchySelection" xml:space="preserve">
+    <value>Type hierarchy selection Error</value>
+  </data>
+  <data name="TypeHierarchySelection" xml:space="preserve">
+    <value>Type hierarchy selection</value>
+  </data>
+  <data name="AnalyzingTypeHierarchy" xml:space="preserve">
+    <value>Analyzing the type hierarchy...</value>
+  </data>
+  <data name="Question_ReplaceFirstFoundTypeName" xml:space="preserve">
+    <value>Could not substitute a type on a particular line. \Do you want to replace the first type name found?</value>
+  </data>
+  <data name="TypeReplacement" xml:space="preserve">
+    <value>Type replacement</value>
+  </data>
+  <data name="CannotEditAsTextDocument" xml:space="preserve">
+    <value>Could not edit as a text document.</value>
+  </data>
+  <data name="CannotSpecifiedPositionReplacingType" xml:space="preserve">
+    <value>Could not locate type replacement.</value>
+  </data>
+  <data name="CannotLocateTypeReplacement" xml:space="preserve">
+    <value>Could not locate type replacement.</value>
+  </data>
+  <data name="ErrorOccurredWhenDirectlyEditingFile" xml:space="preserve">
+    <value>An error occurred while editing the file directly: {0}</value>
+  </data>
+  <data name="SetPlaceHoldersForTypeParameters" xml:space="preserve">
+    <value>Set placeholders for type parameters because the number of type parameters are incompatible.</value>
+  </data>
+  <data name="NowPreviewingCodeChanges" xml:space="preserve">
+    <value>Previewing code changes...</value>
+  </data>
+  <data name="TypeChangePreview" xml:space="preserve">
+    <value>Type change preview</value>
+  </data>
+  <data name="ReplaceTypeNameAtThatLine" xml:space="preserve">
+    <value>Replaces the type name in line {0}</value>
+  </data>
+  <data name="Question_CouldNotFindTypeNameForParticularLine" xml:space="preserve">
+    <value>Could not find the type name for a particular line. \Do you want to preview with the first type name found?</value>
+  </data>
+  <data name="ReplaceTypeNameFirstFound" xml:space="preserve">
+    <value>Replaces the first type name found</value>
+  </data>
+  <data name="ErrorOccurredCannotSpecifiedPositionReplacingType" xml:space="preserve">
+    <value>Could not locate type replacement.</value>
+  </data>
+  <data name="PleaseConsiderToApplyTypeChange" xml:space="preserve">
+    <value>Please consider applying the type change</value>
+  </data>
+  <data name="ErrorOccurredWhenPreviewing" xml:space="preserve">
+    <value>An error occurred while displaying the preview: {0}</value>
+  </data>
+  <data name="Error_Preview" xml:space="preserve">
+    <value>Preview error</value>
+  </data>
+  <data name="NowAnalyzingAffectedRange" xml:space="preserve">
+    <value>Analyzing scope of impact...</value>
+  </data>
+  <data name="SearchReferencesForEntireType" xml:space="preserve">
+    <value>Could not find a specific parameter or variable. Search for a reference to the entire type.</value>
+  </data>
+  <data name="FailedToGetDocumentAndCannotContinueAnalyzing" xml:space="preserve">
+    <value>Failed to retrieve document. Unable to continue analysis.</value>
+  </data>
+  <data name="ErrorOccurredWhenAnalyzingAffectedRange" xml:space="preserve">
+    <value>An error occurred during the analysis of the zone of influence: {0}</value>
+  </data>
+  <data name="NotFoundReferenceOfType" xml:space="preserve">
+    <value>No reference found for type '{0}'.</value>
+  </data>
+  <data name="AnalyzingResult" xml:space="preserve">
+    <value>Analysis Results</value>
+  </data>
+  <data name="ErrorOccurredWhenAnalyzingToAffectRazorFile" xml:space="preserve">
+    <value>Error during impact analysis of Razor file: {0}</value>
+  </data>
+  <data name="MethodSignatureMismatch_Description" xml:space="preserve">
+    <value>The method '{0}({1})' has no matching signature in the new type.</value>
+  </data>
+  <data name="DirectReferencesInRazorFiles" xml:space="preserve">
+    <value>Direct references in Razor files</value>
+  </data>
+  <data name="DataBindingReference" xml:space="preserve">
+    <value>Data binding reference</value>
+  </data>
+  <data name="DependentInjectionReference" xml:space="preserve">
+    <value>Dependent Injection Reference</value>
+  </data>
+  <data name="ReferenceInAtCodeBlock" xml:space="preserve">
+    <value>Reference in @code block</value>
+  </data>
+  <data name="ReferenceInAtFunctionsBlock" xml:space="preserve">
+    <value>References in @functions block</value>
+  </data>
+  <data name="ReferenceInInlineCSharpExpressions" xml:space="preserve">
+    <value>References in inline C# expressions</value>
+  </data>
+  <data name="GenericTypeParameterReference" xml:space="preserve">
+    <value>Generic type parameter reference</value>
+  </data>
+  <data name="InheritanceReference" xml:space="preserve">
+    <value>Inheritance Reference</value>
+  </data>
+  <data name="InterfaceImplementationReference" xml:space="preserve">
+    <value>Interface Implementation Reference</value>
+  </data>
+  <data name="TypeParameterConstraintReference" xml:space="preserve">
+    <value>Type parameter constraint reference</value>
+  </data>
+  <data name="TypeReference" xml:space="preserve">
+    <value>Type reference</value>
+  </data>
+  <data name="ParameterType" xml:space="preserve">
+    <value>Parameter type</value>
+  </data>
+  <data name="VariableTypes" xml:space="preserve">
+    <value>Variable Types</value>
+  </data>
+  <data name="PropertyTypes" xml:space="preserve">
+    <value>Property Types</value>
+  </data>
+  <data name="MethodReturnType" xml:space="preserve">
+    <value>Method return type</value>
+  </data>
+  <data name="MemberUse" xml:space="preserve">
+    <value>Use of member {0}</value>
+  </data>
+  <data name="TypeKindMismatch" xml:space="preserve">
+    <value>Type kind mismatch</value>
+  </data>
+  <data name="CheckTypeCompatibility_Description1" xml:space="preserve">
+    <value>The original type '{0}' is {1}, the new type '{2}' is {3}.</value>
+  </data>
+  <data name="CheckTypeCompatibility_SuggestedFix1" xml:space="preserve">
+    <value>Review the design so that the type types match.</value>
+  </data>
+  <data name="InconsistencyOfSuccessionRelationships" xml:space="preserve">
+    <value>Inconsistency of Succession Relationships</value>
+  </data>
+  <data name="InconsistencyOfSuccessionRelationships_Description" xml:space="preserve">
+    <value>The new type '{0}' does not inherit the original type '{1}'.</value>
+  </data>
+  <data name="InconsistencyOfSuccessionRelationships_SuggestedFix" xml:space="preserve">
+    <value>Use a type that has an inheritance relationship with the original type or consider an adapter pattern.</value>
+  </data>
+  <data name="InterfaceImplementationMismatch" xml:space="preserve">
+    <value>Interface implementation mismatch</value>
+  </data>
+  <data name="InterfaceImplementationMismatch_Description" xml:space="preserve">
+    <value>The new type '{0}' does not implement the interface '{1}'.</value>
+  </data>
+  <data name="InterfaceImplementationMismatch_SuggestedFix" xml:space="preserve">
+    <value>Select the type that implements the interface or consider an adapter pattern.</value>
+  </data>
+  <data name="MissingMethod" xml:space="preserve">
+    <value>Missing method</value>
+  </data>
+  <data name="MissingMethod_Description" xml:space="preserve">
+    <value>The method '{0}' does not exist in the new type.</value>
+  </data>
+  <data name="MissingMethod_SuggestedFix" xml:space="preserve">
+    <value>Implement a method for the new type or use an adapter pattern.</value>
+  </data>
+  <data name="MethodSignatureMismatch" xml:space="preserve">
+    <value>Method signature mismatch</value>
+  </data>
+  <data name="MethodSignatureMismatch_SuggestedFix" xml:space="preserve">
+    <value>Fix method calls or implement adapters to ensure compatibility.</value>
+  </data>
+  <data name="MIssingProperty" xml:space="preserve">
+    <value>Missing property</value>
+  </data>
+  <data name="MissingProperty_Description" xml:space="preserve">
+    <value>Property '{0}' is not present in the new type.</value>
+  </data>
+  <data name="MissingProperty_SuggestedFix" xml:space="preserve">
+    <value>Consider implementing properties for the new types or use extension methods to recreate property functionality.</value>
+  </data>
+  <data name="PropertyTypeMismatch" xml:space="preserve">
+    <value>Property type mismatch</value>
+  </data>
+  <data name="PropertyTypeMismatch_Description" xml:space="preserve">
+    <value>Property '{0}' has different type: '{1}' → '{2}'</value>
+  </data>
+  <data name="PropertyTypeMismatch_SuggestedFix" xml:space="preserve">
+    <value>Consider using type conversion or extension methods to ensure compatibility.</value>
+  </data>
+  <data name="EventMissing" xml:space="preserve">
+    <value>Event missing</value>
+  </data>
+  <data name="EventMissing_Description" xml:space="preserve">
+    <value>Event '{0}' does not exist in the new type.</value>
+  </data>
+  <data name="EventMissing_SuggestedFix" xml:space="preserve">
+    <value>Consider implementing events for the new types or emulate them using custom event handlers.</value>
+  </data>
+  <data name="EventTypeMismatch" xml:space="preserve">
+    <value>Event type mismatch</value>
+  </data>
+  <data name="EventTypeMismatch_Description" xml:space="preserve">
+    <value>Event '{0}' has a different delegate type: '{1}' → '{2}'</value>
+  </data>
+  <data name="EventTypeMismatch_SuggestedFix" xml:space="preserve">
+    <value>Consider implementing an adapter method to adapt to event handlers.</value>
+  </data>
+  <data name="MemberAccessMismatch" xml:space="preserve">
+    <value>Member access mismatch</value>
+  </data>
+  <data name="MemberAccessMismatch_Description" xml:space="preserve">
+    <value>The '{0}' member of the original type does not exist in the new type.</value>
+  </data>
+  <data name="MemberAccessMismatch_SuggestedFix" xml:space="preserve">
+    <value>Modify the code to access '{0}' or implement an alternative.</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Parameter" xml:space="preserve">
+    <value>Parameter</value>
+  </data>
+  <data name="Variable" xml:space="preserve">
+    <value>Variable</value>
+  </data>
+  <data name="UseReference" xml:space="preserve">
+    <value>Use of {0} (in {1})</value>
+  </data>
+  <data name="EventAccessibilityMismatch" xml:space="preserve">
+    <value>Event accessibility mismatch</value>
+  </data>
+  <data name="EventAccessibilityMismatch_Description" xml:space="preserve">
+    <value>Accessibility of event '{0}' is different: '{1}' → '{2}'</value>
+  </data>
+  <data name="EventAccessibilityMismatch_SuggestedFix" xml:space="preserve">
+    <value>Accessibility changes may make references unavailable in some code. Please review the structure of your code or consider implementing accessor methods.</value>
+  </data>
+  <data name="EventDoesnotExistInNewType" xml:space="preserve">
+    <value>Event '{0}' does not exist in the new type</value>
+  </data>
+  <data name="ReferencePoint" xml:space="preserve">
+    <value> - References: {0}, {1} locations</value>
+  </data>
+  <data name="EventDelegateTypeMismatch" xml:space="preserve">
+    <value>Event '{0}' delegate type mismatch</value>
+  </data>
+  <data name="AccessibilityOfEventsVaries" xml:space="preserve">
+    <value>Accessibility of event '{0}' is different</value>
+  </data>
+  <data name="ReturnTypeIsDifferent" xml:space="preserve">
+    <value>The return type is different</value>
+  </data>
+  <data name="DifferentParameterTypes" xml:space="preserve">
+    <value>Parameter #{0} ({1}) has different type</value>
+  </data>
+  <data name="ParameterIsMissingInNewMethod" xml:space="preserve">
+    <value>Parameter #{0} ({1}) is missing from the new method.</value>
+  </data>
+  <data name="NewMethodsHaveAdditionalParameters" xml:space="preserve">
+    <value>The new method has an additional parameter #{0} ({1}).</value>
+  </data>
 </root>

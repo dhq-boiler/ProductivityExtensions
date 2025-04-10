@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using boilersExtensions.Helpers;
 using boilersExtensions.Utils;
 using boilersExtensions.Views;
 using EnvDTE;
@@ -73,7 +74,7 @@ namespace boilersExtensions.ViewModels
                     {
                         // 処理開始
                         IsProcessing.Value = true;
-                        ProcessingStatus.Value = "型を更新中...";
+                        ProcessingStatus.Value = ResourceService.GetString("UpdatingType");
 
                         await ApplyTypeChange();
 
@@ -82,8 +83,8 @@ namespace boilersExtensions.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"型の置換中にエラーが発生しました: {ex.Message}",
-                            "型階層選択エラー",
+                        MessageBox.Show(string.Format(ResourceService.GetString("ErrorOccurredWhenReplacingType"), ex.Message),
+                            ResourceService.GetString("ErrorTypeHierarchySelection"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                     }
@@ -194,13 +195,13 @@ namespace boilersExtensions.ViewModels
 
         // 処理中フラグ
         public ReactivePropertySlim<bool> IsProcessing { get; } = new ReactivePropertySlim<bool>();
-        public ReactivePropertySlim<string> ProcessingStatus { get; } = new ReactivePropertySlim<string>("準備完了");
+        public ReactivePropertySlim<string> ProcessingStatus { get; } = new ReactivePropertySlim<string>(ResourceService.GetString("Ready"));
 
         // ウィンドウ参照
         public Window Window { get; set; }
         public AsyncPackage Package { get; set; }
 
-        public string Title => "型階層選択";
+        public string Title => ResourceService.GetString("TypeHierarchySelection");
 
         /// <summary>
         ///     リソース解放
@@ -386,7 +387,7 @@ namespace boilersExtensions.ViewModels
             try
             {
                 IsProcessing.Value = true;
-                ProcessingStatus.Value = "型の階層を分析中...";
+                ProcessingStatus.Value = ResourceService.GetString("AnalyzingTypeHierarchy");
 
                 // Razorファイルの場合
                 var isRazorFile = !string.IsNullOrEmpty(_razorFilePath) &&
@@ -444,7 +445,7 @@ namespace boilersExtensions.ViewModels
             finally
             {
                 IsProcessing.Value = false;
-                ProcessingStatus.Value = "準備完了";
+                ProcessingStatus.Value = ResourceService.GetString("Ready");
             }
         }
 
@@ -760,8 +761,8 @@ namespace boilersExtensions.ViewModels
 
                             // 上記の方法で見つからない場合は、ユーザーに確認して通常の方法で置換
                             var result = MessageBox.Show(
-                                "特定の行での型の置換ができませんでした。\n最初に見つかった型名を置換しますか？",
-                                "型置換",
+                                ResourceService.GetString("Question_ReplaceFirstFoundTypeName"),
+                                ResourceService.GetString("TypeReplacement"),
                                 MessageBoxButton.YesNo,
                                 MessageBoxImage.Question);
 
@@ -773,16 +774,16 @@ namespace boilersExtensions.ViewModels
                         }
                         else
                         {
-                            MessageBox.Show("テキストドキュメントとして編集できませんでした。",
-                                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show(ResourceService.GetString("CannotEditAsTextDocument"),
+                                ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Error modifying Razor file: {ex.Message}");
-                    MessageBox.Show($"Razorファイルの編集中にエラーが発生しました: {ex.Message}",
-                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(string.Format(ResourceService.GetString("ErrorOccurredWhenEdittingRazorFile"), ex.Message),
+                        ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -859,8 +860,8 @@ namespace boilersExtensions.ViewModels
                 }
                 else
                 {
-                    MessageBox.Show("型を置換する位置を特定できませんでした。",
-                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(ResourceService.GetString("CannotSpecifiedPositionReplacingType"),
+                        ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             finally
@@ -916,8 +917,8 @@ namespace boilersExtensions.ViewModels
 
                 // 行番号での検索に失敗した場合、ユーザーに確認
                 var result = MessageBox.Show(
-                    "特定の行での型の置換ができませんでした。\n最初に見つかった型名を置換しますか？",
-                    "型置換",
+                    ResourceService.GetString("Question_ReplaceFirstFoundTypeName"),
+                    ResourceService.GetString("TypeReplacement"),
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
@@ -936,16 +937,16 @@ namespace boilersExtensions.ViewModels
                     }
                     else
                     {
-                        MessageBox.Show("型を置換する位置を特定できませんでした。",
-                            "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(ResourceService.GetString("CannotLocateTypeReplacement"),
+                            ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error processing Razor file directly: {ex.Message}");
-                MessageBox.Show($"ファイルの直接編集中にエラーが発生しました: {ex.Message}",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(string.Format(ResourceService.GetString("ErrorOccurredWhenDirectlyEditingFile"), ex.Message),
+                    ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -980,8 +981,8 @@ namespace boilersExtensions.ViewModels
                     // 型パラメーターの数が異なる場合は元の型名をそのまま返す
                     if (typeParams.Count(x => x == ',') != originalTypeParams.Count(x => x == ','))
                     {
-                        MessageBox.Show("型パラメーターの数に互換がないため、型パラメーターにプレースホルダーを設定します。",
-                            "警告",
+                        MessageBox.Show(ResourceService.GetString("SetPlaceHoldersForTypeParameters"),
+                            ResourceService.GetString("Warning"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning);
                         return fullName;
@@ -1097,7 +1098,7 @@ namespace boilersExtensions.ViewModels
                 }
 
                 IsProcessing.Value = true;
-                ProcessingStatus.Value = "コード変更をプレビュー中...";
+                ProcessingStatus.Value = ResourceService.GetString("NowPreviewingCodeChanges");
 
                 string originalCode;
                 string newCode;
@@ -1157,19 +1158,19 @@ namespace boilersExtensions.ViewModels
                             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                             var diffViewer = new DiffViewer();
                             _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true,
-                                "型変更のプレビュー",
-                                $"行 {targetLine} の型名を置換します");
+                                ResourceService.GetString("TypeChangePreview"),
+                                string.Format(ResourceService.GetString("ReplaceTypeNameAtThatLine"), targetLine));
 
                             IsProcessing.Value = false;
-                            ProcessingStatus.Value = "準備完了";
+                            ProcessingStatus.Value = ResourceService.GetString("Ready");
                             return;
                         }
                     }
 
                     // 行番号での検索に失敗した場合、ユーザーに確認
                     var result = MessageBox.Show(
-                        "特定の行での型名が見つかりませんでした。\n最初に見つかった型名でプレビューしますか？",
-                        "プレビュー確認",
+                        ResourceService.GetString("Question_CouldNotFindTypeNameForParticularLine"),
+                        ResourceService.GetString("PreviewConfirmation"),
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Question);
 
@@ -1187,16 +1188,16 @@ namespace boilersExtensions.ViewModels
                             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                             var diffViewer = new DiffViewer();
                             _diffWindowFrame = diffViewer.ShowDiff(originalCode, newCode, true,
-                                "型変更のプレビュー",
-                                "最初に見つかった型名を置換します");
+                                ResourceService.GetString("TypeChangePreview"),
+                                ResourceService.GetString("ReplaceTypeNameFirstFound"));
                         }
                         else
                         {
-                            MessageBox.Show("型を置換する位置を特定できませんでした。",
-                                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show(ResourceService.GetString("ErrorOccurredCannotSpecifiedPositionReplacingType"),
+                                ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
 
                             IsProcessing.Value = false;
-                            ProcessingStatus.Value = "準備完了";
+                            ProcessingStatus.Value = ResourceService.GetString("Ready");
                             return;
                         }
                     }
@@ -1204,7 +1205,7 @@ namespace boilersExtensions.ViewModels
                     {
                         // ユーザーがキャンセルした場合
                         IsProcessing.Value = false;
-                        ProcessingStatus.Value = "準備完了";
+                        ProcessingStatus.Value = ResourceService.GetString("Ready");
                         return;
                     }
                 }
@@ -1229,7 +1230,7 @@ namespace boilersExtensions.ViewModels
                     // どちらの条件も満たさない場合（エラー状態）
                     Debug.WriteLine("Error: Both _document and _razorFilePath are invalid");
                     IsProcessing.Value = false;
-                    ProcessingStatus.Value = "準備完了";
+                    ProcessingStatus.Value = ResourceService.GetString("Ready");
                     return;
                 }
 
@@ -1237,21 +1238,21 @@ namespace boilersExtensions.ViewModels
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var commonDiffViewer = new DiffViewer();
                 _diffWindowFrame = commonDiffViewer.ShowDiff(originalCode, newCode, true,
-                    "型変更のプレビュー",
-                    "型変更を適用するか検討してください");
+                    ResourceService.GetString("TypeChangePreview"),
+                    ResourceService.GetString("PleaseConsiderToApplyTypeChange"));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in ShowTypeChangePreview: {ex.Message}");
-                MessageBox.Show($"プレビューの表示中にエラーが発生しました: {ex.Message}",
-                    "プレビューエラー",
+                MessageBox.Show(string.Format(ResourceService.GetString("ErrorOccurredWhenPreviewing"), ex.Message),
+                    ResourceService.GetString("Error_Preview"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
             finally
             {
                 IsProcessing.Value = false;
-                ProcessingStatus.Value = "準備完了";
+                ProcessingStatus.Value = ResourceService.GetString("Ready");
             }
         }
 
@@ -1311,7 +1312,7 @@ namespace boilersExtensions.ViewModels
             try
             {
                 IsProcessing.Value = true;
-                ProcessingStatus.Value = "影響範囲を分析中...";
+                ProcessingStatus.Value = ResourceService.GetString("NowAnalyzingAffectedRange");
 
                 // 選択された型のシンボルがない場合は中止
                 if (_originalTypeSymbol == null)
@@ -1375,8 +1376,8 @@ namespace boilersExtensions.ViewModels
                     }
 
                     // 特定の変数/パラメータが見つからない場合
-                    MessageBox.Show("特定のパラメータや変数が見つかりませんでした。型全体に対する参照を検索します。",
-                        "警告",
+                    MessageBox.Show(ResourceService.GetString("SearchReferencesForEntireType"),
+                        ResourceService.GetString("Warning"),
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
 
@@ -1384,8 +1385,8 @@ namespace boilersExtensions.ViewModels
                 }
                 else
                 {
-                    MessageBox.Show("ドキュメントの取得に失敗しました。分析を続行できません。",
-                        "エラー",
+                    MessageBox.Show(ResourceService.GetString("FailedToGetDocumentAndCannotContinueAnalyzing"),
+                        ResourceService.GetString("Error"),
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 }
@@ -1393,15 +1394,15 @@ namespace boilersExtensions.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in ShowImpactAnalysis: {ex.Message}");
-                MessageBox.Show($"影響範囲の分析中にエラーが発生しました: {ex.Message}",
-                    "エラー",
+                MessageBox.Show(string.Format(ResourceService.GetString("ErrorOccurredWhenAnalyzingAffectedRange"), ex.Message),
+                    ResourceService.GetString("Error"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
             finally
             {
                 IsProcessing.Value = false;
-                ProcessingStatus.Value = "準備完了";
+                ProcessingStatus.Value = ResourceService.GetString("Ready");
             }
         }
 
@@ -1474,15 +1475,15 @@ namespace boilersExtensions.ViewModels
                 }
                 else
                 {
-                    MessageBox.Show($"型 '{originalTypeName}' の参照が見つかりませんでした。",
-                        "分析結果", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(string.Format(ResourceService.GetString("NotFoundReferenceOfType"), originalTypeName),
+                        ResourceService.GetString("AnalyzingResult"), MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Razorファイル影響分析エラー: {ex.Message}");
-                MessageBox.Show($"Razorファイルの影響分析中にエラーが発生しました: {ex.Message}",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(string.Format(ResourceService.GetString("ErrorOccurredWhenAnalyzingToAffectRazorFile"), ex.Message),
+                    ResourceService.GetString("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1514,7 +1515,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1, // Razorファイルなので同じ
                             Column = line.IndexOf(typeName) + 1,
                             Text = line.Trim(),
-                            ReferenceType = "Razorファイルでの直接参照"
+                            ReferenceType = ResourceService.GetString("DirectReferencesInRazorFiles")
                         });
                     }
                 }
@@ -1535,7 +1536,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1,
                             Column = line.IndexOf("@bind") + 1,
                             Text = line.Trim(),
-                            ReferenceType = "データバインド参照"
+                            ReferenceType = ResourceService.GetString("DataBindingReference")
                         });
                     }
                 }
@@ -1555,7 +1556,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1,
                             Column = line.IndexOf(typeName) + 1,
                             Text = line.Trim(),
-                            ReferenceType = "依存性注入参照"
+                            ReferenceType = ResourceService.GetString("DependentInjectionReference")
                         });
                     }
                 }
@@ -1601,7 +1602,7 @@ namespace boilersExtensions.ViewModels
                                 RazorLineNumber = i + 1,
                                 Column = line.IndexOf(typeName) + 1,
                                 Text = line.Trim(),
-                                ReferenceType = "@code ブロック内での参照"
+                                ReferenceType = ResourceService.GetString("ReferenceInAtCodeBlock")
                             });
                         }
                     }
@@ -1644,7 +1645,7 @@ namespace boilersExtensions.ViewModels
                                 RazorLineNumber = i + 1,
                                 Column = line.IndexOf(typeName) + 1,
                                 Text = line.Trim(),
-                                ReferenceType = "@functions ブロック内での参照"
+                                ReferenceType = ResourceService.GetString("ReferenceInAtFunctionsBlock")
                             });
                         }
                     }
@@ -1672,7 +1673,7 @@ namespace boilersExtensions.ViewModels
                                     RazorLineNumber = i + 1,
                                     Column = expressionStart + expression.IndexOf(typeName) + 3, // @( の後ろの位置
                                     Text = line.Trim(),
-                                    ReferenceType = "インラインC#式での参照"
+                                    ReferenceType = ResourceService.GetString("ReferenceInInlineCSharpExpressions")
                                 });
                             }
 
@@ -1704,7 +1705,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1,
                             Column = match.Index + 1,
                             Text = line.Trim(),
-                            ReferenceType = "ジェネリック型パラメータ参照"
+                            ReferenceType = ResourceService.GetString("GenericTypeParameterReference")
                         });
                     }
                 }
@@ -1724,7 +1725,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1,
                             Column = line.IndexOf(typeName) + 1,
                             Text = line.Trim(),
-                            ReferenceType = "継承参照"
+                            ReferenceType = ResourceService.GetString("InheritanceReference")
                         });
                     }
                 }
@@ -1744,7 +1745,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1,
                             Column = line.IndexOf(typeName) + 1,
                             Text = line.Trim(),
-                            ReferenceType = "インターフェース実装参照"
+                            ReferenceType = ResourceService.GetString("InterfaceImplementationReference")
                         });
                     }
                 }
@@ -1764,7 +1765,7 @@ namespace boilersExtensions.ViewModels
                             RazorLineNumber = i + 1,
                             Column = line.IndexOf(typeName) + 1,
                             Text = line.Trim(),
-                            ReferenceType = "型パラメータ制約参照"
+                            ReferenceType = ResourceService.GetString("TypeParameterConstraintReference")
                         });
                     }
                 }
@@ -2040,6 +2041,7 @@ namespace boilersExtensions.ViewModels
             return false;
         }
 
+        [Obsolete]
         /// <summary>
         ///     すべてのプロジェクトを対象に型参照を検索
         /// </summary>
@@ -2308,25 +2310,25 @@ namespace boilersExtensions.ViewModels
                                 LineNumber = refLine,
                                 Column = linePosition.Character + 1,
                                 Text = referenceText,
-                                ReferenceType = "型の参照"
+                                ReferenceType = ResourceService.GetString("TypeReference")
                             };
 
                             // 参照の種類を判断
                             if (typeRef.Parent is ParameterSyntax)
                             {
-                                referenceInfo.ReferenceType = "パラメータの型";
+                                referenceInfo.ReferenceType = ResourceService.GetString("ParameterType");
                             }
                             else if (typeRef.Parent is VariableDeclarationSyntax)
                             {
-                                referenceInfo.ReferenceType = "変数の型";
+                                referenceInfo.ReferenceType = ResourceService.GetString("VariableTypes");
                             }
                             else if (typeRef.Parent is PropertyDeclarationSyntax)
                             {
-                                referenceInfo.ReferenceType = "プロパティの型";
+                                referenceInfo.ReferenceType = ResourceService.GetString("PropertyTypes");
                             }
                             else if (typeRef.Parent is MethodDeclarationSyntax)
                             {
-                                referenceInfo.ReferenceType = "メソッドの戻り値型";
+                                referenceInfo.ReferenceType = ResourceService.GetString("MethodReturnType");
                             }
 
                             // 重複を避けるために追加
@@ -2365,7 +2367,7 @@ namespace boilersExtensions.ViewModels
                                 LineNumber = refLine,
                                 Column = linePosition.Character + 1,
                                 Text = referenceText,
-                                ReferenceType = $"メンバー {memberAccess.Name.Identifier.Text} の使用"
+                                ReferenceType = string.Format(ResourceService.GetString("MemberUse"), memberAccess.Name.Identifier.Text)
                             };
 
                             // 重複を避けるために追加
@@ -2495,10 +2497,10 @@ namespace boilersExtensions.ViewModels
             {
                 issues.Add(new CompatibilityIssue
                 {
-                    IssueType = "型の種類の不一致",
+                    IssueType = ResourceService.GetString("TypeKindMismatch"),
                     Description =
-                        $"元の型 '{originalType.Name}' は {originalType.TypeKind} ですが、新しい型 '{newType.Name}' は {newType.TypeKind} です。",
-                    SuggestedFix = "型の種類が一致するように設計を見直してください。"
+                        string.Format(ResourceService.GetString("CheckTypeCompatibility_Description1"), originalType.Name, originalType.TypeKind, newType.Name, newType.TypeKind),
+                    SuggestedFix = ResourceService.GetString("CheckTypeCompatibility_SuggestedFix1")
                 });
             }
 
@@ -2523,9 +2525,9 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "継承関係の不一致",
-                        Description = $"新しい型 '{newType.Name}' は元の型 '{originalType.Name}' を継承していません。",
-                        SuggestedFix = "元の型と継承関係がある型を使用するか、アダプターパターンを検討してください。"
+                        IssueType = ResourceService.GetString("InconsistencyOfSuccessionRelationships"),
+                        Description = string.Format(ResourceService.GetString("InconsistencyOfSuccessionRelationships_Description"), newType.Name, originalType.Name),
+                        SuggestedFix = ResourceService.GetString("InconsistencyOfSuccessionRelationships_SuggestedFix")
                     });
                 }
             }
@@ -2541,9 +2543,9 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "インターフェース実装の不一致",
-                        Description = $"新しい型 '{newType.Name}' はインターフェース '{originalType.Name}' を実装していません。",
-                        SuggestedFix = "インターフェースを実装する型を選択するか、アダプターパターンを検討してください。"
+                        IssueType = ResourceService.GetString("InterfaceImplementationMismatch"),
+                        Description = string.Format(ResourceService.GetString("InterfaceImplementationMismatch_Description"), newType.Name, originalType.Name),
+                        SuggestedFix = ResourceService.GetString("InterfaceImplementationMismatch_SuggestedFix")
                     });
                 }
             }
@@ -2570,9 +2572,9 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "メソッド欠落",
-                        Description = $"元の型の '{originalMethod.Name}' メソッドが新しい型にありません。",
-                        SuggestedFix = $"新しい型に '{originalMethod.Name}' メソッドを実装するか、拡張メソッドを検討してください。",
+                        IssueType = ResourceService.GetString("MissingMethod"),
+                        Description = string.Format(ResourceService.GetString("MissingMethod_Description"), originalMethod.Name),
+                        SuggestedFix = string.Format(ResourceService.GetString("MissingMethod_SuggestedFix"), originalMethod.Name),
                         Member = originalMethod.Name
                     });
                 }
@@ -2588,9 +2590,9 @@ namespace boilersExtensions.ViewModels
                             .AsValueEnumerable().Select(p => $"{p.Type.Name} {p.Name}"));
                         issues.Add(new CompatibilityIssue
                         {
-                            IssueType = "メソッドシグネチャの不一致",
-                            Description = $"メソッド '{originalMethod.Name}({paramList})' のシグネチャが一致するものが新しい型にありません。",
-                            SuggestedFix = "メソッドのシグネチャを一致させるか、アダプターを実装してください。",
+                            IssueType = ResourceService.GetString("MethodSignatureMismatch"),
+                            Description = string.Format(ResourceService.GetString("MethodSignatureMismatch_Description"), originalMethod.Name, paramList),
+                            SuggestedFix = ResourceService.GetString("MethodSignatureMismatch_SuggestedFix"),
                             Member = originalMethod.Name
                         });
                     }
@@ -2613,9 +2615,9 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "プロパティ欠落",
-                        Description = $"元の型の '{originalProperty.Name}' プロパティが新しい型にありません。",
-                        SuggestedFix = $"新しい型に '{originalProperty.Name}' プロパティを実装するか、拡張メソッドを検討してください。",
+                        IssueType = ResourceService.GetString("MIssingProperty"),
+                        Description = string.Format(ResourceService.GetString("MissingProperty_Description"), originalProperty.Name),
+                        SuggestedFix = string.Format(ResourceService.GetString("MissingProperty_SuggestedFix"), originalProperty.Name),
                         Member = originalProperty.Name
                     });
                 }
@@ -2623,10 +2625,10 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "プロパティ型の不一致",
+                        IssueType = ResourceService.GetString("PropertyTypeMismatch"),
                         Description =
-                            $"プロパティ '{originalProperty.Name}' の型が元の型では '{originalProperty.Type.Name}' ですが、新しい型では '{matchingProperty.Type.Name}' です。",
-                        SuggestedFix = "型変換ロジックを追加するか、代替のプロパティを検討してください。",
+                            string.Format(ResourceService.GetString("PropertyTypeMismatch_Description"), originalProperty.Name, originalProperty.Type.Name, matchingProperty.Type.Name),
+                        SuggestedFix = ResourceService.GetString("PropertyTypeMismatch_SuggestedFix"),
                         Member = originalProperty.Name
                     });
                 }
@@ -2648,9 +2650,9 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "イベント欠落",
-                        Description = $"元の型の '{originalEvent.Name}' イベントが新しい型にありません。",
-                        SuggestedFix = $"新しい型に '{originalEvent.Name}' イベントを実装するか、独自のイベント処理を実装してください。",
+                        IssueType = ResourceService.GetString("EventMissing"),
+                        Description = string.Format(ResourceService.GetString("EventMissing_Description"), originalEvent.Name),
+                        SuggestedFix = string.Format(ResourceService.GetString("EventMissing_SuggestedFix"), originalEvent.Name),
                         Member = originalEvent.Name
                     });
                 }
@@ -2658,10 +2660,10 @@ namespace boilersExtensions.ViewModels
                 {
                     issues.Add(new CompatibilityIssue
                     {
-                        IssueType = "イベント型の不一致",
+                        IssueType = ResourceService.GetString("EventTypeMismatch"),
                         Description =
-                            $"イベント '{originalEvent.Name}' の型が元の型では '{originalEvent.Type.Name}' ですが、新しい型では '{matchingEvent.Type.Name}' です。",
-                        SuggestedFix = "アダプターまたはラッパーを実装して、イベントハンドラーの互換性を確保してください。",
+                            string.Format(ResourceService.GetString("EventTypeMismatch_Description"), originalEvent.Name, originalEvent.Type.Name, matchingEvent.Type.Name),
+                        SuggestedFix = ResourceService.GetString("EventTypeMismatch_SuggestedFix"),
                         Member = originalEvent.Name
                     });
                 }
@@ -2692,9 +2694,9 @@ namespace boilersExtensions.ViewModels
                     {
                         issues.Add(new CompatibilityIssue
                         {
-                            IssueType = "メンバーアクセスの不一致",
-                            Description = $"元の型の '{specificMember.Name}' メンバーは新しい型には存在しません。",
-                            SuggestedFix = $"'{specificMember.Name}' にアクセスするコードを修正するか、代替手段を実装してください。",
+                            IssueType = ResourceService.GetString("MemberAccessMismatch"),
+                            Description = string.Format(ResourceService.GetString("MemberAccessMismatch_Description"), specificMember.Name),
+                            SuggestedFix = string.Format(ResourceService.GetString("MemberAccessMismatch_SuggestedFix"), specificMember.Name),
                             Member = specificMember.Name
                         });
                     }
@@ -2832,6 +2834,7 @@ namespace boilersExtensions.ViewModels
             public string Member { get; set; } // 問題のあるメンバー名（オプション）
         }
 
+        [Obsolete]
         /// <summary>
         ///     型シンボルに対する影響分析（プロジェクト指定版）
         /// </summary>
@@ -2985,7 +2988,7 @@ namespace boilersExtensions.ViewModels
                     var node = (await sourceTree.GetRootAsync()).FindNode(location.Location.SourceSpan);
                     var containingMethod = node.Ancestors()
                         .AsValueEnumerable().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-                    var methodContext = containingMethod != null ? containingMethod.Identifier.Text : "不明";
+                    var methodContext = containingMethod != null ? containingMethod.Identifier.Text : ResourceService.GetString("Unknown");
 
                     // 行のコードテキストを取得
                     var lineText = await GetLineTextAsync(location.Document, lineSpan.StartLinePosition.Line);
@@ -3003,7 +3006,7 @@ namespace boilersExtensions.ViewModels
                         RazorLineNumber = razorLine,
                         Column = lineSpan.StartLinePosition.Character + 1,
                         Text = lineText,
-                        ReferenceType = $"{(symbol is IParameterSymbol ? "パラメータ" : "変数")}の使用 ({methodContext}内)"
+                        ReferenceType = string.Format(ResourceService.GetString("UseReference"), (symbol is IParameterSymbol ? ResourceService.GetString("Parameter") : ResourceService.GetString("Variable")), methodContext)
                     };
 
                     impactList.Add(referenceInfo);
@@ -3281,10 +3284,10 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "イベントアクセシビリティの不一致",
+                IssueType = ResourceService.GetString("EventAccessibilityMismatch"),
                 Description =
-                    $"イベント '{originalEvent.Name}' のアクセシビリティが異なります: '{originalEvent.DeclaredAccessibility}' → '{newEvent.DeclaredAccessibility}'",
-                SuggestedFix = "アクセシビリティの変更により、一部のコードで参照できなくなる可能性があります。コードの構造を見直すか、アクセサメソッドの実装を検討してください。",
+                    string.Format(ResourceService.GetString("EventAccessibilityMismatch_Description"), originalEvent.Name, originalEvent.DeclaredAccessibility, newEvent.DeclaredAccessibility),
+                SuggestedFix = ResourceService.GetString("EventAccessibilityMismatch_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
@@ -3319,14 +3322,14 @@ namespace boilersExtensions.ViewModels
                 if (correspondingEvent == null)
                 {
                     // イベントが見つからない場合
-                    issues.Add($"イベント '{originalEvent.Name}' は新しい型に存在しません");
+                    issues.Add(string.Format(ResourceService.GetString("EventDoesnotExistInNewType"), originalEvent.Name));
 
                     // このイベントへの参照を探す
                     var references = await SymbolFinder.FindReferencesAsync(originalEvent, solution);
                     foreach (var reference in references)
                     {
                         issues.Add(
-                            $"  - 参照箇所: {reference.Definition.Name}, {reference.Locations.AsValueEnumerable().Count()}箇所");
+                            string.Format(ResourceService.GetString("ReferencePoint"), reference.Definition.Name, reference.Locations.AsValueEnumerable().Count()));
                     }
                 }
                 else
@@ -3334,14 +3337,14 @@ namespace boilersExtensions.ViewModels
                     // イベントデリゲート型の互換性を確認
                     if (!AreEventTypesCompatible(originalEvent, correspondingEvent))
                     {
-                        issues.Add($"イベント '{originalEvent.Name}' のデリゲート型が不一致: " +
+                        issues.Add(string.Format(ResourceService.GetString("EventDelegateTypeMismatch"), originalEvent.Name) + ": " +
                                    $"'{originalEvent.Type.ToDisplayString()}' → '{correspondingEvent.Type.ToDisplayString()}'");
                     }
 
                     // アクセシビリティの違いをチェック
                     if (originalEvent.DeclaredAccessibility != correspondingEvent.DeclaredAccessibility)
                     {
-                        issues.Add($"イベント '{originalEvent.Name}' のアクセシビリティが異なります: " +
+                        issues.Add(string.Format(ResourceService.GetString("AccessibilityOfEventsVaries"), originalEvent.Name) + ": " +
                                    $"'{originalEvent.DeclaredAccessibility}' → '{correspondingEvent.DeclaredAccessibility}'");
                     }
                 }
@@ -3430,9 +3433,9 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "イベント欠落",
-                Description = $"イベント '{eventSymbol.Name}' は新しい型に存在しません。",
-                SuggestedFix = "新しい型に対応するイベントを実装するか、カスタムイベントハンドラーを使用してイベントをエミュレートすることを検討してください。",
+                IssueType = ResourceService.GetString("EventMissing"),
+                Description = string.Format(ResourceService.GetString("EventMissing_Description"), eventSymbol.Name),
+                SuggestedFix = ResourceService.GetString("EventMissing_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
@@ -3464,10 +3467,10 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "イベント型の不一致",
+                IssueType = ResourceService.GetString("EventTypeMismatch"),
                 Description =
-                    $"イベント '{originalEvent.Name}' のデリゲート型が異なります: '{originalEvent.Type}' → '{newEvent.Type}'",
-                SuggestedFix = "イベントハンドラーに適応するためのアダプターメソッドの実装を検討してください。",
+                    string.Format(ResourceService.GetString("EventTypeMismatch_Description"), originalEvent.Name, originalEvent.Type, newEvent.Type),
+                SuggestedFix = ResourceService.GetString("EventTypeMismatch_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
@@ -3634,9 +3637,9 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "メソッド欠落",
-                Description = $"メソッド '{method.Name}' は新しい型に存在しません。",
-                SuggestedFix = "新しい型に対応するメソッドを実装するか、アダプターパターンを使用してください。",
+                IssueType = ResourceService.GetString("MissingMethod"),
+                Description = string.Format(ResourceService.GetString("MissingMethod_Description"), method.Name),
+                SuggestedFix = ResourceService.GetString("MissingMethod_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
@@ -3819,7 +3822,7 @@ namespace boilersExtensions.ViewModels
             // 戻り値の型が異なる場合
             if (!original.ReturnType.Equals(newMethod.ReturnType, SymbolEqualityComparer.Default))
             {
-                incompatibilityDetails += $"戻り値の型が異なります: '{original.ReturnType}' → '{newMethod.ReturnType}' ";
+                incompatibilityDetails += ResourceService.GetString("ReturnTypeIsDifferent") + $": '{original.ReturnType}' → '{newMethod.ReturnType}' ";
             }
 
             // パラメータの違いを確認
@@ -3832,20 +3835,20 @@ namespace boilersExtensions.ViewModels
                 if (!origParam.Type.Equals(newParam.Type, SymbolEqualityComparer.Default))
                 {
                     incompatibilityDetails +=
-                        $"パラメータ #{i + 1} ({origParam.Name}) の型が異なります: '{origParam.Type}' → '{newParam.Type}' ";
+                        string.Format(ResourceService.GetString("DifferentParameterTypes"), i + 1, origParam.Name) + $": '{origParam.Type}' → '{newParam.Type}' ";
                 }
             }
 
             // 元のメソッドにあって新しいメソッドにないパラメータ
             for (var i = minParamCount; i < original.Parameters.Length; i++)
             {
-                incompatibilityDetails += $"パラメータ #{i + 1} ({original.Parameters[i].Name}) が新しいメソッドにありません。 ";
+                incompatibilityDetails += string.Format(ResourceService.GetString("ParameterIsMissingInNewMethod"), i + 1, original.Parameters[i].Name);
             }
 
             // 新しいメソッドにあって元のメソッドにないパラメータ
             for (var i = minParamCount; i < newMethod.Parameters.Length; i++)
             {
-                incompatibilityDetails += $"新しいメソッドには追加のパラメータ #{i + 1} ({newMethod.Parameters[i].Name}) があります。 ";
+                incompatibilityDetails += string.Format(ResourceService.GetString("NewMethodsHaveAdditionalParameters"), i + 1, newMethod.Parameters[i].Name);
             }
 
             // 生成コードの行番号
@@ -3869,9 +3872,9 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "メソッドシグネチャの不一致",
-                Description = $"メソッド '{original.Name}' のシグネチャが新しい型では異なります。{incompatibilityDetails}",
-                SuggestedFix = "メソッド呼び出しを修正するか、アダプターを実装して互換性を確保してください。",
+                IssueType = ResourceService.GetString("MethodSignatureMismatch"),
+                Description = string.Format(ResourceService.GetString("MethodSignatureMismatch_Description"), original.Name, incompatibilityDetails),
+                SuggestedFix = ResourceService.GetString("MethodSignatureMismatch_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
@@ -3937,9 +3940,9 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "プロパティ欠落",
-                Description = $"プロパティ '{property.Name}' は新しい型に存在しません。",
-                SuggestedFix = "新しい型に対応するプロパティを実装するか、拡張メソッドを使用してプロパティ機能を再現することを検討してください。",
+                IssueType = ResourceService.GetString("MissingProperty"),
+                Description = string.Format(ResourceService.GetString("MissingProperty_Description"), property.Name),
+                SuggestedFix = ResourceService.GetString("MissingProperty_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }
@@ -3971,9 +3974,9 @@ namespace boilersExtensions.ViewModels
                 FilePath = RazorFileUtility.GetOriginalFilePath(filePath),
                 FileName = RazorFileUtility.GetOriginalFilePath(Path.GetFileName(filePath)),
                 LineNumber = razorLine, // Razorファイルの行番号を使用
-                IssueType = "プロパティ型の不一致",
-                Description = $"プロパティ '{original.Name}' の型が異なります: '{original.Type}' → '{newProperty.Type}'",
-                SuggestedFix = "型変換または拡張メソッドを使用して互換性を確保することを検討してください。",
+                IssueType = ResourceService.GetString("PropertyTypeMismatch"),
+                Description = string.Format(ResourceService.GetString("PropertyTypeMismatch_Description"), original.Name, original.Type, newProperty.Type),
+                SuggestedFix = ResourceService.GetString("PropertyTypeMismatch_SuggestedFix"),
                 CodeSnippet = await GetCodeSnippet(location.Document, lineSpan.StartLinePosition.Line)
             };
         }

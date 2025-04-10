@@ -61,6 +61,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Accessibility of event &apos;{0}&apos; is different に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AccessibilityOfEventsVaries {
+            get {
+                return ResourceManager.GetString("AccessibilityOfEventsVaries", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Add に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Add {
@@ -75,6 +84,24 @@ namespace boilersExtensions.Properties {
         public static string Address {
             get {
                 return ResourceManager.GetString("Address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Analysis Results に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AnalyzingResult {
+            get {
+                return ResourceManager.GetString("AnalyzingResult", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Analyzing the type hierarchy... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AnalyzingTypeHierarchy {
+            get {
+                return ResourceManager.GetString("AnalyzingTypeHierarchy", resourceCulture);
             }
         }
         
@@ -376,6 +403,33 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Could not edit as a text document. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CannotEditAsTextDocument {
+            get {
+                return ResourceManager.GetString("CannotEditAsTextDocument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Could not locate type replacement. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CannotLocateTypeReplacement {
+            get {
+                return ResourceManager.GetString("CannotLocateTypeReplacement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Could not locate type replacement. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CannotSpecifiedPositionReplacingType {
+            get {
+                return ResourceManager.GetString("CannotSpecifiedPositionReplacingType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Cancel に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Caption_Cancel {
@@ -399,6 +453,24 @@ namespace boilersExtensions.Properties {
         public static string ChangeTypeFromTypeHierarchy {
             get {
                 return ResourceManager.GetString("ChangeTypeFromTypeHierarchy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The original type &apos;{0}&apos; is {1}, the new type &apos;{2}&apos; is {3}. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CheckTypeCompatibility_Description1 {
+            get {
+                return ResourceManager.GetString("CheckTypeCompatibility_Description1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Review the design so that the type types match. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CheckTypeCompatibility_SuggestedFix1 {
+            get {
+                return ResourceManager.GetString("CheckTypeCompatibility_SuggestedFix1", resourceCulture);
             }
         }
         
@@ -520,6 +592,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Data binding reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DataBindingReference {
+            get {
+                return ResourceManager.GetString("DataBindingReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Data type に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string DataType {
@@ -543,6 +624,15 @@ namespace boilersExtensions.Properties {
         public static string Delete {
             get {
                 return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Dependent Injection Reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DependentInjectionReference {
+            get {
+                return ResourceManager.GetString("DependentInjectionReference", resourceCulture);
             }
         }
         
@@ -588,6 +678,24 @@ namespace boilersExtensions.Properties {
         public static string DetectionByPropertyTypeComplete {
             get {
                 return ResourceManager.GetString("DetectionByPropertyTypeComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Parameter #{0} ({1}) has different type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DifferentParameterTypes {
+            get {
+                return ResourceManager.GetString("DifferentParameterTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Direct references in Razor files に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string DirectReferencesInRazorFiles {
+            get {
+                return ResourceManager.GetString("DirectReferencesInRazorFiles", resourceCulture);
             }
         }
         
@@ -664,6 +772,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Preview error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Error_Preview {
+            get {
+                return ResourceManager.GetString("Error_Preview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Error adding to resource file: {0} に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ErrorAddingToResourceFile {
@@ -678,6 +795,15 @@ namespace boilersExtensions.Properties {
         public static string ErrorDuringRelationshipDetection {
             get {
                 return ResourceManager.GetString("ErrorDuringRelationshipDetection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Could not locate type replacement. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredCannotSpecifiedPositionReplacingType {
+            get {
+                return ResourceManager.GetString("ErrorOccurredCannotSpecifiedPositionReplacingType", resourceCulture);
             }
         }
         
@@ -709,6 +835,69 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   An error occurred during the analysis of the zone of influence: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredWhenAnalyzingAffectedRange {
+            get {
+                return ResourceManager.GetString("ErrorOccurredWhenAnalyzingAffectedRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error during impact analysis of Razor file: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredWhenAnalyzingToAffectRazorFile {
+            get {
+                return ResourceManager.GetString("ErrorOccurredWhenAnalyzingToAffectRazorFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   An error occurred while editing the file directly: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredWhenDirectlyEditingFile {
+            get {
+                return ResourceManager.GetString("ErrorOccurredWhenDirectlyEditingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error while editing Razor file: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredWhenEdittingRazorFile {
+            get {
+                return ResourceManager.GetString("ErrorOccurredWhenEdittingRazorFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   An error occurred while displaying the preview: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredWhenPreviewing {
+            get {
+                return ResourceManager.GetString("ErrorOccurredWhenPreviewing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Error during type substitution: {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorOccurredWhenReplacingType {
+            get {
+                return ResourceManager.GetString("ErrorOccurredWhenReplacingType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type hierarchy selection Error に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ErrorTypeHierarchySelection {
+            get {
+                return ResourceManager.GetString("ErrorTypeHierarchySelection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Error while loading schema: {0} に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ErrorWhenSchemaLoading {
@@ -723,6 +912,114 @@ namespace boilersExtensions.Properties {
         public static string ErrorWithMessage {
             get {
                 return ResourceManager.GetString("ErrorWithMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event accessibility mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventAccessibilityMismatch {
+            get {
+                return ResourceManager.GetString("EventAccessibilityMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Accessibility of event &apos;{0}&apos; is different: &apos;{1}&apos; → &apos;{2}&apos; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventAccessibilityMismatch_Description {
+            get {
+                return ResourceManager.GetString("EventAccessibilityMismatch_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Accessibility changes may make references unavailable in some code. Please review the structure of your code or consider implementing accessor methods. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventAccessibilityMismatch_SuggestedFix {
+            get {
+                return ResourceManager.GetString("EventAccessibilityMismatch_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event &apos;{0}&apos; delegate type mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventDelegateTypeMismatch {
+            get {
+                return ResourceManager.GetString("EventDelegateTypeMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event &apos;{0}&apos; does not exist in the new type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventDoesnotExistInNewType {
+            get {
+                return ResourceManager.GetString("EventDoesnotExistInNewType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event missing に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventMissing {
+            get {
+                return ResourceManager.GetString("EventMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event &apos;{0}&apos; does not exist in the new type. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventMissing_Description {
+            get {
+                return ResourceManager.GetString("EventMissing_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Consider implementing events for the new types or emulate them using custom event handlers. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventMissing_SuggestedFix {
+            get {
+                return ResourceManager.GetString("EventMissing_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event type mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventTypeMismatch {
+            get {
+                return ResourceManager.GetString("EventTypeMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Event &apos;{0}&apos; has a different delegate type: &apos;{1}&apos; → &apos;{2}&apos; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventTypeMismatch_Description {
+            get {
+                return ResourceManager.GetString("EventTypeMismatch_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Consider implementing an adapter method to adapt to event handlers. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string EventTypeMismatch_SuggestedFix {
+            get {
+                return ResourceManager.GetString("EventTypeMismatch_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Failed to retrieve document. Unable to continue analysis. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string FailedToGetDocumentAndCannotContinueAnalyzing {
+            get {
+                return ResourceManager.GetString("FailedToGetDocumentAndCannotContinueAnalyzing", resourceCulture);
             }
         }
         
@@ -849,6 +1146,15 @@ namespace boilersExtensions.Properties {
         public static string GeneratingTestData {
             get {
                 return ResourceManager.GetString("GeneratingTestData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Generic type parameter reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string GenericTypeParameterReference {
+            get {
+                return ResourceManager.GetString("GenericTypeParameterReference", resourceCulture);
             }
         }
         
@@ -1024,11 +1330,83 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Inconsistency of Succession Relationships に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InconsistencyOfSuccessionRelationships {
+            get {
+                return ResourceManager.GetString("InconsistencyOfSuccessionRelationships", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The new type &apos;{0}&apos; does not inherit the original type &apos;{1}&apos;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InconsistencyOfSuccessionRelationships_Description {
+            get {
+                return ResourceManager.GetString("InconsistencyOfSuccessionRelationships_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use a type that has an inheritance relationship with the original type or consider an adapter pattern. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InconsistencyOfSuccessionRelationships_SuggestedFix {
+            get {
+                return ResourceManager.GetString("InconsistencyOfSuccessionRelationships_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Inheritance Reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InheritanceReference {
+            get {
+                return ResourceManager.GetString("InheritanceReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Inserting code... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string InsertingCode {
             get {
                 return ResourceManager.GetString("InsertingCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Interface implementation mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InterfaceImplementationMismatch {
+            get {
+                return ResourceManager.GetString("InterfaceImplementationMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The new type &apos;{0}&apos; does not implement the interface &apos;{1}&apos;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InterfaceImplementationMismatch_Description {
+            get {
+                return ResourceManager.GetString("InterfaceImplementationMismatch_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Select the type that implements the interface or consider an adapter pattern. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InterfaceImplementationMismatch_SuggestedFix {
+            get {
+                return ResourceManager.GetString("InterfaceImplementationMismatch_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Interface Implementation Reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string InterfaceImplementationReference {
+            get {
+                return ResourceManager.GetString("InterfaceImplementationReference", resourceCulture);
             }
         }
         
@@ -1096,11 +1474,137 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Member access mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MemberAccessMismatch {
+            get {
+                return ResourceManager.GetString("MemberAccessMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The &apos;{0}&apos; member of the original type does not exist in the new type. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MemberAccessMismatch_Description {
+            get {
+                return ResourceManager.GetString("MemberAccessMismatch_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Modify the code to access &apos;{0}&apos; or implement an alternative. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MemberAccessMismatch_SuggestedFix {
+            get {
+                return ResourceManager.GetString("MemberAccessMismatch_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use of member {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MemberUse {
+            get {
+                return ResourceManager.GetString("MemberUse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Method return type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MethodReturnType {
+            get {
+                return ResourceManager.GetString("MethodReturnType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Method signature mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MethodSignatureMismatch {
+            get {
+                return ResourceManager.GetString("MethodSignatureMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The method &apos;{0}({1})&apos; has no matching signature in the new type. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MethodSignatureMismatch_Description {
+            get {
+                return ResourceManager.GetString("MethodSignatureMismatch_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Fix method calls or implement adapters to ensure compatibility. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MethodSignatureMismatch_SuggestedFix {
+            get {
+                return ResourceManager.GetString("MethodSignatureMismatch_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Minimum value に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string MinumumValue {
             get {
                 return ResourceManager.GetString("MinumumValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Missing method に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MissingMethod {
+            get {
+                return ResourceManager.GetString("MissingMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The method &apos;{0}&apos; does not exist in the new type. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MissingMethod_Description {
+            get {
+                return ResourceManager.GetString("MissingMethod_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Implement a method for the new type or use an adapter pattern. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MissingMethod_SuggestedFix {
+            get {
+                return ResourceManager.GetString("MissingMethod_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Missing property に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MIssingProperty {
+            get {
+                return ResourceManager.GetString("MIssingProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property &apos;{0}&apos; is not present in the new type. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MissingProperty_Description {
+            get {
+                return ResourceManager.GetString("MissingProperty_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Consider implementing properties for the new types or use extension methods to recreate property functionality. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MissingProperty_SuggestedFix {
+            get {
+                return ResourceManager.GetString("MissingProperty_SuggestedFix", resourceCulture);
             }
         }
         
@@ -1132,6 +1636,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   The new method has an additional parameter #{0} ({1}). に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NewMethodsHaveAdditionalParameters {
+            get {
+                return ResourceManager.GetString("NewMethodsHaveAdditionalParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   No active document. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NoActiveDocument {
@@ -1159,6 +1672,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   No reference found for type &apos;{0}&apos;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NotFoundReferenceOfType {
+            get {
+                return ResourceManager.GetString("NotFoundReferenceOfType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   The GUID to be replaced has not been selected or a new GUID has not been generated. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NotSelectedReplacingGuidOrNotGenerateNewGuid {
@@ -1168,11 +1690,29 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Analyzing scope of impact... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NowAnalyzingAffectedRange {
+            get {
+                return ResourceManager.GetString("NowAnalyzingAffectedRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Parsing schema... に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string NowAnalyzingSchema {
             get {
                 return ResourceManager.GetString("NowAnalyzingSchema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Previewing code changes... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string NowPreviewingCodeChanges {
+            get {
+                return ResourceManager.GetString("NowPreviewingCodeChanges", resourceCulture);
             }
         }
         
@@ -1240,6 +1780,33 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Parameter に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Parameter {
+            get {
+                return ResourceManager.GetString("Parameter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Parameter #{0} ({1}) is missing from the new method. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ParameterIsMissingInNewMethod {
+            get {
+                return ResourceManager.GetString("ParameterIsMissingInNewMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Parameter type に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ParameterType {
+            get {
+                return ResourceManager.GetString("ParameterType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Parent-child relationship set up complete に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ParentChildRelationshipSetUpComplete {
@@ -1263,6 +1830,15 @@ namespace boilersExtensions.Properties {
         public static string PhoneNumber {
             get {
                 return ResourceManager.GetString("PhoneNumber", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Please consider applying the type change に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PleaseConsiderToApplyTypeChange {
+            get {
+                return ResourceManager.GetString("PleaseConsiderToApplyTypeChange", resourceCulture);
             }
         }
         
@@ -1303,6 +1879,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Preview Confirmation に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PreviewConfirmation {
+            get {
+                return ResourceManager.GetString("PreviewConfirmation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Price/amount に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string PriceAmount {
@@ -1339,6 +1924,69 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Property type mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyTypeMismatch {
+            get {
+                return ResourceManager.GetString("PropertyTypeMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property &apos;{0}&apos; has different type: &apos;{1}&apos; → &apos;{2}&apos; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyTypeMismatch_Description {
+            get {
+                return ResourceManager.GetString("PropertyTypeMismatch_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Consider using type conversion or extension methods to ensure compatibility. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyTypeMismatch_SuggestedFix {
+            get {
+                return ResourceManager.GetString("PropertyTypeMismatch_SuggestedFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Property Types に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyTypes {
+            get {
+                return ResourceManager.GetString("PropertyTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   {0} values... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string PropertyViewModel_FixValuesCount {
+            get {
+                return ResourceManager.GetString("PropertyViewModel_FixValuesCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Could not find the type name for a particular line. \Do you want to preview with the first type name found? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Question_CouldNotFindTypeNameForParticularLine {
+            get {
+                return ResourceManager.GetString("Question_CouldNotFindTypeNameForParticularLine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Could not substitute a type on a particular line. \Do you want to replace the first type name found? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Question_ReplaceFirstFoundTypeName {
+            get {
+                return ResourceManager.GetString("Question_ReplaceFirstFoundTypeName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ready に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Ready {
@@ -1353,6 +2001,42 @@ namespace boilersExtensions.Properties {
         public static string RecordCountCalculationComplete {
             get {
                 return ResourceManager.GetString("RecordCountCalculationComplete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Reference in @code block に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReferenceInAtCodeBlock {
+            get {
+                return ResourceManager.GetString("ReferenceInAtCodeBlock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   References in @functions block に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReferenceInAtFunctionsBlock {
+            get {
+                return ResourceManager.GetString("ReferenceInAtFunctionsBlock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   References in inline C# expressions に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReferenceInInlineCSharpExpressions {
+            get {
+                return ResourceManager.GetString("ReferenceInInlineCSharpExpressions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///    - References: {0}, {1} locations に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReferencePoint {
+            get {
+                return ResourceManager.GetString("ReferencePoint", resourceCulture);
             }
         }
         
@@ -1456,6 +2140,24 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Replaces the type name in line {0} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReplaceTypeNameAtThatLine {
+            get {
+                return ResourceManager.GetString("ReplaceTypeNameAtThatLine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Replaces the first type name found に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReplaceTypeNameFirstFound {
+            get {
+                return ResourceManager.GetString("ReplaceTypeNameFirstFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Resource class に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ResourceClass {
@@ -1488,6 +2190,24 @@ namespace boilersExtensions.Properties {
         public static string ResourceNamespace {
             get {
                 return ResourceManager.GetString("ResourceNamespace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The return type is different に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ReturnTypeIsDifferent {
+            get {
+                return ResourceManager.GetString("ReturnTypeIsDifferent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Could not find a specific parameter or variable. Search for a reference to the entire type. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SearchReferencesForEntireType {
+            get {
+                return ResourceManager.GetString("SearchReferencesForEntireType", resourceCulture);
             }
         }
         
@@ -1987,6 +2707,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Set placeholders for type parameters because the number of type parameters are incompatible. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetPlaceHoldersForTypeParameters {
+            get {
+                return ResourceManager.GetString("SetPlaceHoldersForTypeParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Single に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Single {
@@ -2086,6 +2815,15 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Type change preview に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeChangePreview {
+            get {
+                return ResourceManager.GetString("TypeChangePreview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Analyze scope of impact に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string TypeHierarchyDialog_AnalyzeScopeOfImpact {
@@ -2149,6 +2887,60 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Type hierarchy selection に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeHierarchySelection {
+            get {
+                return ResourceManager.GetString("TypeHierarchySelection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type kind mismatch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeKindMismatch {
+            get {
+                return ResourceManager.GetString("TypeKindMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type parameter constraint reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeParameterConstraintReference {
+            get {
+                return ResourceManager.GetString("TypeParameterConstraintReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type reference に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeReference {
+            get {
+                return ResourceManager.GetString("TypeReference", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Type replacement に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TypeReplacement {
+            get {
+                return ResourceManager.GetString("TypeReplacement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Unknown に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Unknown {
+            get {
+                return ResourceManager.GetString("Unknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Unselect All に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string UnselectAll {
@@ -2185,11 +2977,29 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Updating type... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string UpdatingType {
+            get {
+                return ResourceManager.GetString("UpdatingType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Use custom resource class に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string UseCustomResourceClass {
             get {
                 return ResourceManager.GetString("UseCustomResourceClass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Use of {0} (in {1}) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string UseReference {
+            get {
+                return ResourceManager.GetString("UseReference", resourceCulture);
             }
         }
         
@@ -2203,11 +3013,38 @@ namespace boilersExtensions.Properties {
         }
         
         /// <summary>
+        ///   Variable に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Variable {
+            get {
+                return ResourceManager.GetString("Variable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Variable Types に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VariableTypes {
+            get {
+                return ResourceManager.GetString("VariableTypes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   View in Solution Explorer に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string ViewInSolutionExplorer {
             get {
                 return ResourceManager.GetString("ViewInSolutionExplorer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Warning に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Warning {
+            get {
+                return ResourceManager.GetString("Warning", resourceCulture);
             }
         }
         
