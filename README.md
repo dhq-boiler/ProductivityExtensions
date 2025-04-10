@@ -15,6 +15,27 @@ Select "View in Solution Explorer" from the document tab context menu to locate 
 ### 🌐 GitHub Line Navigation
 When working with repositories that have a GitHub remote, right-click in the editor to "Open the corresponding line in the GitHub hosting repository". This opens the current file at the current line in your browser.
 
+### 🔤 Resource String Registration
+boilersExtensions provides two convenient ways to register strings in resource files:
+
+🔹 Code String Localization
+
+Select any string in your code editor, right-click, and choose "Register resource string" to add it to a resource file. The feature also supports string interpolation ($"..." format), automatically converting expressions to placeholders.
+
+🔹 XAML String Localization
+
+Easily convert text attributes in XAML files to resource references. Right-click in the XAML editor and select "Convert XAML strings to resources" to detect and register multiple text attributes in a single operation.
+
+Key Features:
+
+* Automatic resource key generation and customization
+* Culture-specific resource management
+* Custom resource class support
+* Intelligent string interpolation handling
+* Bulk detection and conversion of strings in XAML files
+
+These tools simplify application localization and help maintain centralized string resources, making your applications more maintainable and easier to translate.
+
 ### 🏷️ Type Hierarchy
 Quickly change types in your code using type hierarchy. Right-click on a type and select "Change type from type hierarchy" to see and select from all compatible types in your solution.
 
